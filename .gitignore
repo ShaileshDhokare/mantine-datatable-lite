@@ -1,0 +1,7 @@
+plan
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+.vite/
+.npm-cache/
