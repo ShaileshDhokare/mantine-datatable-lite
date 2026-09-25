@@ -129,4 +129,5 @@ export interface DataTableProps<T> {
   minWidth?: React.CSSProperties['minWidth'];
   maxHeight?: React.CSSProperties['maxHeight'];
   layout?: 'auto' | 'fixed';
+  debounceTime?: number;
 }

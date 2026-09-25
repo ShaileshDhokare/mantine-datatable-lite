@@ -50,6 +50,26 @@ const examples = [
     label: 'Columns and rendering',
     description: 'Set column width and alignment and render custom cells.',
   },
+  {
+    id: 'sorting',
+    label: 'Sorting',
+    description: 'Click a sort icon for ascending, descending, then the original order.',
+  },
+  {
+    id: 'sortMenu',
+    label: 'Sorting menu',
+    description: 'Open the menu at the right of a header to choose a sort direction.',
+  },
+  {
+    id: 'customSort',
+    label: 'Custom sorting',
+    description: 'Department uses a custom comparator based on department name length.',
+  },
+  {
+    id: 'serverSort',
+    label: 'Server-owned sorting',
+    description: 'The table reports sort changes; the example supplies rows in the requested order.',
+  },
 ] as const;
 
 type ExampleId = (typeof examples)[number]['id'];
@@ -60,6 +80,35 @@ const baseColumns: DataTableColumn<Employee>[] = [
   { dataIndex: 'department', header: 'Department' },
   { dataIndex: 'role', header: 'Role' },
   { dataIndex: 'salary', header: 'Salary' },
+];
+
+const sortingColumns: DataTableColumn<Employee>[] = [
+  { dataIndex: 'name', header: 'Name', type: 'string', sortable: true },
+  { dataIndex: 'age', header: 'Age', type: 'number', sortable: true },
+  { dataIndex: 'joinDate', header: 'Joined', type: 'date', sortable: true, render: (row) => row.joinDate.toLocaleDateString() },
+  { dataIndex: 'isActive', header: 'Active', type: 'boolean', sortable: true, render: (row) => row.isActive ? 'Yes' : 'No' },
+];
+
+const menuColumns: DataTableColumn<Employee>[] = sortingColumns.map((column) => ({
+  ...column,
+  showMenu: true,
+})).concat({ dataIndex: 'department', header: 'Department', showMenu: true, menuOptions: ['filter', 'display'] });
+
+const customSortColumns: DataTableColumn<Employee>[] = [
+  { dataIndex: 'name', header: 'Name', sortable: true },
+  {
+    dataIndex: 'department',
+    header: 'Department',
+    sortable: true,
+    defaultSortOrder: 'asc',
+    sortFn: (a, b) => a.department.length - b.department.length,
+  },
+  { dataIndex: 'salary', header: 'Salary', type: 'number', sortable: true },
+];
+
+const serverColumns: DataTableColumn<Employee>[] = [
+  { dataIndex: 'name', header: 'Name' },
+  { dataIndex: 'salary', header: 'Salary', type: 'number', sortable: true, showMenu: true },
 ];
 
 const spacingOptions = ['Default', 'xs', 'sm', 'md', 'lg', 'xl'];
@@ -95,11 +144,17 @@ export function App() {
   const [salaryAlign, setSalaryAlign] = useState<'left' | 'center' | 'right'>(
     'right',
   );
+  const [serverRows, setServerRows] = useState(() => employees.slice(0, 8));
+  const [sortRequest, setSortRequest] = useState('No sort request yet');
   const colorScheme = useComputedColorScheme('light');
   const { setColorScheme } = useMantineColorScheme();
 
   const current = examples.find((example) => example.id === active)!;
   const columns: DataTableColumn<Employee>[] =
+    active === 'sorting' ? sortingColumns :
+    active === 'sortMenu' ? menuColumns :
+    active === 'customSort' ? customSortColumns :
+    active === 'serverSort' ? serverColumns :
     active === 'columns'
       ? [
           { dataIndex: 'name', header: 'Name', width: nameWidth },
@@ -293,6 +348,14 @@ export function App() {
             </Text>
           </Stack>
         );
+      case 'sorting':
+        return <Text size='sm' c='dimmed'>Name, Age, Joined, and Active demonstrate string, number, date, and boolean sorting.</Text>;
+      case 'sortMenu':
+        return <Text size='sm' c='dimmed'>Each type has a sort menu. Department has a menu without sorting; its Filter and Display entries are reserved for later phases.</Text>;
+      case 'customSort':
+        return <Text size='sm' c='dimmed'>The initial sort uses department name length. Equal lengths preserve their original order.</Text>;
+      case 'serverSort':
+        return <Text size='sm' c='dimmed'>{sortRequest}. Changes are reported after 300 ms.</Text>;
     }
   })();
 
@@ -315,13 +378,21 @@ export function App() {
               <DataTable
                 columns={columns}
                 rows={
-                  active === 'scroll'
+                  active === 'serverSort' ? serverRows :
+                  active === 'scroll' || active === 'sorting' || active === 'sortMenu' || active === 'customSort'
                     ? employees
                     : employees.slice(
                         0,
                         active === 'basic' ? Number(rowCount) : 5,
                       )
                 }
+                pagination={active === 'serverSort' ? { currentPage: 1, pageSize: 8, totalItems: employees.length } : undefined}
+                onChange={active === 'serverSort' ? ({ sorter }) => {
+                  setSortRequest(sorter ? `Requested salary ${sorter.sortOrder}` : 'Requested original order');
+                  const ordered = sorter ? [...employees].sort((a, b) => sorter.sortOrder === 'asc' ? a.salary - b.salary : b.salary - a.salary) : employees;
+                  setServerRows(ordered.slice(0, 8));
+                } : undefined}
+                minWidth={active === 'sorting' || active === 'sortMenu' ? 660 : active === 'scroll' ? Number(minWidth) || minWidth : undefined}
                 striped={
                   active === 'appearance'
                     ? striped
@@ -360,9 +431,6 @@ export function App() {
                     : undefined
                 }
                 layout={active === 'spacing' ? layout : undefined}
-                minWidth={
-                  active === 'scroll' ? Number(minWidth) || minWidth : undefined
-                }
                 maxHeight={
                   active === 'scroll'
                     ? Number(maxHeight) || maxHeight
