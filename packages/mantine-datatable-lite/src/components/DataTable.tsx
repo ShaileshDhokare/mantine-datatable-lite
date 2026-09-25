@@ -5,7 +5,7 @@ import { useTableState } from '../hooks/useTableState';
 import classes from '../styles/styles.module.css';
 import type { DataTableProps } from '../types';
 import { sortRows } from '../utils/sortRows';
-import { ColumnHeader } from './DataTable/ColumnHeader';
+import { ColumnHeader } from './header/ColumnHeader';
 
 export function DataTable<T>({
   columns,
@@ -28,11 +28,16 @@ export function DataTable<T>({
   pagination,
   debounceTime,
 }: DataTableProps<T>) {
-  const tableState = useTableState({ columns, onChange, pagination, debounceTime });
+  const tableState = useTableState({
+    columns,
+    onChange,
+    pagination,
+    debounceTime,
+  });
   const rowKeys = useRef(new WeakMap<object, number>());
   const nextRowKey = useRef(0);
   const visibleRows = useMemo(
-    () => pagination ? rows : sortRows(rows, columns, tableState.sorter),
+    () => (pagination ? rows : sortRows(rows, columns, tableState.sorter)),
     [rows, columns, tableState.sorter, pagination],
   );
 
@@ -64,7 +69,9 @@ export function DataTable<T>({
     >
       <Table.Thead>
         <Table.Tr>
-          {columns.map((column) => <ColumnHeader key={column.dataIndex} column={column} />)}
+          {columns.map((column) => (
+            <ColumnHeader key={column.dataIndex} column={column} />
+          ))}
         </Table.Tr>
       </Table.Thead>
       <Table.Tbody>
@@ -94,7 +101,9 @@ export function DataTable<T>({
         <Table.ScrollContainer minWidth={minWidth ?? 0} maxHeight={maxHeight}>
           {table}
         </Table.ScrollContainer>
-      ) : table}
+      ) : (
+        table
+      )}
     </DataTableContext.Provider>
   );
 }
