@@ -28,6 +28,8 @@ export type IconName =
   | 'expand'
   | 'menu';
 
+export type MenuOption = 'sort' | 'filter' | 'search' | 'pin' | 'display';
+
 export type StringFilterValue = string[];
 export type NumericFilterValue = {
   operator: NumericOperator;
@@ -80,6 +82,8 @@ export interface DataTableColumn<T> {
   filterOptions?: FilterOption[];
   filterFn?: (row: T, filterValue: FilterValue) => boolean;
   width?: string | number;
+  showMenu?: boolean;
+  menuOptions?: MenuOption[];
 }
 
 export interface Pagination {
@@ -94,7 +98,7 @@ export interface Pagination {
 
 export interface DataTableProps<T> {
   columns: DataTableColumn<T>[];
-  rows?: T[];
+  rows: T[];
   pagination?: Pagination;
   globalSearch?: boolean;
   columnSelector?: boolean;
@@ -102,7 +106,7 @@ export interface DataTableProps<T> {
   expandable?: boolean;
   expandedRowRender?: (row: T, index: number) => ReactNode;
   loading?: boolean;
-  onChange: (params: {
+  onChange?: (params: {
     pagination?: Pagination;
     sorter?: Sorter;
     filters?: Filter[];
@@ -122,7 +126,7 @@ export interface DataTableProps<T> {
   highlightOnHover?: boolean;
   highlightOnHoverColor?: MantineColor;
   stickyHeader?: boolean;
-  minWidth?: string | number;
-  maxHeight?: string | number;
+  minWidth?: React.CSSProperties['minWidth'];
+  maxHeight?: React.CSSProperties['maxHeight'];
   layout?: 'auto' | 'fixed';
 }
