@@ -1,24 +1,419 @@
-import { Container, Title } from '@mantine/core';
+import { useState } from 'react';
 import {
-  DataTable,
-  type DataTableColumn,
-} from '@scope/mantine-datatable-lite';
+  Badge,
+  Button,
+  Group,
+  NavLink,
+  NumberInput,
+  Paper,
+  SegmentedControl,
+  Select,
+  Stack,
+  Switch,
+  Text,
+  Title,
+  useComputedColorScheme,
+  useMantineColorScheme,
+} from '@mantine/core';
+import { DataTable, type DataTableColumn } from '@scope/mantine-datatable-lite';
+import { employees, type Employee } from './data';
+import classes from './App.module.css';
 
-type User = { id: number; name: string };
-const columns: DataTableColumn<User>[] = [
-  { dataIndex: 'id', header: 'ID' },
+const examples = [
+  {
+    id: 'basic',
+    label: 'Basic table',
+    description: 'Rows and columns with Mantine defaults.',
+  },
+  {
+    id: 'appearance',
+    label: 'Striped and rows hover',
+    description: 'Try stripes, hover, and each table border.',
+  },
+  {
+    id: 'spacing',
+    label: 'Spacing and layout',
+    description: 'Adjust cell spacing and table layout.',
+  },
+  {
+    id: 'scroll',
+    label: 'Scroll container',
+    description: 'Explore minimum width, maximum height, and a sticky header.',
+  },
+  {
+    id: 'colors',
+    label: 'Theme colors',
+    description: 'Use Mantine colors in light and dark themes.',
+  },
+  {
+    id: 'columns',
+    label: 'Columns and rendering',
+    description: 'Set column width and alignment and render custom cells.',
+  },
+] as const;
+
+type ExampleId = (typeof examples)[number]['id'];
+
+const baseColumns: DataTableColumn<Employee>[] = [
+  { dataIndex: 'id', header: 'ID', width: 70 },
   { dataIndex: 'name', header: 'Name' },
+  { dataIndex: 'department', header: 'Department' },
+  { dataIndex: 'role', header: 'Role' },
+  { dataIndex: 'salary', header: 'Salary' },
 ];
-const users: User[] = [
-  { id: 1, name: 'Ada' },
-  { id: 2, name: 'Grace' },
+
+const spacingOptions = ['Default', 'xs', 'sm', 'md', 'lg', 'xl'];
+const colorOptions = [
+  { value: 'var(--mantine-color-blue-light)', label: 'Blue' },
+  { value: 'var(--mantine-color-teal-light)', label: 'Teal' },
+  { value: 'var(--mantine-color-grape-light)', label: 'Grape' },
+  { value: 'var(--mantine-color-orange-light)', label: 'Orange' },
 ];
 
 export function App() {
+  const [active, setActive] = useState<ExampleId>('appearance');
+  const [rowCount, setRowCount] = useState('6');
+  const [striped, setStriped] = useState(false);
+  const [hover, setHover] = useState(false);
+  const [tableBorder, setTableBorder] = useState(false);
+  const [columnBorders, setColumnBorders] = useState(false);
+  const [rowBorders, setRowBorders] = useState(true);
+  const [horizontalSpacing, setHorizontalSpacing] = useState('Default');
+  const [verticalSpacing, setVerticalSpacing] = useState('Default');
+  const [layout, setLayout] = useState<'auto' | 'fixed'>('auto');
+  const [minWidth, setMinWidth] = useState('800');
+  const [maxHeight, setMaxHeight] = useState('260');
+  const [stickyHeader, setStickyHeader] = useState(true);
+  const [stripedColor, setStripedColor] = useState(
+    'var(--mantine-color-blue-light)',
+  );
+  const [hoverColor, setHoverColor] = useState(
+    'var(--mantine-color-teal-light)',
+  );
+  const [borderColor, setBorderColor] = useState('Default');
+  const [nameWidth, setNameWidth] = useState(190);
+  const [salaryAlign, setSalaryAlign] = useState<'left' | 'center' | 'right'>(
+    'right',
+  );
+  const colorScheme = useComputedColorScheme('light');
+  const { setColorScheme } = useMantineColorScheme();
+
+  const current = examples.find((example) => example.id === active)!;
+  const columns: DataTableColumn<Employee>[] =
+    active === 'columns'
+      ? [
+          { dataIndex: 'name', header: 'Name', width: nameWidth },
+          { dataIndex: 'department', header: 'Department' },
+          {
+            dataIndex: 'salary',
+            header: 'Salary',
+            align: salaryAlign,
+            render: (row) => `$${row.salary.toLocaleString()}`,
+          },
+          {
+            dataIndex: 'isActive',
+            header: 'Status',
+            render: (row) => (
+              <Badge color={row.isActive ? 'teal' : 'gray'} variant='light'>
+                {row.isActive ? 'Active' : 'Inactive'}
+              </Badge>
+            ),
+          },
+        ]
+      : baseColumns;
+
+  const controls = (() => {
+    switch (active) {
+      case 'basic':
+        return (
+          <SegmentedControl
+            fullWidth
+            data={['3', '6', '10']}
+            value={rowCount}
+            onChange={setRowCount}
+            aria-label='Number of rows'
+          />
+        );
+      case 'appearance':
+        return (
+          <Stack gap='md'>
+            <Switch
+              label='Striped'
+              checked={striped}
+              onChange={(event) => setStriped(event.currentTarget.checked)}
+            />
+            <Switch
+              label='Highlight on hover'
+              checked={hover}
+              onChange={(event) => setHover(event.currentTarget.checked)}
+            />
+            <Switch
+              label='With table border'
+              checked={tableBorder}
+              onChange={(event) => setTableBorder(event.currentTarget.checked)}
+            />
+            <Switch
+              label='With column borders'
+              checked={columnBorders}
+              onChange={(event) =>
+                setColumnBorders(event.currentTarget.checked)
+              }
+            />
+            <Switch
+              label='With row borders'
+              checked={rowBorders}
+              onChange={(event) => setRowBorders(event.currentTarget.checked)}
+            />
+          </Stack>
+        );
+      case 'spacing':
+        return (
+          <Stack gap='md'>
+            <Select
+              label='Horizontal spacing'
+              data={spacingOptions}
+              value={horizontalSpacing}
+              onChange={(value) => setHorizontalSpacing(value ?? 'Default')}
+              allowDeselect={false}
+            />
+            <Select
+              label='Vertical spacing'
+              data={spacingOptions}
+              value={verticalSpacing}
+              onChange={(value) => setVerticalSpacing(value ?? 'Default')}
+              allowDeselect={false}
+            />
+            <SegmentedControl
+              data={['auto', 'fixed']}
+              value={layout}
+              onChange={(value) => setLayout(value as 'auto' | 'fixed')}
+              aria-label='Table layout'
+            />
+          </Stack>
+        );
+      case 'scroll':
+        return (
+          <Stack gap='md'>
+            <Select
+              label='Minimum width'
+              data={[
+                { value: '500', label: '500px' },
+                { value: '800', label: '800px' },
+                { value: '50rem', label: '50rem' },
+                { value: '100%', label: '100%' },
+              ]}
+              value={minWidth}
+              onChange={(value) => setMinWidth(value ?? '800')}
+              allowDeselect={false}
+            />
+            <Select
+              label='Maximum height'
+              data={[
+                { value: '200', label: '200px' },
+                { value: '260', label: '260px' },
+                { value: '20rem', label: '20rem' },
+                { value: '50vh', label: '50vh' },
+              ]}
+              value={maxHeight}
+              onChange={(value) => setMaxHeight(value ?? '260')}
+              allowDeselect={false}
+            />
+            <Switch
+              label='Sticky header'
+              checked={stickyHeader}
+              onChange={(event) => setStickyHeader(event.currentTarget.checked)}
+            />
+          </Stack>
+        );
+      case 'colors':
+        return (
+          <Stack gap='md'>
+            <Button
+              variant='light'
+              onClick={() =>
+                setColorScheme(colorScheme === 'light' ? 'dark' : 'light')
+              }
+            >
+              Switch to {colorScheme === 'light' ? 'dark' : 'light'} theme
+            </Button>
+            <Select
+              label='Stripe color'
+              data={colorOptions}
+              value={stripedColor}
+              onChange={(value) =>
+                setStripedColor(value ?? 'var(--mantine-color-blue-light)')
+              }
+              allowDeselect={false}
+            />
+            <Select
+              label='Hover color'
+              data={colorOptions}
+              value={hoverColor}
+              onChange={(value) =>
+                setHoverColor(value ?? 'var(--mantine-color-teal-light)')
+              }
+              allowDeselect={false}
+            />
+            <Select
+              label='Border color'
+              data={[
+                { value: 'Default', label: 'Theme default' },
+                { value: 'blue.4', label: 'Blue' },
+                { value: 'teal.4', label: 'Teal' },
+                { value: 'grape.4', label: 'Grape' },
+              ]}
+              value={borderColor}
+              onChange={(value) => setBorderColor(value ?? 'Default')}
+              allowDeselect={false}
+            />
+          </Stack>
+        );
+      case 'columns':
+        return (
+          <Stack gap='md'>
+            <NumberInput
+              label='Name column width (px)'
+              min={100}
+              max={400}
+              value={nameWidth}
+              onChange={(value) =>
+                typeof value === 'number' && setNameWidth(value)
+              }
+            />
+            <SegmentedControl
+              data={['left', 'center', 'right']}
+              value={salaryAlign}
+              onChange={(value) =>
+                setSalaryAlign(value as 'left' | 'center' | 'right')
+              }
+              aria-label='Salary alignment'
+            />
+            <Text size='sm' c='dimmed'>
+              Salary uses a render function. Status uses a Mantine Badge.
+            </Text>
+          </Stack>
+        );
+    }
+  })();
+
   return (
-    <Container py="xl">
-      <Title order={1} mb="md">DataTable playground</Title>
-      <DataTable columns={columns} records={users} />
-    </Container>
+    <div className={classes.shell}>
+      <main className={classes.content}>
+        <Text size='sm' fw={700} c='blue'>
+          DATATABLE PLAYGROUND
+        </Text>
+        <Title order={1} mt='xs'>
+          {current.label}
+        </Title>
+        <Text c='dimmed' mt='xs' mb='xl'>
+          {current.description}
+        </Text>
+
+        <Paper withBorder radius='md' className={classes.preview}>
+          <div className={classes.previewGrid}>
+            <div className={classes.tablePane}>
+              <DataTable
+                columns={columns}
+                rows={
+                  active === 'scroll'
+                    ? employees
+                    : employees.slice(
+                        0,
+                        active === 'basic' ? Number(rowCount) : 5,
+                      )
+                }
+                striped={
+                  active === 'appearance'
+                    ? striped
+                    : active === 'colors'
+                      ? true
+                      : undefined
+                }
+                highlightOnHover={
+                  active === 'appearance'
+                    ? hover
+                    : active === 'colors'
+                      ? true
+                      : undefined
+                }
+                withTableBorder={
+                  active === 'appearance'
+                    ? tableBorder
+                    : active === 'colors'
+                      ? true
+                      : undefined
+                }
+                withColumnBorders={
+                  active === 'appearance' ? columnBorders : undefined
+                }
+                withRowBorders={
+                  active === 'appearance' ? rowBorders : undefined
+                }
+                horizontalSpacing={
+                  active === 'spacing' && horizontalSpacing !== 'Default'
+                    ? horizontalSpacing
+                    : undefined
+                }
+                verticalSpacing={
+                  active === 'spacing' && verticalSpacing !== 'Default'
+                    ? verticalSpacing
+                    : undefined
+                }
+                layout={active === 'spacing' ? layout : undefined}
+                minWidth={
+                  active === 'scroll' ? Number(minWidth) || minWidth : undefined
+                }
+                maxHeight={
+                  active === 'scroll'
+                    ? Number(maxHeight) || maxHeight
+                    : undefined
+                }
+                stickyHeader={active === 'scroll' ? stickyHeader : undefined}
+                stripedColor={active === 'colors' ? stripedColor : undefined}
+                highlightOnHoverColor={
+                  active === 'colors' ? hoverColor : undefined
+                }
+                borderColor={
+                  active === 'colors' && borderColor !== 'Default'
+                    ? borderColor
+                    : undefined
+                }
+              />
+            </div>
+            <div className={classes.controls}>
+              <Text fw={600} mb='lg'>
+                Props
+              </Text>
+              {controls}
+            </div>
+          </div>
+        </Paper>
+        <Group mt='md' gap='xs'>
+          <Badge variant='light' color='gray'>
+            Mantine theme
+          </Badge>
+          <Text size='sm' c='dimmed'>
+            Changes above update the table immediately.
+          </Text>
+        </Group>
+      </main>
+
+      <aside className={classes.sidebar} aria-label='Example navigation'>
+        <Text fw={700} mb='md'>
+          Table examples
+        </Text>
+        <Stack gap={2} className={classes.menu}>
+          {examples.map((example) => (
+            <NavLink
+              key={example.id}
+              label={example.label}
+              active={active === example.id}
+              onClick={() => setActive(example.id)}
+              variant='light'
+            />
+          ))}
+        </Stack>
+      </aside>
+    </div>
   );
 }
