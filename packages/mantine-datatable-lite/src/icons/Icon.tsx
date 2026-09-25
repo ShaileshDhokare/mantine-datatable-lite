@@ -5,7 +5,6 @@ import React from 'react';
 type IconProps = Omit<SVGProps<SVGSVGElement>, 'children'> & {
   name: IconName;
   size?: number;
-  'stroke-width'?: number;
   fill?: string;
   color?: string;
 };
@@ -82,7 +81,7 @@ const Icon = ({
       viewBox='0 0 24 24'
       fill={fill}
       stroke={color}
-      stroke-width={strokeWidth}
+      strokeWidth={strokeWidth}
       strokeLinecap='round'
       strokeLinejoin='round'
       {...props}

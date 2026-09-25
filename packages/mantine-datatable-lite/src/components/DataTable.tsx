@@ -1,6 +1,11 @@
 import { Table } from '@mantine/core';
-import type { DataTableProps } from '../types';
+import { useMemo, useRef } from 'react';
+import { DataTableContext } from '../context/DataTableContext';
+import { useTableState } from '../hooks/useTableState';
 import classes from '../styles/styles.module.css';
+import type { DataTableProps } from '../types';
+import { sortRows } from '../utils/sortRows';
+import { ColumnHeader } from './DataTable/ColumnHeader';
 
 export function DataTable<T>({
   columns,
@@ -19,7 +24,28 @@ export function DataTable<T>({
   minWidth,
   maxHeight,
   layout,
+  onChange,
+  pagination,
+  debounceTime,
 }: DataTableProps<T>) {
+  const tableState = useTableState({ columns, onChange, pagination, debounceTime });
+  const rowKeys = useRef(new WeakMap<object, number>());
+  const nextRowKey = useRef(0);
+  const visibleRows = useMemo(
+    () => pagination ? rows : sortRows(rows, columns, tableState.sorter),
+    [rows, columns, tableState.sorter, pagination],
+  );
+
+  function getRowKey(row: T, index: number) {
+    if (typeof row !== 'object' || row === null) return index;
+    let key = rowKeys.current.get(row);
+    if (key === undefined) {
+      key = nextRowKey.current++;
+      rowKeys.current.set(row, key);
+    }
+    return key;
+  }
+
   const table = (
     <Table
       className={classes.root}
@@ -38,16 +64,12 @@ export function DataTable<T>({
     >
       <Table.Thead>
         <Table.Tr>
-          {columns.map((column) => (
-            <Table.Th key={column.dataIndex} w={column.width} ta={column.align}>
-              {column.header}
-            </Table.Th>
-          ))}
+          {columns.map((column) => <ColumnHeader key={column.dataIndex} column={column} />)}
         </Table.Tr>
       </Table.Thead>
       <Table.Tbody>
-        {rows.map((row, index) => (
-          <Table.Tr key={index}>
+        {visibleRows.map((row, index) => (
+          <Table.Tr key={getRowKey(row, index)}>
             {columns.map((column) => {
               const value = (row as Record<string, unknown>)[column.dataIndex];
               return (
@@ -66,11 +88,13 @@ export function DataTable<T>({
     </Table>
   );
 
-  return minWidth != null || maxHeight != null ? (
-    <Table.ScrollContainer minWidth={minWidth ?? 0} maxHeight={maxHeight}>
-      {table}
-    </Table.ScrollContainer>
-  ) : (
-    table
+  return (
+    <DataTableContext.Provider value={tableState}>
+      {minWidth != null || maxHeight != null ? (
+        <Table.ScrollContainer minWidth={minWidth ?? 0} maxHeight={maxHeight}>
+          {table}
+        </Table.ScrollContainer>
+      ) : table}
+    </DataTableContext.Provider>
   );
 }
