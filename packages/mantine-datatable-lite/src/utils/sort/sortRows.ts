@@ -1,4 +1,4 @@
-import type { DataTableColumn, Sorter } from '../types';
+import type { DataTableColumn, Sorter } from '../../types';
 import { compareValues } from './compareValues';
 
 export function sortRows<T>(rows: T[], columns: DataTableColumn<T>[], sorter?: Sorter): T[] {

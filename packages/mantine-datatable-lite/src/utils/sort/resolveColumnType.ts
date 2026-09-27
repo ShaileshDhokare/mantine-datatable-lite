@@ -1,4 +1,4 @@
-import type { ColumnType } from '../types';
+import type { ColumnType } from '../../types';
 
 export function resolveColumnType(left: unknown, right: unknown, declaredType?: ColumnType): ColumnType {
   if (declaredType) return declaredType;

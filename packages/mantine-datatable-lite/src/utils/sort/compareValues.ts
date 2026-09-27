@@ -1,4 +1,4 @@
-import type { ColumnType } from '../types';
+import type { ColumnType } from '../../types';
 import { resolveColumnType } from './resolveColumnType';
 
 const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });

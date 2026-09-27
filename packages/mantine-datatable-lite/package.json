@@ -23,6 +23,7 @@
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "@mantine/core": "^9.6.0",
+    "@mantine/dates": "^9.6.0",
     "@mantine/hooks": "^9.6.0"
   }
 }

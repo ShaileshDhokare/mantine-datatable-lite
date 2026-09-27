@@ -1,9 +1,13 @@
 import { createContext, useContext } from 'react';
-import type { SortOrder, Sorter } from '../types';
+import type { Filter, FilterValue, SortOrder, Sorter } from '../types';
 
 type DataTableContextValue = {
   sorter?: Sorter;
   setSort: (field: string, order?: SortOrder | null) => void;
+  filters: Filter[];
+  setFilter: (field: string, value?: FilterValue) => void;
+  openFilter: string | null;
+  setOpenFilter: (field: string | null) => void;
 };
 
 export const DataTableContext = createContext<DataTableContextValue | null>(null);

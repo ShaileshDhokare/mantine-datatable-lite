@@ -8,7 +8,14 @@ import type {
 export type ColumnType = 'string' | 'number' | 'boolean' | 'date';
 export type SortOrder = 'asc' | 'desc';
 
-export type NumericOperator = 'eq' | 'gt' | 'lt' | 'gte' | 'lte' | 'between';
+export type NumericOperator =
+  | 'eq'
+  | 'neq'
+  | 'gt'
+  | 'lt'
+  | 'gte'
+  | 'lte'
+  | 'between';
 
 export type IconName =
   | 'sort'
@@ -26,7 +33,8 @@ export type IconName =
   | 'hide'
   | 'collapse'
   | 'expand'
-  | 'menu';
+  | 'menu'
+  | 'empty';
 
 export type MenuOption = 'sort' | 'filter' | 'search' | 'pin' | 'display';
 
@@ -57,6 +65,13 @@ export type FilterOption = {
   label: string;
 };
 
+export type FilterRenderContext = {
+  value?: FilterValue;
+  onChange: (value?: FilterValue) => void;
+  apply: () => void;
+  reset: () => void;
+};
+
 export type Sorter = {
   sortField: string;
   sortOrder: SortOrder;
@@ -74,13 +89,16 @@ export interface DataTableColumn<T> {
   align?: 'left' | 'center' | 'right';
   render?: (row: T, index: number) => ReactNode;
   sortable?: boolean;
+  showSortIcon?: boolean;
   defaultSortOrder?: SortOrder;
   sortFn?: (a: T, b: T) => number;
   filterable?: boolean;
+  showFilterIcon?: boolean;
   searchableFilter?: boolean;
   defaultFilterValue?: FilterValue;
-  filterOptions?: FilterOption[];
+  filterOptions?: FilterOption[] | string[];
   filterFn?: (row: T, filterValue: FilterValue) => boolean;
+  renderFilter?: (context: FilterRenderContext) => ReactNode;
   width?: string | number;
   showMenu?: boolean;
   menuOptions?: MenuOption[];
@@ -130,4 +148,5 @@ export interface DataTableProps<T> {
   maxHeight?: React.CSSProperties['maxHeight'];
   layout?: 'auto' | 'fixed';
   debounceTime?: number;
+  emptyState?: ReactNode;
 }

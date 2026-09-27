@@ -1,10 +1,12 @@
-import { Table } from '@mantine/core';
+import { Stack, Table, Text } from '@mantine/core';
 import { useMemo, useRef } from 'react';
 import { DataTableContext } from '../context/DataTableContext';
 import { useTableState } from '../hooks/useTableState';
+import { Icon } from '../icons/Icon';
 import classes from '../styles/styles.module.css';
 import type { DataTableProps } from '../types';
-import { sortRows } from '../utils/sortRows';
+import { filterRows } from '../utils/filter/predicates';
+import { sortRows } from '../utils/sort/sortRows';
 import { ColumnHeader } from './header/ColumnHeader';
 
 export function DataTable<T>({
@@ -27,6 +29,7 @@ export function DataTable<T>({
   onChange,
   pagination,
   debounceTime,
+  emptyState,
 }: DataTableProps<T>) {
   const tableState = useTableState({
     columns,
@@ -36,9 +39,16 @@ export function DataTable<T>({
   });
   const rowKeys = useRef(new WeakMap<object, number>());
   const nextRowKey = useRef(0);
+  const filteredRows = useMemo(
+    () => (pagination ? rows : filterRows(rows, columns, tableState.filters)),
+    [rows, columns, tableState.filters, pagination],
+  );
   const visibleRows = useMemo(
-    () => (pagination ? rows : sortRows(rows, columns, tableState.sorter)),
-    [rows, columns, tableState.sorter, pagination],
+    () =>
+      pagination
+        ? filteredRows
+        : sortRows(filteredRows, columns, tableState.sorter),
+    [filteredRows, columns, tableState.sorter, pagination],
   );
 
   function getRowKey(row: T, index: number) {
@@ -70,11 +80,36 @@ export function DataTable<T>({
       <Table.Thead>
         <Table.Tr>
           {columns.map((column) => (
-            <ColumnHeader key={column.dataIndex} column={column} />
+            <ColumnHeader
+              key={column.dataIndex}
+              column={column}
+              rows={rows}
+              serverMode={Boolean(pagination)}
+            />
           ))}
         </Table.Tr>
       </Table.Thead>
       <Table.Tbody>
+        {visibleRows.length === 0 && (
+          <Table.Tr>
+            <Table.Td colSpan={Math.max(columns.length, 1)} ta='center' py='xl'>
+              {emptyState ?? (
+                <Stack align='center' gap='xs' py='md'>
+                  <Icon
+                    name='empty'
+                    strokeWidth={1}
+                    size={36}
+                    color='var(--mantine-color-dimmed)'
+                    aria-hidden='true'
+                  />
+                  <Text size='sm' c='dimmed'>
+                    No records found
+                  </Text>
+                </Stack>
+              )}
+            </Table.Td>
+          </Table.Tr>
+        )}
         {visibleRows.map((row, index) => (
           <Table.Tr key={getRowKey(row, index)}>
             {columns.map((column) => {

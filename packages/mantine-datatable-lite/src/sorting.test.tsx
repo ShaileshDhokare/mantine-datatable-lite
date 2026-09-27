@@ -2,7 +2,7 @@ import { MantineProvider } from '@mantine/core';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, expect, test, vi } from 'vitest';
 import { DataTable } from './components/DataTable';
-import { sortRows } from './utils/sortRows';
+import { sortRows } from './utils/sort/sortRows';
 
 afterEach(() => {
   cleanup();
@@ -67,7 +67,7 @@ test('pagination-owned rows stay untouched and the latest request is debounced',
   expect(screen.getAllByRole('cell').map((cell) => cell.textContent)).toEqual(['2', '1']);
   act(() => vi.advanceTimersByTime(300));
   expect(onChange).toHaveBeenCalledTimes(1);
-  expect(onChange).toHaveBeenCalledWith({ pagination, sorter: { sortField: 'value', sortOrder: 'desc' } });
+  expect(onChange).toHaveBeenCalledWith({ pagination, sorter: { sortField: 'value', sortOrder: 'desc' }, filters: [] });
 });
 
 test('sort submenu selects a direction', async () => {
