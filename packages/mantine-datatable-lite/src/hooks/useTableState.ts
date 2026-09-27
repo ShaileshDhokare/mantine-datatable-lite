@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { ColumnSearch, DataTableProps, Filter, FilterValue, SortOrder, Sorter } from '../types';
+import type { ColumnSearch, DataTableProps, Filter, FilterValue, Pagination, SortOrder, Sorter } from '../types';
 import { activeFilter } from '../utils/filter/predicates';
 import { nextSortOrder } from '../utils/sort/nextSortOrder';
 
@@ -28,16 +28,17 @@ export function useTableState<T>({ columns, onChange, pagination, debounceTime =
   const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const callbackRef = useRef(onChange);
   const paginationRef = useRef(pagination);
+  const lastClampRef = useRef<string | null>(null);
   callbackRef.current = onChange;
   paginationRef.current = pagination;
 
   useEffect(() => () => clearTimeout(timerRef.current), []);
 
-  function notify(nextSorter: Sorter | undefined, nextFilters: Filter[], immediate = false) {
+  function notify(nextSorter: Sorter | undefined, nextFilters: Filter[], immediate = false, nextPagination?: Pagination) {
     clearTimeout(timerRef.current);
     if (callbackRef.current) {
       const snapshot = {
-        pagination: paginationRef.current,
+        pagination: nextPagination ?? paginationRef.current,
         sorter: nextSorter,
         filters: nextFilters,
         columnSearch: columnSearchRef.current,
@@ -54,7 +55,7 @@ export function useTableState<T>({ columns, onChange, pagination, debounceTime =
     const next = nextOrder ? { sortField: field, sortOrder: nextOrder } : undefined;
     sorterRef.current = next;
     setSorter(next);
-    notify(next, filtersRef.current);
+    notify(next, filtersRef.current, false, resetPage());
   }
 
   function setFilter(field: string, value?: FilterValue) {
@@ -63,7 +64,7 @@ export function useTableState<T>({ columns, onChange, pagination, debounceTime =
     filtersRef.current = next;
     setFilters(next);
     setOpenFilter(null);
-    notify(sorterRef.current, next);
+    notify(sorterRef.current, next, false, resetPage());
   }
 
   function setColumnSearch(field: string, value: string) {
@@ -73,15 +74,50 @@ export function useTableState<T>({ columns, onChange, pagination, debounceTime =
     columnSearchRef.current = next;
     setColumnSearchState(next);
     setOpenSearch(null);
-    notify(sorterRef.current, filtersRef.current);
+    notify(sorterRef.current, filtersRef.current, false, resetPage());
   }
 
   function setSearchQuery(value: string, immediate = false) {
     searchQueryRef.current = value.trim();
     setSearchQueryState(value.trim());
-    notify(sorterRef.current, filtersRef.current, immediate);
+    notify(sorterRef.current, filtersRef.current, immediate, resetPage());
   }
 
+  function resetPage() {
+    const current = paginationRef.current;
+    if (!current) return undefined;
+    const next = { ...current, currentPage: 1 };
+    delete next.from;
+    delete next.to;
+    return next;
+  }
+
+  function setPagination(currentPage: number, pageSize = paginationRef.current?.pageSize) {
+    const current = paginationRef.current;
+    if (!current || !pageSize) return;
+    const next: Pagination = { ...current, currentPage, pageSize };
+    delete next.from;
+    delete next.to;
+    paginationRef.current = next;
+    notify(sorterRef.current, filtersRef.current, true, next);
+  }
+
+  useEffect(() => {
+    if (!pagination || !onChange) return;
+    const pageSize = pagination.pageSize > 0 ? pagination.pageSize : pagination.defaultPageSize || 10;
+    const lastPage = Math.max(1, Math.ceil(pagination.totalItems / pageSize));
+    const clampedPage = Math.min(Math.max(1, pagination.currentPage), lastPage);
+    const key = `${pagination.currentPage}:${pageSize}:${pagination.totalItems}`;
+    if (clampedPage === pagination.currentPage) lastClampRef.current = null;
+    if (clampedPage !== pagination.currentPage && lastClampRef.current !== key) {
+      lastClampRef.current = key;
+      const next = { ...pagination, currentPage: clampedPage };
+      delete next.from;
+      delete next.to;
+      notify(sorterRef.current, filtersRef.current, true, next);
+    }
+  }, [pagination?.currentPage, pagination?.pageSize, pagination?.totalItems, onChange]);
+
   return { sorter, setSort, filters, setFilter, openFilter, setOpenFilter,
-    columnSearch, setColumnSearch, openSearch, setOpenSearch, searchQuery, setSearchQuery };
+    columnSearch, setColumnSearch, openSearch, setOpenSearch, searchQuery, setSearchQuery, setPagination };
 }

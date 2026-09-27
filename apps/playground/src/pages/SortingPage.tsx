@@ -22,6 +22,7 @@ export function SortingPage() {
   const [rowBorders, setRowBorders] = useState(true);
   const [rowCount, setRowCount] = useState('15');
   const [serverRows, setServerRows] = useState(() => employees.slice(0, 8));
+  const [serverPagination, setServerPagination] = useState({ currentPage: 1, pageSize: 8, totalItems: employees.length });
   const [sortRequest, setSortRequest] = useState('No sort request yet');
 
   const menuOnly = active === 'menuOnly';
@@ -60,12 +61,14 @@ export function SortingPage() {
 
   return <PlaygroundLayout section='sorting' scenarios={scenarios} active={active} onSelect={setActive} controls={controls}>
     <DataTable key={active} columns={columns} rows={active === 'server' ? serverRows : employees.slice(0, Number(rowCount))}
-      pagination={active === 'server' ? { currentPage: 1, pageSize: 8, totalItems: employees.length } : undefined}
-      onChange={active === 'server' ? ({ sorter }) => {
+      pagination={active === 'server' ? serverPagination : undefined}
+      onChange={active === 'server' ? ({ sorter, pagination: next }) => {
         setSortRequest(sorter ? `Requested salary ${sorter.sortOrder}` : 'Requested original order');
         const ordered = sorter ? [...employees].sort((a, b) =>
           sorter.sortOrder === 'asc' ? a.salary - b.salary : b.salary - a.salary) : employees;
-        setServerRows(ordered.slice(0, 8));
+        const page = next ?? serverPagination;
+        setServerPagination(page);
+        setServerRows(ordered.slice((page.currentPage - 1) * page.pageSize, page.currentPage * page.pageSize));
       } : undefined}
       minWidth={660}
       withTableBorder={tableBorder} withColumnBorders={columnBorders} withRowBorders={rowBorders}

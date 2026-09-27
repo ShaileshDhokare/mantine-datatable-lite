@@ -1,8 +1,8 @@
 import { ActionIcon, Group, TextInput } from '@mantine/core';
 import { useDebouncedCallback } from '@mantine/hooks';
 import { useState } from 'react';
-import { useDataTableContext } from '../context/DataTableContext';
-import { Icon } from '../icons/Icon';
+import { useDataTableContext } from '../../context/DataTableContext';
+import { Icon } from '../../icons/Icon';
 
 export function GlobalSearch({
   debounceTime = 300,

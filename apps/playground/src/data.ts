@@ -10,7 +10,7 @@ export type Employee = {
   joinDate: Date;
 };
 
-export const employees: Employee[] = [
+const originalEmployees: Employee[] = [
   {
     id: 1,
     name: 'Olivia Bennett',
@@ -342,3 +342,40 @@ export const employees: Employee[] = [
     joinDate: new Date('2013-08-05'),
   },
 ];
+
+const firstNames = [
+  'Aria', 'Caleb', 'Nina', 'Owen', 'Priya', 'Rafael', 'Serena',
+  'Theo', 'Uma', 'Victor', 'Willow', 'Xavier', 'Yasmin', 'Zane',
+];
+const lastNames = ['Kapoor', 'Morgan', 'Silva', 'Park', 'Ahmed'];
+const assignments = [
+  { department: 'Engineering', role: 'Software Engineer' },
+  { department: 'Product', role: 'Product Analyst' },
+  { department: 'Design', role: 'Product Designer' },
+  { department: 'Sales', role: 'Account Manager' },
+  { department: 'Marketing', role: 'Marketing Specialist' },
+  { department: 'Finance', role: 'Financial Analyst' },
+  { department: 'Human Resources', role: 'HR Generalist' },
+  { department: 'IT', role: 'Systems Engineer' },
+  { department: 'Operations', role: 'Operations Coordinator' },
+  { department: 'Data', role: 'Data Scientist' },
+];
+
+const additionalEmployees: Employee[] = Array.from({ length: 70 }, (_, index) => {
+  const firstName = firstNames[index % firstNames.length];
+  const lastName = lastNames[Math.floor(index / firstNames.length)];
+  const assignment = assignments[index % assignments.length];
+  return {
+    id: index + 31,
+    name: `${firstName} ${lastName}`,
+    email: `${firstName}.${lastName}${index + 31}@example.com`.toLowerCase(),
+    age: 23 + (index % 31),
+    department: assignment.department,
+    role: assignment.role,
+    salary: 65000 + (index % 27) * 2900,
+    isActive: index % 7 !== 0,
+    joinDate: new Date(2015 + Math.floor(index / 7), index % 12, (index % 27) + 1),
+  };
+});
+
+export const employees: Employee[] = [...originalEmployees, ...additionalEmployees];
