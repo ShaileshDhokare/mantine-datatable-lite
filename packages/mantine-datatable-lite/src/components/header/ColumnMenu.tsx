@@ -16,7 +16,6 @@ const defaultMenuOptions: MenuOption[] = [
 const pendingOptions = {
   filter: { label: 'Filter', icon: 'filter' },
   pin: { label: 'Pin', icon: 'pin' },
-  display: { label: 'Display', icon: 'show' },
 } as const;
 
 type ColumnMenuProps<T> = {
@@ -25,11 +24,12 @@ type ColumnMenuProps<T> = {
   serverMode: boolean;
   order?: SortOrder;
   setSort: (field: string, order?: SortOrder | null) => void;
+  canHide: boolean;
 };
 
-export function ColumnMenu<T>({ column, rows, serverMode, order, setSort }: ColumnMenuProps<T>) {
+export function ColumnMenu<T>({ column, rows, serverMode, order, setSort, canHide }: ColumnMenuProps<T>) {
   const options = column.menuOptions ?? defaultMenuOptions;
-  const { filters, columnSearch, setOpenFilter, setOpenSearch } = useDataTableContext();
+  const { filters, columnSearch, setColumnHidden, setOpenFilter, setOpenSearch } = useDataTableContext();
   const activeFilter = filters.some((filter) => filter.field === column.dataIndex);
   const activeSearch = columnSearch.some((search) => search.searchField === column.dataIndex);
   const [opened, setOpened] = useState(false);
@@ -102,6 +102,12 @@ export function ColumnMenu<T>({ column, rows, serverMode, order, setSort }: Colu
               </Menu.Sub>
             ) : <Menu.Item key='search' disabled py={3} px={6} fz='xs'
               leftSection={<Icon name='search' size={14} />}>Search</Menu.Item>;
+          }
+          if (option === 'display') {
+            return <Menu.Item key='display' py={3} px={6} fz='xs'
+              disabled={!canHide}
+              leftSection={<Icon name='hide' size={14} />}
+              onClick={() => setColumnHidden(column.dataIndex, true)}>Hide</Menu.Item>;
           }
           if (option !== 'sort') {
             const { label, icon } = pendingOptions[option];

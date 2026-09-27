@@ -163,6 +163,7 @@ export function AdvancedPage() {
   return <PlaygroundLayout section='advanced' scenarios={scenarios} active='combined'
     onSelect={resetTable} controls={controls}>
     <DataTable key={resetKey} columns={columns} rows={rows} globalSearch
+      columnSelector showTableStatePills showReset
       pagination={{ currentPage: state.page, pageSize: state.pageSize, totalItems: matched.length,
         pageSizeOptions: options }}
       onChange={({ pagination, sorter, filters, columnSearch, searchQuery }) => setState({

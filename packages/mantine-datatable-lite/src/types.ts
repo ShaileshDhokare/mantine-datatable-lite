@@ -24,6 +24,7 @@ export type IconName =
   | 'filter'
   | 'search'
   | 'clear'
+  | 'delete'
   | 'nextPage'
   | 'prevPage'
   | 'firstPage'
@@ -152,4 +153,7 @@ export interface DataTableProps<T> {
   layout?: 'auto' | 'fixed';
   debounceTime?: number;
   emptyState?: ReactNode;
+  showTableStatePills?: boolean;
+  showReset?: boolean;
+  maxChips?: number;
 }
