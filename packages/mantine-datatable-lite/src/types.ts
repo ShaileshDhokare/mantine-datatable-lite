@@ -112,7 +112,7 @@ export interface Pagination {
   pageSize: number;
   totalItems: number;
   defaultPageSize?: number;
-  pageSizeOptions?: number[];
+  pageSizeOptions?: number[] | false;
   from?: number;
   to?: number;
 }

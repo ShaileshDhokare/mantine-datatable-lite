@@ -9,7 +9,8 @@ import { filterRows } from '../utils/filter/predicates';
 import { sortRows } from '../utils/sort/sortRows';
 import { searchRows } from '../utils/search/searchRows';
 import { ColumnHeader } from './header/ColumnHeader';
-import { GlobalSearch } from './GlobalSearch';
+import { GlobalSearch } from './toolbar/GlobalSearch';
+import { TablePagination } from './footer/TablePagination';
 
 export function DataTable<T>({
   columns,
@@ -47,8 +48,22 @@ export function DataTable<T>({
     [rows, columns, tableState.filters, pagination],
   );
   const searchedRows = useMemo(
-    () => pagination ? filteredRows : searchRows(filteredRows, columns, tableState.columnSearch, tableState.searchQuery),
-    [filteredRows, columns, tableState.columnSearch, tableState.searchQuery, pagination],
+    () =>
+      pagination
+        ? filteredRows
+        : searchRows(
+            filteredRows,
+            columns,
+            tableState.columnSearch,
+            tableState.searchQuery,
+          ),
+    [
+      filteredRows,
+      columns,
+      tableState.columnSearch,
+      tableState.searchQuery,
+      pagination,
+    ],
   );
   const visibleRows = useMemo(
     () =>
@@ -121,15 +136,21 @@ export function DataTable<T>({
           <Table.Tr key={getRowKey(row, index)}>
             {columns.map((column) => {
               const value = (row as Record<string, unknown>)[column.dataIndex];
-              const terms = [column.searchable !== false ? tableState.searchQuery : '',
-                tableState.columnSearch.find((item) => item.searchField === column.dataIndex)?.searchValue].filter((term): term is string => Boolean(term));
+              const terms = [
+                column.searchable !== false ? tableState.searchQuery : '',
+                tableState.columnSearch.find(
+                  (item) => item.searchField === column.dataIndex,
+                )?.searchValue,
+              ].filter((term): term is string => Boolean(term));
               return (
                 <Table.Td key={column.dataIndex} ta={column.align}>
-                  {column.render
-                    ? column.render(row, index)
-                    : value == null
-                      ? null
-                      : terms.length ? <Highlight highlight={terms}>{String(value)}</Highlight> : String(value)}
+                  {column.render ? (
+                    column.render(row, index)
+                  ) : value == null ? null : terms.length ? (
+                    <Highlight highlight={terms}>{String(value)}</Highlight>
+                  ) : (
+                    String(value)
+                  )}
                 </Table.Td>
               );
             })}
@@ -148,6 +169,12 @@ export function DataTable<T>({
         </Table.ScrollContainer>
       ) : (
         table
+      )}
+      {pagination && (
+        <TablePagination
+          pagination={pagination}
+          onChange={tableState.setPagination}
+        />
       )}
     </DataTableContext.Provider>
   );
