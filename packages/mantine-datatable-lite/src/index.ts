@@ -1,2 +1,2 @@
 export { DataTable } from './components/DataTable';
-export type { DataTableColumn, DataTableProps, Sorter, SortOrder } from './types';
+export type { DataTableColumn, DataTableProps, Sorter, SortOrder, Filter, FilterValue, FilterOption, NumericOperator, FilterRenderContext } from './types';

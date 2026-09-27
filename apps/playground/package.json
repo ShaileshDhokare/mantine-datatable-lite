@@ -10,9 +10,11 @@
   },
   "dependencies": {
     "@mantine/core": "^9.6.2",
+    "@mantine/dates": "^9.6.2",
     "@mantine/hooks": "^9.6.2",
     "@scope/mantine-datatable-lite": "0.1.0",
     "react": "^19.3.0",
-    "react-dom": "^19.3.0"
+    "react-dom": "^19.3.0",
+    "react-router": "^7.18.4"
   }
 }
