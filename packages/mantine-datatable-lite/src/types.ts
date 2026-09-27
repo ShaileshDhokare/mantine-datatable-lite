@@ -93,6 +93,9 @@ export interface DataTableColumn<T> {
   defaultSortOrder?: SortOrder;
   sortFn?: (a: T, b: T) => number;
   filterable?: boolean;
+  searchable?: boolean;
+  showSearchIcon?: boolean;
+  defaultSearchValue?: string;
   showFilterIcon?: boolean;
   searchableFilter?: boolean;
   defaultFilterValue?: FilterValue;

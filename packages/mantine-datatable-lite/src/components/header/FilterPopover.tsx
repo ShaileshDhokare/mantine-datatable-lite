@@ -9,7 +9,7 @@ export function FilterPopover<T>({ column, rows, serverMode }: {
   rows: T[];
   serverMode: boolean;
 }) {
-  const { filters, openFilter, setOpenFilter } = useDataTableContext();
+  const { filters, openFilter, setOpenFilter, setOpenSearch } = useDataTableContext();
   const opened = openFilter === column.dataIndex;
   const active = filters.some((filter) => filter.field === column.dataIndex);
 
@@ -30,7 +30,7 @@ export function FilterPopover<T>({ column, rows, serverMode }: {
           size='sm'
           color={active ? 'var(--mantine-primary-color-filled)' : 'var(--mantine-color-gray-6)'}
           aria-label={`Filter ${String(column.header)}`}
-          onClick={() => setOpenFilter(opened ? null : column.dataIndex)}
+          onClick={() => { setOpenSearch(null); setOpenFilter(opened ? null : column.dataIndex); }}
         >
           <Icon name='filter' size={16} fill={active ? 'currentColor' : undefined} strokeWidth={2} />
         </ActionIcon>

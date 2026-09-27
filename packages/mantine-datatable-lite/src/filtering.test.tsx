@@ -74,13 +74,13 @@ test('default string filter renders; Apply and Reset notify with the full state'
   fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
   expect(screen.getAllByRole('cell')).toHaveLength(3);
   act(() => vi.advanceTimersByTime(300));
-  expect(onChange).toHaveBeenLastCalledWith({ pagination: undefined, sorter: undefined, filters: [{ field: 'city', value: ['London', 'Paris'] }] });
+  expect(onChange).toHaveBeenLastCalledWith({ pagination: undefined, sorter: undefined, filters: [{ field: 'city', value: ['London', 'Paris'] }], columnSearch: [], searchQuery: '' });
   fireEvent.click(screen.getByRole('button', { name: 'City menu' }));
   fireEvent.mouseEnter(screen.getByRole('menuitem', { name: 'Filter' }));
   fireEvent.click(screen.getByRole('button', { name: 'Reset' }));
   expect(screen.getAllByRole('cell')).toHaveLength(3);
   act(() => vi.advanceTimersByTime(300));
-  expect(onChange).toHaveBeenLastCalledWith({ pagination: undefined, sorter: undefined, filters: [] });
+  expect(onChange).toHaveBeenLastCalledWith({ pagination: undefined, sorter: undefined, filters: [], columnSearch: [], searchQuery: '' });
 });
 
 test('explicit option search narrows checkboxes without filtering rows before Apply', () => {
