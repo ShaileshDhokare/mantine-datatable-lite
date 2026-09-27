@@ -4,6 +4,7 @@ import { Icon } from '../../icons/Icon';
 import type { DataTableColumn, MenuOption, SortOrder } from '../../types';
 import { useDataTableContext } from '../../context/DataTableContext';
 import { FilterControls } from './FilterControls';
+import { SearchControls } from './SearchControls';
 
 const defaultMenuOptions: MenuOption[] = [
   'sort',
@@ -14,7 +15,6 @@ const defaultMenuOptions: MenuOption[] = [
 ];
 const pendingOptions = {
   filter: { label: 'Filter', icon: 'filter' },
-  search: { label: 'Search', icon: 'search' },
   pin: { label: 'Pin', icon: 'pin' },
   display: { label: 'Display', icon: 'show' },
 } as const;
@@ -29,10 +29,12 @@ type ColumnMenuProps<T> = {
 
 export function ColumnMenu<T>({ column, rows, serverMode, order, setSort }: ColumnMenuProps<T>) {
   const options = column.menuOptions ?? defaultMenuOptions;
-  const { filters, setOpenFilter } = useDataTableContext();
+  const { filters, columnSearch, setOpenFilter, setOpenSearch } = useDataTableContext();
   const activeFilter = filters.some((filter) => filter.field === column.dataIndex);
+  const activeSearch = columnSearch.some((search) => search.searchField === column.dataIndex);
   const [opened, setOpened] = useState(false);
   const [filterSubOpen, setFilterSubOpen] = useState(false);
+  const [searchSubOpen, setSearchSubOpen] = useState(false);
   const [openCount, setOpenCount] = useState(0);
 
   return (
@@ -41,9 +43,11 @@ export function ColumnMenu<T>({ column, rows, serverMode, order, setSort }: Colu
         setOpened(next);
         if (next) {
           setOpenFilter(null);
+          setOpenSearch(null);
           setOpenCount((count) => count + 1);
         } else {
           setFilterSubOpen(false);
+          setSearchSubOpen(false);
         }
       }}>
       <Menu.Target>
@@ -65,6 +69,7 @@ export function ColumnMenu<T>({ column, rows, serverMode, order, setSort }: Colu
                 onChange={(next) => { if (next) setFilterSubOpen(true); }}>
                 <Menu.Sub.Target>
                   <Menu.Sub.Item py={3} px={6} fz='xs'
+                    onMouseEnter={() => setSearchSubOpen(false)}
                     leftSection={<Icon name='filter' size={14} fill={activeFilter ? 'currentColor' : undefined} />}>
                     Filter
                   </Menu.Sub.Item>
@@ -78,6 +83,25 @@ export function ColumnMenu<T>({ column, rows, serverMode, order, setSort }: Colu
               <Menu.Item key='filter' disabled py={3} px={6} fz='xs'
                 leftSection={<Icon name='filter' size={14} />}>Filter</Menu.Item>
             );
+          }
+          if (option === 'search') {
+            return column.searchable === true ? (
+              <Menu.Sub key='search' offset={6} opened={searchSubOpen}
+                onChange={(next) => { if (next) setSearchSubOpen(true); }}>
+                <Menu.Sub.Target>
+                  <Menu.Sub.Item py={3} px={6} fz='xs'
+                    onMouseEnter={() => setFilterSubOpen(false)}
+                    color={activeSearch ? 'var(--mantine-primary-color-filled)' : undefined}
+                    leftSection={<Icon name='search' size={14} />}>
+                    Search
+                  </Menu.Sub.Item>
+                </Menu.Sub.Target>
+                <Menu.Sub.Dropdown p={0}>
+                  <SearchControls key={openCount} column={column} onDone={() => setOpened(false)} />
+                </Menu.Sub.Dropdown>
+              </Menu.Sub>
+            ) : <Menu.Item key='search' disabled py={3} px={6} fz='xs'
+              leftSection={<Icon name='search' size={14} />}>Search</Menu.Item>;
           }
           if (option !== 'sort') {
             const { label, icon } = pendingOptions[option];
@@ -99,9 +123,9 @@ export function ColumnMenu<T>({ column, rows, serverMode, order, setSort }: Colu
             <Menu.Sub key='sort' offset={6}>
               <Menu.Sub.Target>
                 <Menu.Sub.Item
-                  onMouseEnter={() => setFilterSubOpen(false)}
-                  onFocus={() => setFilterSubOpen(false)}
-                  onClick={() => setFilterSubOpen(false)}
+                  onMouseEnter={() => { setFilterSubOpen(false); setSearchSubOpen(false); }}
+                  onFocus={() => { setFilterSubOpen(false); setSearchSubOpen(false); }}
+                  onClick={() => { setFilterSubOpen(false); setSearchSubOpen(false); }}
                   py={3}
                   px={6}
                   fz='xs'

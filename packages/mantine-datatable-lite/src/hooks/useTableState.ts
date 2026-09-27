@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { DataTableProps, Filter, FilterValue, SortOrder, Sorter } from '../types';
+import type { ColumnSearch, DataTableProps, Filter, FilterValue, SortOrder, Sorter } from '../types';
 import { activeFilter } from '../utils/filter/predicates';
 import { nextSortOrder } from '../utils/sort/nextSortOrder';
 
@@ -14,8 +14,17 @@ export function useTableState<T>({ columns, onChange, pagination, debounceTime =
       : [],
   ));
   const [openFilter, setOpenFilter] = useState<string | null>(null);
+  const [columnSearch, setColumnSearchState] = useState<ColumnSearch[]>(() => columns.flatMap((column) =>
+    column.searchable && column.defaultSearchValue?.trim()
+      ? [{ searchField: column.dataIndex, searchValue: column.defaultSearchValue.trim() }]
+      : [],
+  ));
+  const [openSearch, setOpenSearch] = useState<string | null>(null);
+  const [searchQuery, setSearchQueryState] = useState('');
   const sorterRef = useRef(sorter);
   const filtersRef = useRef(filters);
+  const columnSearchRef = useRef(columnSearch);
+  const searchQueryRef = useRef(searchQuery);
   const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const callbackRef = useRef(onChange);
   const paginationRef = useRef(pagination);
@@ -24,14 +33,18 @@ export function useTableState<T>({ columns, onChange, pagination, debounceTime =
 
   useEffect(() => () => clearTimeout(timerRef.current), []);
 
-  function notify(nextSorter: Sorter | undefined, nextFilters: Filter[]) {
+  function notify(nextSorter: Sorter | undefined, nextFilters: Filter[], immediate = false) {
     clearTimeout(timerRef.current);
     if (callbackRef.current) {
-      timerRef.current = setTimeout(() => callbackRef.current?.({
+      const snapshot = {
         pagination: paginationRef.current,
         sorter: nextSorter,
         filters: nextFilters,
-      }), Math.max(0, debounceTime));
+        columnSearch: columnSearchRef.current,
+        searchQuery: searchQueryRef.current,
+      };
+      if (immediate) callbackRef.current(snapshot);
+      else timerRef.current = setTimeout(() => callbackRef.current?.(snapshot), Math.max(0, debounceTime));
     }
   }
 
@@ -53,5 +66,22 @@ export function useTableState<T>({ columns, onChange, pagination, debounceTime =
     notify(sorterRef.current, next);
   }
 
-  return { sorter, setSort, filters, setFilter, openFilter, setOpenFilter };
+  function setColumnSearch(field: string, value: string) {
+    const next = columnSearchRef.current.filter((search) => search.searchField !== field);
+    const trimmed = value.trim();
+    if (trimmed) next.push({ searchField: field, searchValue: trimmed });
+    columnSearchRef.current = next;
+    setColumnSearchState(next);
+    setOpenSearch(null);
+    notify(sorterRef.current, filtersRef.current);
+  }
+
+  function setSearchQuery(value: string, immediate = false) {
+    searchQueryRef.current = value.trim();
+    setSearchQueryState(value.trim());
+    notify(sorterRef.current, filtersRef.current, immediate);
+  }
+
+  return { sorter, setSort, filters, setFilter, openFilter, setOpenFilter,
+    columnSearch, setColumnSearch, openSearch, setOpenSearch, searchQuery, setSearchQuery };
 }

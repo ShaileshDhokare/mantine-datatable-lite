@@ -67,7 +67,7 @@ test('pagination-owned rows stay untouched and the latest request is debounced',
   expect(screen.getAllByRole('cell').map((cell) => cell.textContent)).toEqual(['2', '1']);
   act(() => vi.advanceTimersByTime(300));
   expect(onChange).toHaveBeenCalledTimes(1);
-  expect(onChange).toHaveBeenCalledWith({ pagination, sorter: { sortField: 'value', sortOrder: 'desc' }, filters: [] });
+  expect(onChange).toHaveBeenCalledWith({ pagination, sorter: { sortField: 'value', sortOrder: 'desc' }, filters: [], columnSearch: [], searchQuery: '' });
 });
 
 test('sort submenu selects a direction', async () => {

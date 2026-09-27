@@ -1,4 +1,4 @@
-import { Stack, Table, Text } from '@mantine/core';
+import { Highlight, Stack, Table, Text } from '@mantine/core';
 import { useMemo, useRef } from 'react';
 import { DataTableContext } from '../context/DataTableContext';
 import { useTableState } from '../hooks/useTableState';
@@ -7,7 +7,9 @@ import classes from '../styles/styles.module.css';
 import type { DataTableProps } from '../types';
 import { filterRows } from '../utils/filter/predicates';
 import { sortRows } from '../utils/sort/sortRows';
+import { searchRows } from '../utils/search/searchRows';
 import { ColumnHeader } from './header/ColumnHeader';
+import { GlobalSearch } from './GlobalSearch';
 
 export function DataTable<T>({
   columns,
@@ -28,6 +30,7 @@ export function DataTable<T>({
   layout,
   onChange,
   pagination,
+  globalSearch,
   debounceTime,
   emptyState,
 }: DataTableProps<T>) {
@@ -43,12 +46,16 @@ export function DataTable<T>({
     () => (pagination ? rows : filterRows(rows, columns, tableState.filters)),
     [rows, columns, tableState.filters, pagination],
   );
+  const searchedRows = useMemo(
+    () => pagination ? filteredRows : searchRows(filteredRows, columns, tableState.columnSearch, tableState.searchQuery),
+    [filteredRows, columns, tableState.columnSearch, tableState.searchQuery, pagination],
+  );
   const visibleRows = useMemo(
     () =>
       pagination
-        ? filteredRows
-        : sortRows(filteredRows, columns, tableState.sorter),
-    [filteredRows, columns, tableState.sorter, pagination],
+        ? searchedRows
+        : sortRows(searchedRows, columns, tableState.sorter),
+    [searchedRows, columns, tableState.sorter, pagination],
   );
 
   function getRowKey(row: T, index: number) {
@@ -114,13 +121,15 @@ export function DataTable<T>({
           <Table.Tr key={getRowKey(row, index)}>
             {columns.map((column) => {
               const value = (row as Record<string, unknown>)[column.dataIndex];
+              const terms = [column.searchable !== false ? tableState.searchQuery : '',
+                tableState.columnSearch.find((item) => item.searchField === column.dataIndex)?.searchValue].filter((term): term is string => Boolean(term));
               return (
                 <Table.Td key={column.dataIndex} ta={column.align}>
                   {column.render
                     ? column.render(row, index)
                     : value == null
                       ? null
-                      : String(value)}
+                      : terms.length ? <Highlight highlight={terms}>{String(value)}</Highlight> : String(value)}
                 </Table.Td>
               );
             })}
@@ -132,6 +141,7 @@ export function DataTable<T>({
 
   return (
     <DataTableContext.Provider value={tableState}>
+      {globalSearch && <GlobalSearch debounceTime={debounceTime} />}
       {minWidth != null || maxHeight != null ? (
         <Table.ScrollContainer minWidth={minWidth ?? 0} maxHeight={maxHeight}>
           {table}

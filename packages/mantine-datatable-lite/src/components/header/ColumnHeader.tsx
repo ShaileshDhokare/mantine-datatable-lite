@@ -4,6 +4,7 @@ import { Icon } from '../../icons/Icon';
 import type { DataTableColumn } from '../../types';
 import { ColumnMenu } from './ColumnMenu';
 import { FilterPopover } from './FilterPopover';
+import { SearchPopover } from './SearchPopover';
 
 export function ColumnHeader<T>({ column, rows, serverMode }: { column: DataTableColumn<T>; rows: T[]; serverMode: boolean }) {
   const { sorter, setSort } = useDataTableContext();
@@ -29,6 +30,7 @@ export function ColumnHeader<T>({ column, rows, serverMode }: { column: DataTabl
           </ActionIcon>
         )}
         {column.filterable && column.showFilterIcon !== false && <FilterPopover column={column} rows={rows} serverMode={serverMode} />}
+        {column.searchable === true && column.showSearchIcon !== false && <SearchPopover column={column} />}
         {column.showMenu && <ColumnMenu column={column} rows={rows} serverMode={serverMode} order={order} setSort={setSort} />}
       </Group>
     </Table.Th>
