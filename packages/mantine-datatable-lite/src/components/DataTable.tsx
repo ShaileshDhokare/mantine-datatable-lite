@@ -9,7 +9,7 @@ import { filterRows } from '../utils/filter/predicates';
 import { sortRows } from '../utils/sort/sortRows';
 import { searchRows } from '../utils/search/searchRows';
 import { ColumnHeader } from './header/ColumnHeader';
-import { GlobalSearch } from './toolbar/GlobalSearch';
+import { TableToolbar } from './toolbar/TableToolbar';
 import { TablePagination } from './footer/TablePagination';
 
 export function DataTable<T>({
@@ -32,6 +32,10 @@ export function DataTable<T>({
   onChange,
   pagination,
   globalSearch,
+  columnSelector,
+  showTableStatePills,
+  showReset,
+  maxChips,
   debounceTime,
   emptyState,
 }: DataTableProps<T>) {
@@ -43,6 +47,7 @@ export function DataTable<T>({
   });
   const rowKeys = useRef(new WeakMap<object, number>());
   const nextRowKey = useRef(0);
+  const visibleColumns = columns.filter((column) => !tableState.hiddenColumns.includes(column.dataIndex));
   const filteredRows = useMemo(
     () => (pagination ? rows : filterRows(rows, columns, tableState.filters)),
     [rows, columns, tableState.filters, pagination],
@@ -101,12 +106,13 @@ export function DataTable<T>({
     >
       <Table.Thead>
         <Table.Tr>
-          {columns.map((column) => (
+          {visibleColumns.map((column) => (
             <ColumnHeader
               key={column.dataIndex}
               column={column}
               rows={rows}
               serverMode={Boolean(pagination)}
+              canHide={visibleColumns.length > 1 && Boolean(columnSelector || showTableStatePills || showReset)}
             />
           ))}
         </Table.Tr>
@@ -114,7 +120,7 @@ export function DataTable<T>({
       <Table.Tbody>
         {visibleRows.length === 0 && (
           <Table.Tr>
-            <Table.Td colSpan={Math.max(columns.length, 1)} ta='center' py='xl'>
+            <Table.Td colSpan={Math.max(visibleColumns.length, 1)} ta='center' py='xl'>
               {emptyState ?? (
                 <Stack align='center' gap='xs' py='md'>
                   <Icon
@@ -134,7 +140,7 @@ export function DataTable<T>({
         )}
         {visibleRows.map((row, index) => (
           <Table.Tr key={getRowKey(row, index)}>
-            {columns.map((column) => {
+            {visibleColumns.map((column) => {
               const value = (row as Record<string, unknown>)[column.dataIndex];
               const terms = [
                 column.searchable !== false ? tableState.searchQuery : '',
@@ -162,7 +168,10 @@ export function DataTable<T>({
 
   return (
     <DataTableContext.Provider value={tableState}>
-      {globalSearch && <GlobalSearch debounceTime={debounceTime} />}
+      {(globalSearch || columnSelector || showTableStatePills || showReset) &&
+        <TableToolbar columns={columns} globalSearch={globalSearch} columnSelector={columnSelector}
+          showTableStatePills={showTableStatePills} showReset={showReset}
+          debounceTime={debounceTime} maxChips={maxChips} />}
       {minWidth != null || maxHeight != null ? (
         <Table.ScrollContainer minWidth={minWidth ?? 0} maxHeight={maxHeight}>
           {table}

@@ -21,6 +21,8 @@ export function useTableState<T>({ columns, onChange, pagination, debounceTime =
   ));
   const [openSearch, setOpenSearch] = useState<string | null>(null);
   const [searchQuery, setSearchQueryState] = useState('');
+  const [hiddenColumns, setHiddenColumns] = useState<string[]>([]);
+  const [resetVersion, setResetVersion] = useState(0);
   const sorterRef = useRef(sorter);
   const filtersRef = useRef(filters);
   const columnSearchRef = useRef(columnSearch);
@@ -83,6 +85,28 @@ export function useTableState<T>({ columns, onChange, pagination, debounceTime =
     notify(sorterRef.current, filtersRef.current, immediate, resetPage());
   }
 
+  function setColumnHidden(field: string, hidden: boolean) {
+    setHiddenColumns((current) => hidden
+      ? current.includes(field) ? current : [...current, field]
+      : current.filter((item) => item !== field));
+  }
+
+  function clearAll() {
+    sorterRef.current = undefined;
+    filtersRef.current = [];
+    columnSearchRef.current = [];
+    searchQueryRef.current = '';
+    setSorter(undefined);
+    setFilters([]);
+    setColumnSearchState([]);
+    setSearchQueryState('');
+    setHiddenColumns([]);
+    setResetVersion((version) => version + 1);
+    setOpenFilter(null);
+    setOpenSearch(null);
+    notify(undefined, [], false, resetPage());
+  }
+
   function resetPage() {
     const current = paginationRef.current;
     if (!current) return undefined;
@@ -119,5 +143,6 @@ export function useTableState<T>({ columns, onChange, pagination, debounceTime =
   }, [pagination?.currentPage, pagination?.pageSize, pagination?.totalItems, onChange]);
 
   return { sorter, setSort, filters, setFilter, openFilter, setOpenFilter,
-    columnSearch, setColumnSearch, openSearch, setOpenSearch, searchQuery, setSearchQuery, setPagination };
+    columnSearch, setColumnSearch, openSearch, setOpenSearch, searchQuery, setSearchQuery,
+    hiddenColumns, setHiddenColumns, setColumnHidden, clearAll, resetVersion, setPagination };
 }

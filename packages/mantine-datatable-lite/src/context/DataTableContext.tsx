@@ -14,6 +14,11 @@ type DataTableContextValue = {
   setOpenSearch: (field: string | null) => void;
   searchQuery: string;
   setSearchQuery: (value: string, immediate?: boolean) => void;
+  hiddenColumns: string[];
+  setHiddenColumns: (fields: string[]) => void;
+  setColumnHidden: (field: string, hidden: boolean) => void;
+  clearAll: () => void;
+  resetVersion: number;
 };
 
 export const DataTableContext = createContext<DataTableContextValue | null>(null);

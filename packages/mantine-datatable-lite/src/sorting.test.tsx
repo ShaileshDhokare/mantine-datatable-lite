@@ -73,7 +73,7 @@ test('pagination-owned rows stay untouched and the latest request is debounced',
 test('sort submenu selects a direction', async () => {
   render(<MantineProvider env='test'><DataTable columns={[{ dataIndex: 'value', header: 'Value', sortable: true, showMenu: true }]} rows={[{ value: 2 }, { value: 1 }]} /></MantineProvider>);
   fireEvent.click(screen.getByRole('button', { name: 'Value menu' }));
-  for (const label of ['Filter', 'Search', 'Pin', 'Display']) {
+  for (const label of ['Filter', 'Search', 'Pin', 'Hide']) {
     expect(screen.getByRole('menuitem', { name: label })).toBeTruthy();
   }
   fireEvent.mouseEnter(screen.getByRole('menuitem', { name: 'Sort' }));
@@ -86,6 +86,6 @@ test('showMenu displays only requested actions even when sorting is disabled', (
   expect(screen.queryByRole('button', { name: 'Sort Value: none' })).toBeNull();
   fireEvent.click(screen.getByRole('button', { name: 'Value menu' }));
   expect(screen.getByRole('menuitem', { name: 'Filter' })).toBeTruthy();
-  expect(screen.getByRole('menuitem', { name: 'Display' })).toBeTruthy();
+  expect(screen.getByRole('menuitem', { name: 'Hide' })).toBeTruthy();
   expect(screen.queryByRole('menuitem', { name: 'Sort' })).toBeNull();
 });

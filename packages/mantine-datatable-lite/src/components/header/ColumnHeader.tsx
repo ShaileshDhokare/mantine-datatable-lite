@@ -10,10 +10,12 @@ export function ColumnHeader<T>({
   column,
   rows,
   serverMode,
+  canHide,
 }: {
   column: DataTableColumn<T>;
   rows: T[];
   serverMode: boolean;
+  canHide: boolean;
 }) {
   const { sorter, setSort } = useDataTableContext();
   const order =
@@ -75,6 +77,7 @@ export function ColumnHeader<T>({
             serverMode={serverMode}
             order={order}
             setSort={setSort}
+            canHide={canHide}
           />
         )}
       </Group>
