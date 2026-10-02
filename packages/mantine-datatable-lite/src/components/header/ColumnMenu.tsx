@@ -13,10 +13,6 @@ const defaultMenuOptions: MenuOption[] = [
   'pin',
   'display',
 ];
-const pendingOptions = {
-  filter: { label: 'Filter', icon: 'filter' },
-  pin: { label: 'Pin', icon: 'pin' },
-} as const;
 
 type ColumnMenuProps<T> = {
   column: DataTableColumn<T>;
@@ -27,18 +23,49 @@ type ColumnMenuProps<T> = {
   canHide: boolean;
 };
 
-export function ColumnMenu<T>({ column, rows, serverMode, order, setSort, canHide }: ColumnMenuProps<T>) {
+export function ColumnMenu<T>({
+  column,
+  rows,
+  serverMode,
+  order,
+  setSort,
+  canHide,
+}: ColumnMenuProps<T>) {
   const options = column.menuOptions ?? defaultMenuOptions;
-  const { filters, columnSearch, setColumnHidden, setOpenFilter, setOpenSearch } = useDataTableContext();
-  const activeFilter = filters.some((filter) => filter.field === column.dataIndex);
-  const activeSearch = columnSearch.some((search) => search.searchField === column.dataIndex);
+  const {
+    filters,
+    columnSearch,
+    setColumnHidden,
+    setOpenFilter,
+    setOpenSearch,
+    pinned,
+    pinColumn,
+    movePinned,
+  } = useDataTableContext();
+  const side = pinned.left.includes(column.dataIndex)
+    ? 'left'
+    : pinned.right.includes(column.dataIndex)
+      ? 'right'
+      : null;
+  const sideFields = side ? pinned[side] : [];
+  const pinIndex = sideFields.indexOf(column.dataIndex);
+  const activeFilter = filters.some(
+    (filter) => filter.field === column.dataIndex,
+  );
+  const activeSearch = columnSearch.some(
+    (search) => search.searchField === column.dataIndex,
+  );
   const [opened, setOpened] = useState(false);
   const [filterSubOpen, setFilterSubOpen] = useState(false);
   const [searchSubOpen, setSearchSubOpen] = useState(false);
   const [openCount, setOpenCount] = useState(0);
 
   return (
-    <Menu position='bottom-end' offset={0} withinPortal opened={opened}
+    <Menu
+      position='bottom-end'
+      offset={0}
+      withinPortal
+      opened={opened}
       onChange={(next) => {
         setOpened(next);
         if (next) {
@@ -49,7 +76,8 @@ export function ColumnMenu<T>({ column, rows, serverMode, order, setSort, canHid
           setFilterSubOpen(false);
           setSearchSubOpen(false);
         }
-      }}>
+      }}
+    >
       <Menu.Target>
         <ActionIcon
           variant='transparent'
@@ -65,73 +93,218 @@ export function ColumnMenu<T>({ column, rows, serverMode, order, setSort, canHid
         {options.map((option) => {
           if (option === 'filter') {
             return column.filterable ? (
-              <Menu.Sub key='filter' offset={6} opened={filterSubOpen}
-                onChange={(next) => { if (next) setFilterSubOpen(true); }}>
+              <Menu.Sub
+                key='filter'
+                offset={6}
+                opened={filterSubOpen}
+                onChange={(next) => {
+                  if (next) setFilterSubOpen(true);
+                }}
+              >
                 <Menu.Sub.Target>
-                  <Menu.Sub.Item py={3} px={6} fz='xs'
+                  <Menu.Sub.Item
+                    py={3}
+                    px={6}
+                    fz='xs'
                     onMouseEnter={() => setSearchSubOpen(false)}
-                    leftSection={<Icon name='filter' size={14} fill={activeFilter ? 'currentColor' : undefined} />}>
+                    leftSection={
+                      <Icon
+                        name='filter'
+                        size={14}
+                        fill={activeFilter ? 'currentColor' : undefined}
+                      />
+                    }
+                  >
                     Filter
                   </Menu.Sub.Item>
                 </Menu.Sub.Target>
                 <Menu.Sub.Dropdown p={0}>
-                  <FilterControls key={openCount} column={column} rows={rows} serverMode={serverMode}
-                    onDone={() => setOpened(false)} />
+                  <FilterControls
+                    key={openCount}
+                    column={column}
+                    rows={rows}
+                    serverMode={serverMode}
+                    onDone={() => setOpened(false)}
+                  />
                 </Menu.Sub.Dropdown>
               </Menu.Sub>
             ) : (
-              <Menu.Item key='filter' disabled py={3} px={6} fz='xs'
-                leftSection={<Icon name='filter' size={14} />}>Filter</Menu.Item>
-            );
-          }
-          if (option === 'search') {
-            return column.searchable === true ? (
-              <Menu.Sub key='search' offset={6} opened={searchSubOpen}
-                onChange={(next) => { if (next) setSearchSubOpen(true); }}>
-                <Menu.Sub.Target>
-                  <Menu.Sub.Item py={3} px={6} fz='xs'
-                    onMouseEnter={() => setFilterSubOpen(false)}
-                    color={activeSearch ? 'var(--mantine-primary-color-filled)' : undefined}
-                    leftSection={<Icon name='search' size={14} />}>
-                    Search
-                  </Menu.Sub.Item>
-                </Menu.Sub.Target>
-                <Menu.Sub.Dropdown p={0}>
-                  <SearchControls key={openCount} column={column} onDone={() => setOpened(false)} />
-                </Menu.Sub.Dropdown>
-              </Menu.Sub>
-            ) : <Menu.Item key='search' disabled py={3} px={6} fz='xs'
-              leftSection={<Icon name='search' size={14} />}>Search</Menu.Item>;
-          }
-          if (option === 'display') {
-            return <Menu.Item key='display' py={3} px={6} fz='xs'
-              disabled={!canHide}
-              leftSection={<Icon name='hide' size={14} />}
-              onClick={() => setColumnHidden(column.dataIndex, true)}>Hide</Menu.Item>;
-          }
-          if (option !== 'sort') {
-            const { label, icon } = pendingOptions[option];
-            return (
               <Menu.Item
-                key={option}
+                key='filter'
                 disabled
                 py={3}
                 px={6}
                 fz='xs'
-                leftSection={<Icon name={icon} size={14} />}
+                leftSection={<Icon name='filter' size={14} />}
               >
-                {label}
+                Filter
               </Menu.Item>
             );
+          }
+          if (option === 'search') {
+            return column.searchable === true ? (
+              <Menu.Sub
+                key='search'
+                offset={6}
+                opened={searchSubOpen}
+                onChange={(next) => {
+                  if (next) setSearchSubOpen(true);
+                }}
+              >
+                <Menu.Sub.Target>
+                  <Menu.Sub.Item
+                    py={3}
+                    px={6}
+                    fz='xs'
+                    onMouseEnter={() => setFilterSubOpen(false)}
+                    color={
+                      activeSearch
+                        ? 'var(--mantine-primary-color-filled)'
+                        : undefined
+                    }
+                    leftSection={<Icon name='search' size={14} />}
+                  >
+                    Search
+                  </Menu.Sub.Item>
+                </Menu.Sub.Target>
+                <Menu.Sub.Dropdown p={0}>
+                  <SearchControls
+                    key={openCount}
+                    column={column}
+                    onDone={() => setOpened(false)}
+                  />
+                </Menu.Sub.Dropdown>
+              </Menu.Sub>
+            ) : (
+              <Menu.Item
+                key='search'
+                disabled
+                py={3}
+                px={6}
+                fz='xs'
+                leftSection={<Icon name='search' size={14} />}
+              >
+                Search
+              </Menu.Item>
+            );
+          }
+          if (option === 'display') {
+            return (
+              <Menu.Item
+                key='display'
+                py={3}
+                px={6}
+                fz='xs'
+                disabled={!canHide || column.hideable === false}
+                leftSection={<Icon name='hide' size={14} />}
+                onClick={() => setColumnHidden(column.dataIndex, true)}
+              >
+                Hide
+              </Menu.Item>
+            );
+          }
+          if (option === 'pin') {
+            return column.pinnable !== false ? (
+              <Menu.Sub key='pin' offset={6}>
+                <Menu.Sub.Target>
+                  <Menu.Sub.Item
+                    py={3}
+                    px={6}
+                    fz='xs'
+                    leftSection={<Icon name='pin' size={14} />}
+                  >
+                    Pin
+                  </Menu.Sub.Item>
+                </Menu.Sub.Target>
+                <Menu.Sub.Dropdown>
+                  <Menu.Item
+                    py={3}
+                    px={6}
+                    fz='xs'
+                    disabled={side === 'left'}
+                    leftSection={
+                      <Icon
+                        name='pin'
+                        size={14}
+                        style={{ transform: 'rotate(90deg)' }}
+                      />
+                    }
+                    onClick={() => pinColumn(column.dataIndex, 'left')}
+                  >
+                    Pin to left
+                  </Menu.Item>
+                  <Menu.Item
+                    py={3}
+                    px={6}
+                    fz='xs'
+                    disabled={side === 'right'}
+                    leftSection={
+                      <Icon
+                        name='pin'
+                        size={14}
+                        style={{ transform: 'rotate(-90deg)' }}
+                      />
+                    }
+                    onClick={() => pinColumn(column.dataIndex, 'right')}
+                  >
+                    Pin to right
+                  </Menu.Item>
+                  {side && (
+                    <>
+                      <Menu.Item
+                        py={3}
+                        px={6}
+                        fz='xs'
+                        disabled={pinIndex === 0}
+                        leftSection={<Icon name='prevPage' size={14} />}
+                        onClick={() => movePinned(column.dataIndex, -1)}
+                      >
+                        Move left
+                      </Menu.Item>
+                      <Menu.Item
+                        py={3}
+                        px={6}
+                        fz='xs'
+                        disabled={pinIndex === sideFields.length - 1}
+                        leftSection={<Icon name='nextPage' size={14} />}
+                        onClick={() => movePinned(column.dataIndex, 1)}
+                      >
+                        Move right
+                      </Menu.Item>
+                      <Menu.Item
+                        py={3}
+                        px={6}
+                        fz='xs'
+                        onClick={() => pinColumn(column.dataIndex, null)}
+                      >
+                        Unpin
+                      </Menu.Item>
+                    </>
+                  )}
+                </Menu.Sub.Dropdown>
+              </Menu.Sub>
+            ) : null;
+          }
+          if (option !== 'sort') {
+            return null;
           }
 
           return column.sortable ? (
             <Menu.Sub key='sort' offset={6}>
               <Menu.Sub.Target>
                 <Menu.Sub.Item
-                  onMouseEnter={() => { setFilterSubOpen(false); setSearchSubOpen(false); }}
-                  onFocus={() => { setFilterSubOpen(false); setSearchSubOpen(false); }}
-                  onClick={() => { setFilterSubOpen(false); setSearchSubOpen(false); }}
+                  onMouseEnter={() => {
+                    setFilterSubOpen(false);
+                    setSearchSubOpen(false);
+                  }}
+                  onFocus={() => {
+                    setFilterSubOpen(false);
+                    setSearchSubOpen(false);
+                  }}
+                  onClick={() => {
+                    setFilterSubOpen(false);
+                    setSearchSubOpen(false);
+                  }}
                   py={3}
                   px={6}
                   fz='xs'

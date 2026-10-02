@@ -1,2 +1,23 @@
 export { DataTable } from './components/DataTable';
-export type { DataTableColumn, DataTableProps, Sorter, SortOrder, Filter, FilterValue, FilterOption, NumericOperator, FilterRenderContext, ColumnSearch, Pagination, PaginationChange, TableChange } from './types';
+export { Icon } from './icons/Icon';
+export { rowActionsColumn } from './rowActionsColumn';
+export type {
+  DataTableColumn,
+  DataTableProps,
+  Sorter,
+  SortOrder,
+  Filter,
+  FilterValue,
+  FilterOption,
+  NumericOperator,
+  FilterRenderContext,
+  ColumnSearch,
+  Pagination,
+  PaginationChange,
+  TableChange,
+  RowId,
+  PinnedColumns,
+  SelectionSnapshot,
+  SelectionConfig,
+  ExpandableConfig,
+} from './types';

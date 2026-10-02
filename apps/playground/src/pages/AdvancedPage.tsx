@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react';
-import { Badge, Button, Select, Stack, Switch, Text } from '@mantine/core';
+import { ActionIcon, Badge, Button, DataList, Select, Stack, Switch, Text, Tooltip } from '@mantine/core';
 import {
   DataTable,
+  Icon,
   type ColumnSearch,
   type DataTableColumn,
   type Filter,
+  type RowId,
   type Sorter,
 } from '@scope/mantine-datatable-lite';
 import { PlaygroundLayout } from '../components/PlaygroundLayout';
@@ -14,7 +16,7 @@ import { queryEmployees } from '../queryEmployees';
 const scenarios = [{
   id: 'combined',
   label: 'Complete table',
-  description: 'Sort, filter, search, and page through 100 employees in one table.',
+  description: 'Sort, filter, search, pin, expand, select, and page through 100 employees in one table.',
 }] as const;
 
 const departmentOptions = [...new Set(employees.map((employee) => employee.department))].sort();
@@ -46,15 +48,17 @@ export function AdvancedPage() {
   const [rowBorders, setRowBorders] = useState(true);
   const [constrainHeight, setConstrainHeight] = useState(true);
   const [pageSizeChoices, setPageSizeChoices] = useState('default');
+  const [selectedIds, setSelectedIds] = useState<RowId[]>([]);
 
   function resetTable() {
     setState(initialState());
     setResetKey((key) => key + 1);
+    setSelectedIds([]);
   }
 
   const columns: DataTableColumn<Employee>[] = [
     { dataIndex: 'name', header: 'Name', sortable: true, searchable: true, showMenu,
-      showSortIcon, showSearchIcon, width: 170 },
+      showSortIcon, showSearchIcon, width: 170, sticky: 'left' },
     { dataIndex: 'email', header: 'Email', searchable: true, showMenu, showSearchIcon, width: 240 },
     { dataIndex: 'department', header: 'Department', sortable: true, filterable: true,
       searchable: true, filterOptions: departmentOptions, searchableFilter, showMenu,
@@ -72,6 +76,7 @@ export function AdvancedPage() {
       </Badge> },
     { dataIndex: 'joinDate', header: 'Joined', type: 'date', sortable: true, filterable: true,
       searchable: false, showMenu, showSortIcon, showFilterIcon, width: 120,
+      sticky: 'right',
       render: (employee) => employee.joinDate.toLocaleDateString() },
   ];
 
@@ -109,6 +114,18 @@ export function AdvancedPage() {
     onSelect={resetTable} controls={controls}>
     <DataTable key={resetKey} columns={columns} rows={rows} globalSearch
       columnSelector showTableStatePills showReset
+      selection={{ selectedIds, onChange: ({ ids }) => setSelectedIds(ids),
+        renderBulkActions: () => <Tooltip label='Log all selected employees'>
+          <ActionIcon variant='default' size='lg' aria-label='Log all selected employees'
+            onClick={() => console.log(employees.filter((employee) => selectedIds.includes(employee.id)))}>
+            <Icon name='show' size={20} />
+          </ActionIcon>
+        </Tooltip> }}
+      expandable={{ allowMultiple: true, render: (employee) => <DataList size='sm' orientation='horizontal'>
+        <DataList.Item><DataList.ItemLabel>Employee ID</DataList.ItemLabel><DataList.ItemValue>{employee.id}</DataList.ItemValue></DataList.Item>
+        <DataList.Item><DataList.ItemLabel>Email</DataList.ItemLabel><DataList.ItemValue>{employee.email}</DataList.ItemValue></DataList.Item>
+        <DataList.Item><DataList.ItemLabel>Age</DataList.ItemLabel><DataList.ItemValue>{employee.age}</DataList.ItemValue></DataList.Item>
+      </DataList> }}
       pagination={{ currentPage: state.page, pageSize: state.pageSize, totalItems: matched.length,
         pageSizeOptions: options }}
       onChange={({ pagination, sorter, filters, columnSearch, searchQuery }) => setState({
@@ -119,7 +136,7 @@ export function AdvancedPage() {
         columnSearch: columnSearch ?? [],
         searchQuery: searchQuery ?? '',
       })}
-      minWidth={1150} maxHeight={constrainHeight ? 420 : undefined}
+      minWidth={1250} maxHeight={constrainHeight ? 420 : undefined}
       stickyHeader={constrainHeight} striped={striped} highlightOnHover={highlightOnHover}
       withTableBorder withColumnBorders={columnBorders} withRowBorders={rowBorders} />
   </PlaygroundLayout>;

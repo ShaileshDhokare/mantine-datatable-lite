@@ -10,7 +10,7 @@ export type Scenario<Id extends string> = {
 };
 
 type PlaygroundLayoutProps<Id extends string> = {
-  section: 'basic' | 'sorting' | 'filtering' | 'searching' | 'pagination' | 'advanced' | 'server';
+  section: 'basic' | 'sorting' | 'filtering' | 'searching' | 'pagination' | 'advanced' | 'server' | 'pinning' | 'expandable' | 'selection';
   scenarios: readonly Scenario<Id>[];
   active: Id;
   onSelect: (id: Id) => void;
@@ -26,6 +26,9 @@ const features = [
   { id: 'pagination', label: 'Pagination' },
   { id: 'advanced', label: 'Advanced example' },
   { id: 'server', label: 'Server mode' },
+  { id: 'pinning', label: 'Pin columns' },
+  { id: 'expandable', label: 'Expandable rows' },
+  { id: 'selection', label: 'Row selection' },
 ] as const;
 
 export function PlaygroundLayout<Id extends string>({
