@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { ColumnSearch, DataTableProps, Filter, FilterValue, Pagination, PaginationChange, SortOrder, Sorter } from '../types';
+import type { ColumnSearch, DataTableProps, Filter, FilterValue, Pagination, PaginationChange, PinnedColumns, SortOrder, Sorter } from '../types';
 import { activeFilter } from '../utils/filter/predicates';
 import { nextSortOrder } from '../utils/sort/nextSortOrder';
 
@@ -31,7 +31,11 @@ export function useTableState<T>({ columns, onChange, pagination, debounceTime =
   ));
   const [openSearch, setOpenSearch] = useState<string | null>(null);
   const [searchQuery, setSearchQueryState] = useState('');
-  const [hiddenColumns, setHiddenColumns] = useState<string[]>([]);
+  const [hiddenColumns, setHiddenColumnsState] = useState<string[]>([]);
+  const [pinned, setPinned] = useState<PinnedColumns>(() => ({
+    left: columns.filter((column) => column.sticky === 'left').map((column) => column.dataIndex),
+    right: columns.filter((column) => column.sticky === 'right').map((column) => column.dataIndex),
+  }));
   const [resetVersion, setResetVersion] = useState(0);
   const sorterRef = useRef(sorter);
   const filtersRef = useRef(filters);
@@ -97,9 +101,44 @@ export function useTableState<T>({ columns, onChange, pagination, debounceTime =
   }
 
   function setColumnHidden(field: string, hidden: boolean) {
-    setHiddenColumns((current) => hidden
+    setHiddenColumnsState((current) => hidden
       ? current.includes(field) ? current : [...current, field]
       : current.filter((item) => item !== field));
+    if (hidden) setPinned((current) => ({
+      left: current.left.filter((item) => item !== field),
+      right: current.right.filter((item) => item !== field),
+    }));
+  }
+
+  function setHiddenColumns(fields: string[]) {
+    setHiddenColumnsState(fields);
+    setPinned((current) => ({
+      left: current.left.filter((field) => !fields.includes(field)),
+      right: current.right.filter((field) => !fields.includes(field)),
+    }));
+  }
+
+  function pinColumn(field: string, side: 'left' | 'right' | null) {
+    if (columns.find((column) => column.dataIndex === field)?.pinnable === false) return;
+    setPinned((current) => ({
+      left: side === 'left' ? [...current.left.filter((item) => item !== field), field]
+        : current.left.filter((item) => item !== field),
+      right: side === 'right' ? [...current.right.filter((item) => item !== field), field]
+        : current.right.filter((item) => item !== field),
+    }));
+  }
+
+  function movePinned(field: string, direction: -1 | 1) {
+    setPinned((current) => {
+      const side = current.left.includes(field) ? 'left' : current.right.includes(field) ? 'right' : null;
+      if (!side) return current;
+      const items = [...current[side]];
+      const from = items.indexOf(field);
+      const to = from + direction;
+      if (to < 0 || to >= items.length) return current;
+      [items[from], items[to]] = [items[to], items[from]];
+      return { ...current, [side]: items };
+    });
   }
 
   function clearAll() {
@@ -112,6 +151,7 @@ export function useTableState<T>({ columns, onChange, pagination, debounceTime =
     setColumnSearchState([]);
     setSearchQueryState('');
     setHiddenColumns([]);
+    setPinned({ left: [], right: [] });
     setResetVersion((version) => version + 1);
     setOpenFilter(null);
     setOpenSearch(null);
@@ -156,5 +196,6 @@ export function useTableState<T>({ columns, onChange, pagination, debounceTime =
 
   return { sorter, setSort, filters, setFilter, openFilter, setOpenFilter,
     columnSearch, setColumnSearch, openSearch, setOpenSearch, searchQuery, setSearchQuery,
-    hiddenColumns, setHiddenColumns, setColumnHidden, clearAll, resetVersion, setPagination };
+    hiddenColumns, setHiddenColumns, setColumnHidden, pinned, pinColumn, movePinned,
+    clearAll, resetVersion, setPagination };
 }

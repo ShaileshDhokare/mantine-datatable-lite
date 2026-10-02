@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { MouseEvent, ReactNode, ComponentProps } from 'react';
 import type {
   MantineSpacing,
   MantineColor,
@@ -39,6 +39,34 @@ export type IconName =
   | 'empty';
 
 export type MenuOption = 'sort' | 'filter' | 'search' | 'pin' | 'display';
+export type RowId = string | number;
+export type PinnedColumns = { left: string[]; right: string[] };
+
+export type SelectionSnapshot<T> = {
+  kind: 'include';
+  ids: RowId[];
+  loadedRows: T[];
+  count: number;
+  query: { filters: Filter[]; columnSearch: ColumnSearch[]; search: string };
+};
+
+export type SelectionConfig<T> = {
+  selectedIds: RowId[];
+  onChange: (selection: SelectionSnapshot<T>) => void;
+  isSelectable?: (row: T) => boolean;
+  showSelectionCount?: boolean;
+  renderBulkActions?: (
+    context: SelectionSnapshot<T> & { clear: () => void },
+  ) => ReactNode;
+};
+
+export type ExpandableConfig<T> = {
+  render: (row: T, index: number) => ReactNode;
+  expandedIds?: RowId[];
+  onChange?: (ids: RowId[]) => void;
+  allowMultiple?: boolean;
+  trigger?: 'icon' | 'row';
+};
 
 export type StringFilterValue = string[];
 export type NumericFilterValue = {
@@ -107,6 +135,11 @@ export interface DataTableColumn<T> {
   width?: string | number;
   showMenu?: boolean;
   menuOptions?: MenuOption[];
+  sticky?: 'left' | 'right';
+  pinnable?: boolean;
+  hideable?: boolean;
+  /** Used by rowActionsColumn to keep action clicks out of row handlers. */
+  stopRowClick?: boolean;
 }
 
 export interface Pagination {
@@ -119,8 +152,10 @@ export interface Pagination {
   to?: number;
 }
 
-export type PaginationChange = Pick<Pagination,
-  'currentPage' | 'pageSize' | 'totalItems' | 'from' | 'to'>;
+export type PaginationChange = Pick<
+  Pagination,
+  'currentPage' | 'pageSize' | 'totalItems' | 'from' | 'to'
+>;
 
 /** Complete table request. With pagination, the caller supplies the resulting page in rows. */
 export type TableChange = {
@@ -137,9 +172,16 @@ export interface DataTableProps<T> {
   pagination?: Pagination;
   globalSearch?: boolean;
   columnSelector?: boolean;
-  selectable?: boolean;
-  expandable?: boolean;
+  idAccessor?: keyof T | ((row: T) => RowId);
+  selection?: SelectionConfig<T>;
+  expandable?: ExpandableConfig<T> | boolean;
   expandedRowRender?: (row: T, index: number) => ReactNode;
+  onRowClick?: (
+    row: T,
+    index: number,
+    event: MouseEvent<HTMLTableRowElement>,
+  ) => void;
+  rowProps?: (row: T, index: number) => ComponentProps<'tr'>;
   onChange?: (params: TableChange) => void;
   /** Shown over the last supplied rows while the caller loads another page. */
   loading?: boolean;

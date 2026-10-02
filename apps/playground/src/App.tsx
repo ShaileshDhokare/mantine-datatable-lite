@@ -6,6 +6,9 @@ import { SearchingPage } from './pages/SearchingPage';
 import { PaginationPage } from './pages/PaginationPage';
 import { AdvancedPage } from './pages/AdvancedPage';
 import { ServerPage } from './pages/ServerPage';
+import { PinningPage } from './pages/PinningPage';
+import { ExpandablePage } from './pages/ExpandablePage';
+import { SelectionPage } from './pages/SelectionPage';
 
 export function App() {
   return <Routes>
@@ -16,6 +19,9 @@ export function App() {
     <Route path='/pagination' element={<PaginationPage />} />
     <Route path='/advanced' element={<AdvancedPage />} />
     <Route path='/server' element={<ServerPage />} />
+    <Route path='/pinning' element={<PinningPage />} />
+    <Route path='/expandable' element={<ExpandablePage />} />
+    <Route path='/selection' element={<SelectionPage />} />
     <Route path='*' element={<Navigate to='/basic' replace />} />
   </Routes>;
 }

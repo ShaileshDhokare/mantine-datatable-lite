@@ -3,8 +3,8 @@ import { afterEach, expect, test, vi } from 'vitest';
 afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); vi.resetModules(); });
 
 test('fetches JSON on every request with query parameters and returns the requested page', async () => {
-  const fetchMock = vi.fn(async (_url: string, _options: RequestInit) => ({
-    ok: true,
+  const fetchMock = vi.fn(async (url: string, options: RequestInit) => ({
+    ok: Boolean(url && options),
     json: async () => [
       { id: 1, name: 'Alice', department: 'Engineering', email: 'a@example.com', role: 'Engineer',
         age: 30, salary: 100, isActive: true, joinDate: '2020-01-01T00:00:00.000Z' },

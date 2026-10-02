@@ -2,6 +2,8 @@ import { ActionIcon, Box, Group, Table } from '@mantine/core';
 import { useDataTableContext } from '../../context/DataTableContext';
 import { Icon } from '../../icons/Icon';
 import type { DataTableColumn } from '../../types';
+import classes from '../../styles/styles.module.css';
+import type { CSSProperties } from 'react';
 import { ColumnMenu } from './ColumnMenu';
 import { FilterPopover } from './FilterPopover';
 import { SearchPopover } from './SearchPopover';
@@ -11,11 +13,15 @@ export function ColumnHeader<T>({
   rows,
   serverMode,
   canHide,
+  pin,
+  stickyHeader,
 }: {
   column: DataTableColumn<T>;
   rows: T[];
   serverMode: boolean;
   canHide: boolean;
+  pin?: { side: 'left' | 'right'; offset: number };
+  stickyHeader?: boolean;
 }) {
   const { sorter, setSort } = useDataTableContext();
   const order =
@@ -23,6 +29,15 @@ export function ColumnHeader<T>({
 
   return (
     <Table.Th
+      data-column={column.dataIndex}
+      data-pinned={pin?.side}
+      data-sticky-header={stickyHeader || undefined}
+      className={classes.cell}
+      style={
+        pin
+          ? ({ '--dt-pin-offset': `${pin.offset}px` } as CSSProperties)
+          : undefined
+      }
       w={column.width}
       ta={column.align}
       aria-sort={
