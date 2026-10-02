@@ -1,7 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
-import type { ColumnSearch, DataTableProps, Filter, FilterValue, Pagination, SortOrder, Sorter } from '../types';
+import type { ColumnSearch, DataTableProps, Filter, FilterValue, Pagination, PaginationChange, SortOrder, Sorter } from '../types';
 import { activeFilter } from '../utils/filter/predicates';
 import { nextSortOrder } from '../utils/sort/nextSortOrder';
+
+function paginationChange(pagination: Pagination): PaginationChange {
+  const { currentPage, totalItems } = pagination;
+  const pageSize = pagination.pageSize > 0 ? pagination.pageSize : pagination.defaultPageSize || 10;
+  return {
+    currentPage, pageSize, totalItems,
+    from: totalItems === 0 ? 0 : (currentPage - 1) * pageSize + 1,
+    to: totalItems === 0 ? 0 : Math.min(currentPage * pageSize, totalItems),
+  };
+}
 
 export function useTableState<T>({ columns, onChange, pagination, debounceTime = 300 }: Pick<DataTableProps<T>, 'columns' | 'onChange' | 'pagination' | 'debounceTime'>) {
   const [sorter, setSorter] = useState<Sorter | undefined>(() => {
@@ -39,8 +49,9 @@ export function useTableState<T>({ columns, onChange, pagination, debounceTime =
   function notify(nextSorter: Sorter | undefined, nextFilters: Filter[], immediate = false, nextPagination?: Pagination) {
     clearTimeout(timerRef.current);
     if (callbackRef.current) {
+      const requestedPagination = nextPagination ?? paginationRef.current;
       const snapshot = {
-        pagination: nextPagination ?? paginationRef.current,
+        pagination: requestedPagination ? paginationChange(requestedPagination) : undefined,
         sorter: nextSorter,
         filters: nextFilters,
         columnSearch: columnSearchRef.current,
@@ -113,6 +124,7 @@ export function useTableState<T>({ columns, onChange, pagination, debounceTime =
     const next = { ...current, currentPage: 1 };
     delete next.from;
     delete next.to;
+    paginationRef.current = next;
     return next;
   }
 

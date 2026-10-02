@@ -21,12 +21,12 @@ test('shows the item range and reports page and size changes', () => {
   expect(screen.getByText('Showing 11 - 20 of 25 items')).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: '3' }));
   expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({
-    pagination: expect.objectContaining({ currentPage: 3, pageSize: 10 }),
+    pagination: { currentPage: 3, pageSize: 10, totalItems: 25, from: 21, to: 25 },
   }));
   fireEvent.click(screen.getByRole('combobox', { name: 'Rows per page' }));
   fireEvent.click(screen.getByRole('option', { name: '20 / page' }));
   expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({
-    pagination: expect.objectContaining({ currentPage: 1, pageSize: 20 }),
+    pagination: { currentPage: 1, pageSize: 20, totalItems: 25, from: 1, to: 20 },
   }));
 });
 
@@ -48,7 +48,7 @@ test('clamps a shrinking total and keeps empty pagination visible but disabled',
   </MantineProvider>);
   expect(screen.getByText('Showing 21 - 21 of 21 items')).toBeTruthy();
   expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({
-    pagination: expect.objectContaining({ currentPage: 3 }),
+    pagination: { currentPage: 3, pageSize: 10, totalItems: 21, from: 21, to: 21 },
   }));
   view.rerender(<MantineProvider env='test'>
     <DataTable columns={columns} rows={[]} pagination={{ currentPage: 1, pageSize: 10, totalItems: 0 }} />
@@ -67,7 +67,7 @@ test('sort, filter, and search requests return to page one while retaining size'
   fireEvent.click(screen.getByRole('button', { name: 'Sort Name: none' }));
   act(() => vi.advanceTimersByTime(300));
   expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({
-    pagination: expect.objectContaining({ currentPage: 1, pageSize: 20 }),
+    pagination: { currentPage: 1, pageSize: 20, totalItems: 100, from: 1, to: 20 },
   }));
   fireEvent.click(screen.getByRole('button', { name: 'Filter Name' }));
   fireEvent.click(screen.getByRole('checkbox', { name: 'Alice' }));
@@ -84,4 +84,38 @@ test('sort, filter, and search requests return to page one while retaining size'
     pagination: expect.objectContaining({ currentPage: 1, pageSize: 20 }),
     searchQuery: 'bob',
   }));
+});
+
+test('loading and error keep supplied rows visible and let the caller retry', () => {
+  const onRetry = vi.fn();
+  render(<MantineProvider env='test'><DataTable columns={columns} rows={rows}
+    pagination={{ currentPage: 1, pageSize: 10, totalItems: 20 }}
+    loading error='Request failed' onRetry={onRetry} /></MantineProvider>);
+  expect(screen.getByRole('table').textContent).toContain('Alice');
+  expect(screen.getByRole('alert').textContent).toContain('Request failed');
+  expect(screen.getByRole('table').parentElement?.getAttribute('aria-busy')).toBe('true');
+  fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+  expect(onRetry).toHaveBeenCalledTimes(1);
+});
+
+test('page change sends the latest sort in the complete request', () => {
+  vi.useFakeTimers();
+  const onChange = vi.fn();
+  show({ currentPage: 3, pageSize: 10, totalItems: 40 }, onChange);
+  fireEvent.click(screen.getByRole('button', { name: 'Sort Name: none' }));
+  fireEvent.click(screen.getByRole('button', { name: '2' }));
+  expect(onChange).toHaveBeenCalledTimes(1);
+  expect(onChange).toHaveBeenCalledWith({
+    pagination: { currentPage: 2, pageSize: 10, totalItems: 40, from: 11, to: 20 },
+    sorter: { sortField: 'name', sortOrder: 'asc' },
+    filters: [], columnSearch: [], searchQuery: '',
+  });
+  act(() => vi.advanceTimersByTime(300));
+  expect(onChange).toHaveBeenCalledTimes(1);
+});
+
+test('externally owned pages render only supplied rows and trust the supplied total', () => {
+  show({ currentPage: 2, pageSize: 10, totalItems: 100 });
+  expect(screen.getAllByRole('row')).toHaveLength(3);
+  expect(screen.getByText('Showing 11 - 20 of 100 items')).toBeTruthy();
 });

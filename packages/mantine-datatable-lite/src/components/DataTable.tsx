@@ -1,4 +1,4 @@
-import { Highlight, Stack, Table, Text } from '@mantine/core';
+import { Alert, Box, Button, Group, Highlight, LoadingOverlay, Stack, Table, Text } from '@mantine/core';
 import { useMemo, useRef } from 'react';
 import { DataTableContext } from '../context/DataTableContext';
 import { useTableState } from '../hooks/useTableState';
@@ -38,6 +38,10 @@ export function DataTable<T>({
   maxChips,
   debounceTime,
   emptyState,
+  loading,
+  loaderProps,
+  error,
+  onRetry,
 }: DataTableProps<T>) {
   const tableState = useTableState({
     columns,
@@ -166,19 +170,30 @@ export function DataTable<T>({
     </Table>
   );
 
+  const tableContent = minWidth != null || maxHeight != null ? (
+    <Table.ScrollContainer minWidth={minWidth ?? 0} maxHeight={maxHeight}>
+      {table}
+    </Table.ScrollContainer>
+  ) : table;
+
   return (
     <DataTableContext.Provider value={tableState}>
       {(globalSearch || columnSelector || showTableStatePills || showReset) &&
         <TableToolbar columns={columns} globalSearch={globalSearch} columnSelector={columnSelector}
           showTableStatePills={showTableStatePills} showReset={showReset}
           debounceTime={debounceTime} maxChips={maxChips} />}
-      {minWidth != null || maxHeight != null ? (
-        <Table.ScrollContainer minWidth={minWidth ?? 0} maxHeight={maxHeight}>
-          {table}
-        </Table.ScrollContainer>
-      ) : (
-        table
-      )}
+      {loading ? <Box pos='relative' aria-busy='true'>
+        <LoadingOverlay visible zIndex={1000}
+          overlayProps={{ radius: 'sm', blur: 2 }}
+          loaderProps={{ type: 'bars', size: 'sm', ...loaderProps }} />
+        {tableContent}
+      </Box> : tableContent}
+      {error && <Alert color='red' role='alert' mt='xs'>
+        <Group justify='space-between' gap='sm'>
+          <Text size='sm'>{error}</Text>
+          {onRetry && <Button size='xs' variant='light' color='red' onClick={onRetry}>Retry</Button>}
+        </Group>
+      </Alert>}
       {pagination && (
         <TablePagination
           pagination={pagination}

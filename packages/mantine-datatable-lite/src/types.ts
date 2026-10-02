@@ -3,6 +3,7 @@ import type {
   MantineSpacing,
   MantineColor,
   ActionIconProps,
+  LoaderProps,
 } from '@mantine/core';
 
 export type ColumnType = 'string' | 'number' | 'boolean' | 'date';
@@ -118,6 +119,18 @@ export interface Pagination {
   to?: number;
 }
 
+export type PaginationChange = Pick<Pagination,
+  'currentPage' | 'pageSize' | 'totalItems' | 'from' | 'to'>;
+
+/** Complete table request. With pagination, the caller supplies the resulting page in rows. */
+export type TableChange = {
+  pagination?: PaginationChange;
+  sorter?: Sorter;
+  filters: Filter[];
+  columnSearch: ColumnSearch[];
+  searchQuery: string;
+};
+
 export interface DataTableProps<T> {
   columns: DataTableColumn<T>[];
   rows: T[];
@@ -127,14 +140,13 @@ export interface DataTableProps<T> {
   selectable?: boolean;
   expandable?: boolean;
   expandedRowRender?: (row: T, index: number) => ReactNode;
+  onChange?: (params: TableChange) => void;
+  /** Shown over the last supplied rows while the caller loads another page. */
   loading?: boolean;
-  onChange?: (params: {
-    pagination?: Pagination;
-    sorter?: Sorter;
-    filters?: Filter[];
-    columnSearch?: ColumnSearch[];
-    searchQuery?: string;
-  }) => void;
+  loaderProps?: LoaderProps;
+  /** Fetch error supplied by the caller. Previous rows remain visible. */
+  error?: ReactNode;
+  onRetry?: () => void;
   toolbar?: boolean;
   toolbarActions?: React.ComponentType<ActionIconProps>[];
   borderColor?: MantineColor;
