@@ -79,6 +79,30 @@ test('page selection is tri-state and supplies row objects', () => {
   expect(within(screen.getByRole('table')).getAllByRole('row')).toHaveLength(3);
 });
 
+test('bulk action receives IDs selected across server pages', () => {
+  const first = [{ id: 1, name: 'Ava' }, { id: 2, name: 'Bob' }];
+  const second = [{ id: 3, name: 'Cara' }, { id: 4, name: 'Dan' }];
+  const onBulk = vi.fn();
+  function Example({ page }: { page: number }) {
+    const [ids, setIds] = useState<(string | number)[]>([]);
+    return <DataTable rows={page === 1 ? first : second}
+      columns={[{ dataIndex: 'name', header: 'Name' }]} toolbar
+      pagination={{ currentPage: page, pageSize: 2, totalItems: 4 }}
+      selection={{ selectedIds: ids, onChange: ({ ids: next }) => setIds(next),
+        renderBulkActions: ({ ids: selected, loadedRows }) =>
+          <button onClick={() => onBulk(selected, loadedRows)}>Bulk</button> }} />;
+  }
+  const view = render(<MantineProvider env='test'><Example page={1} /></MantineProvider>);
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Select all rows on this page' }));
+  view.rerender(<MantineProvider env='test'><Example page={2} /></MantineProvider>);
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Select all rows on this page' }));
+  expect(screen.getByText('4 rows selected')).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: 'Bulk' }));
+  expect(onBulk).toHaveBeenCalledWith([1, 2, 3, 4], second);
+  view.rerender(<MantineProvider env='test'><Example page={1} /></MantineProvider>);
+  expect((screen.getByRole('checkbox', { name: 'Select all rows on this page' }) as HTMLInputElement).checked).toBe(true);
+});
+
 test('selection toolbar is opt in and renders direct and tooltip actions only for multiple rows', () => {
   const direct = vi.fn();
   const wrapped = vi.fn();

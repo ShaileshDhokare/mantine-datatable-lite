@@ -279,7 +279,7 @@ export function AdvancedPage() {
           renderBulkActions: () => (
             <Tooltip label='Log all selected employees'>
               <ActionIcon
-                variant='default'
+                variant='transparent'
                 size='lg'
                 aria-label='Log all selected employees'
                 onClick={() =>
