@@ -59,6 +59,8 @@ export function DataTable<T>({
   columnSelector,
   showTableStatePills,
   showReset,
+  toolbar,
+  toolbarActions,
   maxChips,
   debounceTime,
   emptyState,
@@ -338,9 +340,10 @@ export function DataTable<T>({
                 onClick={(event) => {
                   suppliedProps.onClick?.(event);
                   if (event.defaultPrevented) return;
-                  if (expandConfig?.trigger === 'row') toggleExpanded(id);
-                  if (!window.getSelection?.()?.toString())
+                  if (!window.getSelection?.()?.toString()) {
+                    if (expandConfig?.trigger === 'row') toggleExpanded(id);
                     onRowClick?.(row, index, event);
+                  }
                 }}
               >
                 {selection && (
@@ -383,7 +386,7 @@ export function DataTable<T>({
                         event.stopPropagation();
                         toggleExpanded(id);
                       }}
-                      color='var(--mantine-color-gray-8)'
+                      color='var(--mantine-color-gray-6)'
                     >
                       <Icon
                         name={expanded ? 'collapse' : 'expand'}
@@ -447,31 +450,39 @@ export function DataTable<T>({
     ) : (
       table
     );
+  const showStandardToolbar = Boolean(
+    globalSearch || columnSelector || showTableStatePills || showReset,
+  );
+  const showBulkToolbar = Boolean(
+    toolbar && selection && selectedIds.length > 1,
+  );
 
   return (
     <DataTableContext.Provider value={tableState}>
-      {(globalSearch ||
-        columnSelector ||
-        showTableStatePills ||
-        showReset ||
-        selection) && (
+      {(showStandardToolbar || showBulkToolbar) && (
         <Box pos='relative'>
-          <TableToolbar
-            columns={columns}
-            globalSearch={globalSearch}
-            columnSelector={columnSelector}
-            showTableStatePills={showTableStatePills}
-            showReset={showReset}
-            debounceTime={debounceTime}
-            maxChips={maxChips}
-          />
+          {showStandardToolbar && (
+            <TableToolbar
+              columns={columns}
+              globalSearch={globalSearch}
+              columnSelector={columnSelector}
+              showTableStatePills={showTableStatePills}
+              showReset={showReset}
+              debounceTime={debounceTime}
+              maxChips={maxChips}
+            />
+          )}
           <Transition
-            mounted={Boolean(selection && selectedIds.length)}
+            mounted={showBulkToolbar}
             transition='fade'
             duration={100}
           >
             {(styles) => (
-              <Paper shadow='xs' className={classes.bulkBar} style={styles}>
+              <Paper
+                shadow='xs'
+                className={showStandardToolbar ? classes.bulkBar : undefined}
+                style={styles}
+              >
                 <Group
                   justify='space-between'
                   align='center'
@@ -485,6 +496,9 @@ export function DataTable<T>({
                     </Text>
                   )}
                   <Group gap='xs' wrap='nowrap'>
+                    {toolbarActions?.map((action, index) => (
+                      <Fragment key={index}>{action}</Fragment>
+                    ))}
                     {selection?.renderBulkActions?.({
                       ...snapshot(selectedIds),
                       clear: () => changeSelection([]),

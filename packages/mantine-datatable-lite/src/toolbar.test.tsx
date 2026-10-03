@@ -51,6 +51,24 @@ test('picker stages visibility and hidden pill restores a column', () => {
   expect(pill('Hidden: Name')).toBeTruthy();
 });
 
+test('picker and menu keep non-hideable columns visible and disable the last visible column', () => {
+  const columns = [
+    { dataIndex: 'name', header: 'Name', showMenu: true },
+    { dataIndex: 'actions', header: 'Actions', showMenu: true, hideable: false },
+  ];
+  render(<MantineProvider env='test'><DataTable columns={columns}
+    rows={[{ name: 'Ava', actions: 'Edit' }]} columnSelector /></MantineProvider>);
+  fireEvent.click(screen.getByRole('button', { name: 'Select columns' }));
+  expect((screen.getByRole('checkbox', { name: 'Actions' }) as HTMLInputElement).disabled).toBe(true);
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Name' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
+  expect(screen.getAllByRole('columnheader')).toHaveLength(1);
+  fireEvent.click(screen.getByRole('button', { name: 'Select columns' }));
+  expect((screen.getByRole('checkbox', { name: 'Actions' }) as HTMLInputElement).disabled).toBe(true);
+  fireEvent.click(screen.getByRole('button', { name: 'Actions menu' }));
+  expect(screen.getByRole('menuitem', { name: 'Hide' }).getAttribute('data-disabled')).not.toBeNull();
+});
+
 test('reset clears sorter, filters, searches and hidden columns in one state update', () => {
   vi.useFakeTimers();
   const onChange = vi.fn();

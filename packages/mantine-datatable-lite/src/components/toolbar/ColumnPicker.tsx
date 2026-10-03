@@ -28,7 +28,8 @@ export function ColumnPicker<T>({ columns }: { columns: DataTableColumn<T>[] }) 
           <Checkbox.Group value={selected} onChange={setSelected}>
             <Stack gap={2}>
               {columns.map((column) => <Checkbox key={column.dataIndex} value={column.dataIndex}
-                label={column.header} size='xs' px={6} py={3} />)}
+                label={column.header} size='xs' px={6} py={3}
+                disabled={column.hideable === false || (selected.length === 1 && selected.includes(column.dataIndex))} />)}
             </Stack>
           </Checkbox.Group>
         </ScrollArea.Autosize>

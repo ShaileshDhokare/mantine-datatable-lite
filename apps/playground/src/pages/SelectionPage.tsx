@@ -29,16 +29,16 @@ export function SelectionPage() {
     controls={<Stack gap='xs'><Text size='sm'>{selectedIds.length} selected of {rows.length} rows</Text>
       <Button size='xs' variant='light' onClick={() => { setRows(employees.slice(0, 12)); setSelectedIds([]); }}>Restore rows</Button>
     </Stack>}>
-    <DataTable columns={columns} rows={rows} withTableBorder withRowBorders
+    <DataTable columns={columns} rows={rows} withTableBorder withRowBorders toolbar
+      toolbarActions={[<Tooltip key='log' label='Log selected rows'>
+        <ActionIcon aria-label='Log selected rows' variant='default' size='lg'
+          onClick={() => console.log(selectedRows())}>
+          <Icon name='show' size={20} />
+        </ActionIcon>
+      </Tooltip>]}
       selection={{ selectedIds, onChange: onSelectionChange,
         isSelectable: active === 'eligible' ? (row) => row.isActive : undefined,
         renderBulkActions: ({ loadedRows }) => <Group gap='xs'>
-          <Tooltip label='Log selected rows'>
-            <ActionIcon aria-label='Log selected rows' variant='default' size='lg'
-              onClick={() => console.log(loadedRows)}>
-              <Icon name='show' size={20} />
-            </ActionIcon>
-          </Tooltip>
           <Tooltip label='Delete selected rows'>
             <ActionIcon aria-label='Delete selected rows' variant='default' size='lg'
               onClick={() => { console.log(loadedRows); setPendingDelete(selectedRows()); }}>

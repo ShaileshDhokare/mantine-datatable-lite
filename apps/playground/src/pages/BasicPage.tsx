@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Badge, Button, NumberInput, SegmentedControl, Select, Stack, Switch, Text, useComputedColorScheme, useMantineColorScheme } from '@mantine/core';
+import { Badge, NumberInput, SegmentedControl, Select, Stack, Switch, Text } from '@mantine/core';
 import { DataTable, type DataTableColumn } from '@scope/mantine-datatable-lite';
 import { PlaygroundLayout } from '../components/PlaygroundLayout';
 import { employees, type Employee } from '../data';
@@ -48,8 +48,6 @@ export function BasicPage() {
   const [borderColor, setBorderColor] = useState('Default');
   const [nameWidth, setNameWidth] = useState(190);
   const [salaryAlign, setSalaryAlign] = useState<'left' | 'center' | 'right'>('right');
-  const colorScheme = useComputedColorScheme('light');
-  const { setColorScheme } = useMantineColorScheme();
 
   const columns: DataTableColumn<Employee>[] = active === 'columns' ? [
     { dataIndex: 'name', header: 'Name', width: nameWidth },
@@ -89,9 +87,6 @@ export function BasicPage() {
         <Switch label='Sticky header' checked={stickyHeader} onChange={(event) => setStickyHeader(event.currentTarget.checked)} />
       </Stack>;
       case 'colors': return <Stack gap='md'>
-        <Button variant='light' onClick={() => setColorScheme(colorScheme === 'light' ? 'dark' : 'light')}>
-          Switch to {colorScheme === 'light' ? 'dark' : 'light'} theme
-        </Button>
         <Select label='Stripe color' data={colorOptions} value={stripedColor}
           onChange={(value) => setStripedColor(value ?? colorOptions[0].value)} allowDeselect={false} />
         <Select label='Hover color' data={colorOptions} value={hoverColor}

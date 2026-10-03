@@ -2,7 +2,6 @@ import type { MouseEvent, ReactNode, ComponentProps } from 'react';
 import type {
   MantineSpacing,
   MantineColor,
-  ActionIconProps,
   LoaderProps,
 } from '@mantine/core';
 
@@ -189,8 +188,10 @@ export interface DataTableProps<T> {
   /** Fetch error supplied by the caller. Previous rows remain visible. */
   error?: ReactNode;
   onRetry?: () => void;
+  /** Show selection actions when more than one row is selected. */
   toolbar?: boolean;
-  toolbarActions?: React.ComponentType<ActionIconProps>[];
+  /** ActionIcon elements, optionally wrapped in Tooltip. Requires toolbar. */
+  toolbarActions?: ReactNode[];
   borderColor?: MantineColor;
   withTableBorder?: boolean;
   withColumnBorders?: boolean;

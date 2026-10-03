@@ -101,20 +101,22 @@ export function useTableState<T>({ columns, onChange, pagination, debounceTime =
   }
 
   function setColumnHidden(field: string, hidden: boolean) {
-    setHiddenColumnsState((current) => hidden
-      ? current.includes(field) ? current : [...current, field]
-      : current.filter((item) => item !== field));
-    if (hidden) setPinned((current) => ({
-      left: current.left.filter((item) => item !== field),
-      right: current.right.filter((item) => item !== field),
-    }));
+    const column = columns.find((item) => item.dataIndex === field);
+    if (!column || (hidden && column.hideable === false)) return;
+    const next = hidden
+      ? [...new Set([...hiddenColumns, field])]
+      : hiddenColumns.filter((item) => item !== field);
+    setHiddenColumns(next);
   }
 
   function setHiddenColumns(fields: string[]) {
-    setHiddenColumnsState(fields);
+    const allowed = [...new Set(fields)].filter((field) => columns.some((column) =>
+      column.dataIndex === field && column.hideable !== false));
+    const next = allowed.length < columns.length ? allowed : allowed.slice(0, -1);
+    setHiddenColumnsState(next);
     setPinned((current) => ({
-      left: current.left.filter((field) => !fields.includes(field)),
-      right: current.right.filter((field) => !fields.includes(field)),
+      left: current.left.filter((field) => !next.includes(field)),
+      right: current.right.filter((field) => !next.includes(field)),
     }));
   }
 
