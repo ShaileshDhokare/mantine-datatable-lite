@@ -7,6 +7,7 @@ import {
 import type { SVGProps } from 'react';
 import { Icon } from '../../icons/Icon';
 import type { Pagination } from '../../types';
+import { resolvePagination } from '../../utils/pagination';
 
 const defaultPageSizeOptions = [10, 20, 50, 100];
 
@@ -38,25 +39,8 @@ export function TablePagination({
   pagination: Pagination;
   onChange: (page: number, pageSize: number) => void;
 }) {
-  const { totalItems, from, to } = pagination;
-  const pageSize =
-    pagination.pageSize > 0
-      ? pagination.pageSize
-      : pagination.defaultPageSize || 10;
-  const pageCount = Math.max(1, Math.ceil(totalItems / pageSize));
-  const currentPage = Math.min(Math.max(1, pagination.currentPage), pageCount);
-  const firstItem =
-    totalItems === 0
-      ? 0
-      : currentPage === pagination.currentPage && from != null
-        ? from
-        : (currentPage - 1) * pageSize + 1;
-  const lastItem =
-    totalItems === 0
-      ? 0
-      : currentPage === pagination.currentPage && to != null
-        ? to
-        : Math.min(currentPage * pageSize, totalItems);
+  const { totalItems } = pagination;
+  const { pageSize, pageCount, currentPage, from: firstItem, to: lastItem } = resolvePagination(pagination);
   const options =
     pagination.pageSizeOptions === false
       ? null

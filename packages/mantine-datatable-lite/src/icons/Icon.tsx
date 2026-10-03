@@ -66,8 +66,6 @@ const additionalIconPaths: Partial<Record<IconName, React.JSX.Element[]>> = {
   ],
 };
 
-export const defaultIcons = iconPaths;
-
 const Icon = ({
   name,
   size = 24,

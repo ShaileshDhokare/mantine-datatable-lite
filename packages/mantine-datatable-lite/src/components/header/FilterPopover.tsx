@@ -1,3 +1,4 @@
+import { columnLabel } from '../../utils/columnLabel';
 import { ActionIcon, Popover } from '@mantine/core';
 import { useDataTableContext } from '../../context/DataTableContext';
 import { Icon } from '../../icons/Icon';
@@ -29,7 +30,7 @@ export function FilterPopover<T>({ column, rows, serverMode }: {
           variant='transparent'
           size='sm'
           color={active ? 'var(--mantine-primary-color-filled)' : 'var(--mantine-color-gray-6)'}
-          aria-label={`Filter ${String(column.header)}`}
+          aria-label={`Filter ${columnLabel(column)}`}
           onClick={() => { setOpenSearch(null); setOpenFilter(opened ? null : column.dataIndex); }}
         >
           <Icon name='filter' size={16} fill={active ? 'currentColor' : undefined} strokeWidth={2} />

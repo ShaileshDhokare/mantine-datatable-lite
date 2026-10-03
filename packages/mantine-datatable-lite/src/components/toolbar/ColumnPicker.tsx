@@ -4,14 +4,14 @@ import { useDataTableContext } from '../../context/DataTableContext';
 import { Icon } from '../../icons/Icon';
 import type { DataTableColumn } from '../../types';
 
-export function ColumnPicker<T>({ columns }: { columns: DataTableColumn<T>[] }) {
+export function ColumnPicker<T>({ columns, inactive }: { columns: DataTableColumn<T>[]; inactive?: boolean }) {
   const { hiddenColumns, setHiddenColumns } = useDataTableContext();
   const [opened, setOpened] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
 
-  return <Popover position='bottom-end' withinPortal opened={opened} onChange={setOpened}>
+  return <Popover position='bottom-end' withinPortal opened={opened} onChange={setOpened} disabled={inactive}>
     <Popover.Target>
-      <Tooltip label='Select columns' withArrow>
+      <Tooltip label='Select columns' withArrow disabled={inactive}>
         <ActionIcon variant='subtle' size='lg' aria-label='Select columns'
           color={hiddenColumns.length ? 'var(--mantine-primary-color-filled)' : 'var(--mantine-color-gray-6)'}
           onClick={() => {

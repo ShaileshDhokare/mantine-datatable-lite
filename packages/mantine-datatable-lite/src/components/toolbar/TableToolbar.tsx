@@ -15,6 +15,7 @@ export function TableToolbar<T>({
   showTableStatePills,
   debounceTime,
   maxChips,
+  inactive,
 }: {
   columns: DataTableColumn<T>[];
   globalSearch?: boolean;
@@ -23,6 +24,7 @@ export function TableToolbar<T>({
   showTableStatePills?: boolean;
   debounceTime?: number;
   maxChips?: number;
+  inactive?: boolean;
 }) {
   const state = useDataTableContext();
   const pills = showTableStatePills ? describeState(columns, state) : [];
@@ -31,12 +33,12 @@ export function TableToolbar<T>({
       <Group justify='space-between' align='center' gap='lg' p='4' wrap='wrap'>
         <Group gap='xs' flex={1}>
           {showTableStatePills && (
-            <AppliedChips pills={pills} maxChips={maxChips} />
+            <AppliedChips pills={pills} maxChips={maxChips} inactive={inactive} />
           )}
         </Group>
         <Group gap='xs' wrap='nowrap'>
           {globalSearch && <GlobalSearch debounceTime={debounceTime} />}
-          {columnSelector && <ColumnPicker columns={columns} />}
+          {columnSelector && <ColumnPicker columns={columns} inactive={inactive} />}
           {showReset && (
             <Tooltip label='Reset table state' withArrow>
               <ActionIcon

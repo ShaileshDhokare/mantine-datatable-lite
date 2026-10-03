@@ -1,3 +1,4 @@
+import { columnLabel } from '../../utils/columnLabel';
 import { Box, Button, Divider, Group, TextInput } from '@mantine/core';
 import { useState } from 'react';
 import { useDataTableContext } from '../../context/DataTableContext';
@@ -15,8 +16,8 @@ export function SearchControls<T>({ column, onDone }: { column: DataTableColumn<
 
   return <Box onKeyDown={(event) => { if (event.key === 'Enter') commit(draft); }}>
     <Box p={6}>
-      <TextInput size='xs' autoFocus aria-label={`Search ${String(column.header)}`}
-        placeholder={`Search ${String(column.header)}`} leftSection={<Icon name='search' size={14} />}
+      <TextInput size='xs' autoFocus aria-label={`Search ${columnLabel(column)}`}
+        placeholder={`Search ${columnLabel(column)}`} leftSection={<Icon name='search' size={14} />}
         value={draft} onChange={(event) => setDraft(event.currentTarget.value)} />
     </Box>
     <Divider />

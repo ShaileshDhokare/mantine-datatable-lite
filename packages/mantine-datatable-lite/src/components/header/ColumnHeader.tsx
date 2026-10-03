@@ -1,3 +1,4 @@
+import { columnLabel } from '../../utils/columnLabel';
 import { ActionIcon, Box, Group, Table } from '@mantine/core';
 import { useDataTableContext } from '../../context/DataTableContext';
 import { Icon } from '../../icons/Icon';
@@ -63,7 +64,7 @@ export function ColumnHeader<T>({
                 ? 'var(--mantine-primary-color-filled)'
                 : 'var(--mantine-color-gray-6)'
             }
-            aria-label={`Sort ${String(column.header)}: ${order ?? 'none'}`}
+            aria-label={`Sort ${columnLabel(column)}: ${order ?? 'none'}`}
             onClick={() => setSort(column.dataIndex)}
           >
             <Icon

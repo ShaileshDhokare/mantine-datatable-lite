@@ -1,3 +1,4 @@
+import { columnLabel } from '../../utils/columnLabel';
 import { ActionIcon, Popover } from '@mantine/core';
 import { useDataTableContext } from '../../context/DataTableContext';
 import { Icon } from '../../icons/Icon';
@@ -14,7 +15,7 @@ export function SearchPopover<T>({ column }: { column: DataTableColumn<T> }) {
     <Popover.Target>
       <ActionIcon variant='transparent' size='sm'
         color={active ? 'var(--mantine-primary-color-filled)' : 'var(--mantine-color-gray-6)'}
-        aria-label={`Search ${String(column.header)}`}
+        aria-label={`Search ${columnLabel(column)}`}
         onClick={() => { setOpenFilter(null); setOpenSearch(opened ? null : column.dataIndex); }}>
         <Icon name='search' size={16} />
       </ActionIcon>

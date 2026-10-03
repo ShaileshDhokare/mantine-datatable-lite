@@ -21,6 +21,7 @@ import type {
   NumericOperator,
 } from '../../types';
 import { uniqueValues } from '../../utils/filter/uniqueValues';
+import { columnLabel } from '../../utils/columnLabel';
 
 const operators = [
   { value: 'eq', label: 'Equal to' },
@@ -75,6 +76,7 @@ export function FilterControls<T>({
   onDone: () => void;
 }) {
   const { filters, setFilter } = useDataTableContext();
+  const name = columnLabel(column);
   const applied = filters.find(
     (filter) => filter.field === column.dataIndex,
   )?.value;
@@ -94,7 +96,7 @@ export function FilterControls<T>({
       choice && (!serverMode || column.filterOptions)
         ? uniqueValues(rows, column)
         : [],
-    [choice, rows, column.dataIndex, column.filterOptions, serverMode],
+    [choice, rows, column, serverMode],
   );
 
   useEffect(() => {
@@ -132,20 +134,19 @@ export function FilterControls<T>({
       : draft.second === null || draft.second === ''
         ? null
         : Number(draft.second);
-    const valid = (value: unknown) =>
-      value !== null &&
-      value !== '' &&
-      value !== undefined &&
-      (typeof value !== 'number' || Number.isFinite(value));
-    if (!valid(first) || (draft.operator === 'between' && !valid(second))) {
+    if (first === null || (typeof first === 'number' && !Number.isFinite(first))) {
       onDone();
       return;
     }
-    const value = draft.operator === 'between' ? [first, second] : first;
-    commit({
-      operator: draft.operator,
-      value,
-    } as FilterValue);
+    if (draft.operator === 'between') {
+      if (first instanceof Date && second instanceof Date) commit({ operator: 'between', value: [first, second] });
+      else if (typeof first === 'number' && typeof second === 'number' && Number.isFinite(second))
+        commit({ operator: 'between', value: [first, second] });
+      else onDone();
+    } else {
+      if (first instanceof Date) commit({ operator: draft.operator, value: first });
+      else commit({ operator: draft.operator, value: first });
+    }
   }
 
   const visibleOptions = options.filter((option) =>
@@ -159,6 +160,7 @@ export function FilterControls<T>({
     date ? (
       <DatePickerInput
         size='xs'
+        aria-label={`${name} filter ${label?.toLowerCase() ?? 'value'}`}
         placeholder={label}
         value={typeof value === 'string' ? value : null}
         onChange={(next) => onChange(next)}
@@ -167,6 +169,7 @@ export function FilterControls<T>({
     ) : (
       <NumberInput
         size='xs'
+        aria-label={`${name} filter ${label?.toLowerCase() ?? 'value'}`}
         placeholder={label}
         value={value ?? ''}
         onChange={(next) => onChange(next === '' ? null : next)}
@@ -234,6 +237,7 @@ export function FilterControls<T>({
           <Stack gap='xs'>
             <Select
               size='xs'
+              aria-label={`${name} filter operator`}
               data={operators}
               value={draft.operator}
               checkIconPosition='right'

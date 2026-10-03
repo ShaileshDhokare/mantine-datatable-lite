@@ -42,5 +42,5 @@ test.each([
     </MantineProvider>,
   );
 
-  expect(screen.getByRole('table').parentElement === container).toBe(!wrapped);
+  expect(Boolean(container.querySelector('.mantine-TableScrollContainer-scrollContainer'))).toBe(wrapped);
 });

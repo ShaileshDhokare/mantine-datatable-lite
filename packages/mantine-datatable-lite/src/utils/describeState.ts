@@ -1,4 +1,5 @@
-import type { DataTableColumn, FilterValue } from '../types';
+import type { DataTableColumn, FilterValue, TableChange } from '../types';
+import { columnLabel } from './columnLabel';
 
 const operatorLabels = {
   eq: '=',
@@ -45,11 +46,7 @@ export type StatePill = {
 
 export function describeState<T>(
   columns: DataTableColumn<T>[],
-  state: {
-    sorter?: { sortField: string; sortOrder: 'asc' | 'desc' };
-    filters: { field: string; value: FilterValue }[];
-    columnSearch: { searchField: string; searchValue: string }[];
-    searchQuery: string;
+  state: Pick<TableChange, 'sorter' | 'filters' | 'columnSearch' | 'searchQuery'> & {
     hiddenColumns: string[];
     setSort: (field: string, order: null) => void;
     setFilter: (field: string, value?: FilterValue) => void;
@@ -63,7 +60,7 @@ export function describeState<T>(
   );
   const name = (field: string) => {
     const column = columnByField.get(field);
-    return typeof column?.header === 'string' ? column.header : field;
+    return column ? columnLabel(column) : field;
   };
   const pills: StatePill[] = [];
   const addPill = (

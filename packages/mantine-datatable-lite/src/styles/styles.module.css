@@ -43,8 +43,8 @@
   position: sticky;
   inset-inline-start: var(--dt-pin-offset);
   z-index: 2;
-  width: 48px;
-  min-width: 48px;
+  width: var(--dt-control-width);
+  min-width: var(--dt-control-width);
   background-color: var(--mantine-color-body);
 }
 .root thead .controlCell {

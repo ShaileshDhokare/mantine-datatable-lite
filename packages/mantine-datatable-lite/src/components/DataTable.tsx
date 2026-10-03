@@ -27,8 +27,10 @@ import { DataTableContext } from '../context/DataTableContext';
 import { useTableState } from '../hooks/useTableState';
 import { Icon } from '../icons/Icon';
 import classes from '../styles/styles.module.css';
-import type { DataTableProps, RowId, SelectionSnapshot } from '../types';
-import { useColumnLayout } from '../hooks/useColumnLayout';
+import type { DataTableProps, RowId } from '../types';
+import { CONTROL_COLUMN_WIDTH, useColumnLayout } from '../hooks/useColumnLayout';
+import { rowPanelId, useRowIdentity } from '../hooks/useRowIdentity';
+import { useSelection } from '../hooks/useSelection';
 import { filterRows } from '../utils/filter/predicates';
 import { sortRows } from '../utils/sort/sortRows';
 import { searchRows } from '../utils/search/searchRows';
@@ -83,23 +85,23 @@ export function DataTable<T>({
     persistKey,
     debounceTime,
   });
-  const rowKeys = useRef(new WeakMap<object, number>());
-  const nextRowKey = useRef(0);
-  const {
-    tableRef,
-    ordered: visibleColumns,
-    offsets,
-    left,
-    right,
-  } = useColumnLayout(columns, tableState.hiddenColumns, tableState.pinned);
   const expandConfig =
     typeof expandable === 'object'
       ? expandable
       : expandable && expandedRowRender
         ? { render: expandedRowRender }
         : undefined;
+  const {
+    tableRef,
+    ordered: visibleColumns,
+    offsets,
+    left,
+    right,
+    expansionOffset,
+  } = useColumnLayout(columns, tableState.hiddenColumns, tableState.pinned, Boolean(selection), Boolean(expandConfig));
   const [localExpanded, setLocalExpanded] = useState<RowId[]>([]);
   const expandedIds = expandConfig?.expandedIds ?? localExpanded;
+  const expandedSet = new Set(expandedIds);
   const panelPrefix = useId().replace(/:/g, '');
   const filteredRows = useMemo(
     () => (pagination ? rows : filterRows(rows, columns, tableState.filters)),
@@ -131,28 +133,10 @@ export function DataTable<T>({
     [searchedRows, columns, tableState.sorter, pagination],
   );
 
-  function getRowKey(row: T, index: number) {
-    if (typeof row !== 'object' || row === null) return index;
-    let key = rowKeys.current.get(row);
-    if (key === undefined) {
-      key = nextRowKey.current++;
-      rowKeys.current.set(row, key);
-    }
-    return key;
-  }
-
-  function getRowId(row: T, index: number): RowId {
-    const id =
-      typeof idAccessor === 'function'
-        ? idAccessor(row)
-        : (row as Record<string, unknown>)[String(idAccessor ?? 'id')];
-    return typeof id === 'number' || typeof id === 'string'
-      ? id
-      : getRowKey(row, index);
-  }
+  const rowEntries = useRowIdentity(visibleRows, idAccessor, Boolean(selection || expandConfig));
 
   function toggleExpanded(id: RowId) {
-    const next = expandedIds.includes(id)
+    const next = expandedSet.has(id)
       ? expandedIds.filter((item) => item !== id)
       : expandConfig?.allowMultiple
         ? [...expandedIds, id]
@@ -161,52 +145,42 @@ export function DataTable<T>({
     expandConfig?.onChange?.(next);
   }
 
-  const selectedIds = selection?.selectedIds ?? [];
-  const selectedSet = new Set(selectedIds);
-  const selectableRows = selection
-    ? visibleRows.filter((row) => selection.isSelectable?.(row) ?? true)
-    : [];
-  const selectedOnPage = selectableRows.filter((row, index) =>
-    selectedSet.has(getRowId(row, index)),
-  );
-  const allPageSelected =
-    selectableRows.length > 0 &&
-    selectedOnPage.length === selectableRows.length;
   const query = {
     filters: tableState.filters,
     columnSearch: tableState.columnSearch,
     search: tableState.searchQuery,
   };
-  function snapshot(ids: RowId[]): SelectionSnapshot<T> {
-    const set = new Set(ids);
-    return {
-      kind: 'include',
-      ids,
-      loadedRows: visibleRows.filter((row, index) =>
-        set.has(getRowId(row, index)),
-      ),
-      count: ids.length,
-      query,
-    };
-  }
-  function changeSelection(ids: RowId[]) {
-    selection?.onChange(snapshot(ids));
-  }
-  const querySignature = JSON.stringify(query);
-  const previousQuery = useRef(querySignature);
-  useEffect(() => {
-    if (previousQuery.current !== querySignature) {
-      previousQuery.current = querySignature;
-      if (selectedIds.length) changeSelection([]);
-    }
-  }, [querySignature]);
+  const { selectedIds, selectedSet, pageIds, selectedOnPage, allPageSelected, snapshot, changeSelection, togglePage } =
+    useSelection(rowEntries, selection, query);
+  const columnSearchByField = new Map(tableState.columnSearch.map((item) => [item.searchField, item.searchValue]));
+  const cellColumns = visibleColumns.map((column) => ({ column, pin: offsets.get(column.dataIndex),
+    terms: column.render ? [] : [column.searchable !== false ? tableState.searchQuery : '',
+      columnSearchByField.get(column.dataIndex)].filter((term): term is string => Boolean(term)) }));
 
   const extraColumns =
     Number(Boolean(selection)) + Number(Boolean(expandConfig));
   const colSpan = Math.max(visibleColumns.length + extraColumns, 1);
+  const standardToolbarRef = useRef<HTMLDivElement>(null);
+  const bulkToolbarRef = useRef<HTMLDivElement>(null);
+  const restoreToolbarFocus = useRef(false);
+  const showStandardToolbar = Boolean(globalSearch || columnSelector || showTableStatePills || showReset);
+  const showBulkToolbar = Boolean(toolbar && selection && selectedIds.length > 1);
+  useEffect(() => {
+    if (showBulkToolbar && standardToolbarRef.current?.contains(document.activeElement)) {
+      bulkToolbarRef.current?.querySelector<HTMLElement>('button')?.focus();
+    }
+    if (!showBulkToolbar && restoreToolbarFocus.current) {
+      restoreToolbarFocus.current = false;
+      standardToolbarRef.current?.querySelector<HTMLElement>('input, button')?.focus();
+    }
+  }, [showBulkToolbar]);
+  function clearSelection() {
+    restoreToolbarFocus.current = true;
+    changeSelection([]);
+  }
 
   function pinProps(field: string) {
-    const pin = offsets[field];
+    const pin = offsets.get(field);
     return pin
       ? {
           'data-pinned': pin.side,
@@ -218,7 +192,7 @@ export function DataTable<T>({
                 : undefined,
           className: classes.cell,
           style: {
-            '--dt-pin-offset': `${pin.side === 'left' ? pin.offset + extraColumns * 48 : pin.offset}px`,
+            '--dt-pin-offset': `${pin.offset}px`,
           } as CSSProperties,
         }
       : {};
@@ -228,6 +202,7 @@ export function DataTable<T>({
     <Table
       ref={tableRef}
       className={classes.root}
+      style={{ '--dt-control-width': `${CONTROL_COLUMN_WIDTH}px` } as CSSProperties}
       borderColor={borderColor}
       withTableBorder={withTableBorder}
       withColumnBorders={withColumnBorders}
@@ -240,12 +215,14 @@ export function DataTable<T>({
       highlightOnHoverColor={highlightOnHoverColor}
       stickyHeader={stickyHeader}
       layout={layout}
+      aria-busy={Boolean(loading)}
     >
       <Table.Thead>
         <Table.Tr>
           {selection && (
             <Table.Th
-              w={48}
+              data-control='selection'
+              w={CONTROL_COLUMN_WIDTH}
               className={classes.controlCell}
               style={{ '--dt-pin-offset': '0px' } as CSSProperties}
             >
@@ -253,34 +230,26 @@ export function DataTable<T>({
                 aria-label='Select all rows on this page'
                 size='sm'
                 checked={allPageSelected}
-                indeterminate={!allPageSelected && selectedOnPage.length > 0}
-                disabled={!selectableRows.length}
-                onChange={() => {
-                  const pageIds = selectableRows.map((row, index) =>
-                    getRowId(row, index),
-                  );
-                  changeSelection(
-                    allPageSelected
-                      ? selectedIds.filter((id) => !pageIds.includes(id))
-                      : [...new Set([...selectedIds, ...pageIds])],
-                  );
-                }}
+                indeterminate={!allPageSelected && selectedOnPage > 0}
+                disabled={!pageIds.size}
+                onChange={togglePage}
               />
             </Table.Th>
           )}
           {expandConfig && (
             <Table.Th
-              w={48}
+              data-control='expansion'
+              w={CONTROL_COLUMN_WIDTH}
               className={classes.controlCell}
               style={
                 {
-                  '--dt-pin-offset': selection ? '48px' : '0px',
+                  '--dt-pin-offset': `${expansionOffset}px`,
                 } as CSSProperties
               }
               aria-label='Expand rows'
             />
           )}
-          {visibleColumns.map((column) => (
+          {cellColumns.map(({ column, pin }) => (
             <ColumnHeader
               key={column.dataIndex}
               column={column}
@@ -290,18 +259,7 @@ export function DataTable<T>({
                 visibleColumns.length > 1 &&
                 Boolean(columnSelector || showTableStatePills || showReset)
               }
-              pin={
-                offsets[column.dataIndex]
-                  ? {
-                      ...offsets[column.dataIndex],
-                      offset:
-                        offsets[column.dataIndex].offset +
-                        (offsets[column.dataIndex].side === 'left'
-                          ? extraColumns * 48
-                          : 0),
-                    }
-                  : undefined
-              }
+              pin={pin}
               stickyHeader={stickyHeader}
             />
           ))}
@@ -328,22 +286,21 @@ export function DataTable<T>({
             </Table.Td>
           </Table.Tr>
         )}
-        {visibleRows.map((row, index) => {
-          const id = getRowId(row, index);
-          const expanded = expandedIds.includes(id);
-          const panelId = `${panelPrefix}-panel-${String(id).replace(/[^a-zA-Z0-9_-]/g, '-')}`;
-          const selectable = selection?.isSelectable?.(row) ?? true;
+        {rowEntries.map(({ row, id, key }, index) => {
+          const expanded = id !== undefined && expandedSet.has(id);
+          const panelId = id === undefined ? undefined : rowPanelId(panelPrefix, id);
+          const selectable = id !== undefined && pageIds.has(id);
           const suppliedProps = rowProps?.(row, index) ?? {};
           return (
-            <Fragment key={id}>
+            <Fragment key={key}>
               <Table.Tr
                 {...suppliedProps}
-                data-selected={selectedSet.has(id) || undefined}
+                data-selected={(id !== undefined && selectedSet.has(id)) || undefined}
                 onClick={(event) => {
                   suppliedProps.onClick?.(event);
                   if (event.defaultPrevented) return;
                   if (!window.getSelection?.()?.toString()) {
-                    if (expandConfig?.trigger === 'row') toggleExpanded(id);
+                    if (expandConfig?.trigger === 'row' && id !== undefined) toggleExpanded(id);
                     onRowClick?.(row, index, event);
                   }
                 }}
@@ -355,17 +312,18 @@ export function DataTable<T>({
                   >
                     <Checkbox
                       size='sm'
-                      aria-label={`Select row ${String(id)}`}
-                      checked={selectedSet.has(id)}
+                      aria-label={id === undefined ? `Select row ${index + 1} (invalid ID)` : `Select row ${String(id)}`}
+                      checked={id !== undefined && selectedSet.has(id)}
                       disabled={!selectable}
                       onClick={(event) => event.stopPropagation()}
-                      onChange={() =>
+                      onChange={() => {
+                        if (id === undefined) return;
                         changeSelection(
                           selectedSet.has(id)
                             ? selectedIds.filter((item) => item !== id)
                             : [...selectedIds, id],
-                        )
-                      }
+                        );
+                      }}
                     />
                   </Table.Td>
                 )}
@@ -374,19 +332,20 @@ export function DataTable<T>({
                     className={classes.controlCell}
                     style={
                       {
-                        '--dt-pin-offset': selection ? '48px' : '0px',
+                        '--dt-pin-offset': `${expansionOffset}px`,
                       } as CSSProperties
                     }
                   >
                     <ActionIcon
                       variant='transparent'
                       size='sm'
-                      aria-label={`${expanded ? 'Collapse' : 'Expand'} row ${String(id)}`}
+                      aria-label={`${expanded ? 'Collapse' : 'Expand'} row ${id === undefined ? `${index + 1} (invalid ID)` : String(id)}`}
+                      disabled={id === undefined}
                       aria-expanded={expanded}
                       aria-controls={panelId}
                       onClick={(event) => {
                         event.stopPropagation();
-                        toggleExpanded(id);
+                        if (id !== undefined) toggleExpanded(id);
                       }}
                       color='var(--mantine-color-gray-6)'
                     >
@@ -398,16 +357,10 @@ export function DataTable<T>({
                     </ActionIcon>
                   </Table.Td>
                 )}
-                {visibleColumns.map((column) => {
+                {cellColumns.map(({ column, terms }) => {
                   const value = (row as Record<string, unknown>)[
                     column.dataIndex
                   ];
-                  const terms = [
-                    column.searchable !== false ? tableState.searchQuery : '',
-                    tableState.columnSearch.find(
-                      (item) => item.searchField === column.dataIndex,
-                    )?.searchValue,
-                  ].filter((term): term is string => Boolean(term));
                   return (
                     <Table.Td
                       key={column.dataIndex}
@@ -452,27 +405,24 @@ export function DataTable<T>({
     ) : (
       table
     );
-  const showStandardToolbar = Boolean(
-    globalSearch || columnSelector || showTableStatePills || showReset,
-  );
-  const showBulkToolbar = Boolean(
-    toolbar && selection && selectedIds.length > 1,
-  );
 
   return (
     <DataTableContext.Provider value={tableState}>
       {(showStandardToolbar || showBulkToolbar) && (
         <Box pos='relative'>
           {showStandardToolbar && (
-            <TableToolbar
-              columns={columns}
-              globalSearch={globalSearch}
-              columnSelector={columnSelector}
-              showTableStatePills={showTableStatePills}
-              showReset={showReset}
-              debounceTime={debounceTime}
-              maxChips={maxChips}
-            />
+            <Box ref={standardToolbarRef} inert={showBulkToolbar} aria-hidden={showBulkToolbar || undefined}>
+              <TableToolbar
+                columns={columns}
+                globalSearch={globalSearch}
+                columnSelector={columnSelector}
+                showTableStatePills={showTableStatePills}
+                showReset={showReset}
+                debounceTime={debounceTime}
+                maxChips={maxChips}
+                inactive={showBulkToolbar}
+              />
+            </Box>
           )}
           <Transition
             mounted={showBulkToolbar}
@@ -481,6 +431,7 @@ export function DataTable<T>({
           >
             {(styles) => (
               <Paper
+                ref={bulkToolbarRef}
                 shadow='xs'
                 className={showStandardToolbar ? classes.bulkBar : undefined}
                 style={styles}
@@ -503,14 +454,14 @@ export function DataTable<T>({
                     ))}
                     {selection?.renderBulkActions?.({
                       ...snapshot(selectedIds),
-                      clear: () => changeSelection([]),
+                      clear: clearSelection,
                     })}
                     <Tooltip label='Clear selection'>
                       <ActionIcon
                         variant='transparent'
                         size='lg'
                         aria-label='Clear selection'
-                        onClick={() => changeSelection([])}
+                        onClick={clearSelection}
                       >
                         <Icon name='clear' size={20} />
                       </ActionIcon>
@@ -522,19 +473,15 @@ export function DataTable<T>({
           </Transition>
         </Box>
       )}
-      {loading ? (
-        <Box pos='relative' aria-busy='true'>
-          <LoadingOverlay
-            visible
-            zIndex={1000}
-            overlayProps={{ radius: 'sm', blur: 2 }}
-            loaderProps={{ type: 'bars', size: 'sm', ...loaderProps }}
-          />
-          {tableContent}
-        </Box>
-      ) : (
-        tableContent
-      )}
+      <Box pos='relative' aria-busy={Boolean(loading)}>
+        <LoadingOverlay
+          visible={Boolean(loading)}
+          zIndex={1000}
+          overlayProps={{ radius: 'sm', blur: 2 }}
+          loaderProps={{ type: 'bars', size: 'sm', ...loaderProps }}
+        />
+        {tableContent}
+      </Box>
       {error && (
         <Alert color='red' role='alert' mt='xs'>
           <Group justify='space-between' gap='sm'>

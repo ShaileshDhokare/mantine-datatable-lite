@@ -1,18 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
-import type { ColumnSearch, DataTableProps, Filter, FilterValue, Pagination, PaginationChange, SortOrder, Sorter } from '../types';
+import { useCallback, useEffect, useEffectEvent, useRef, useState } from 'react';
+import type { ColumnSearch, DataTableProps, Filter, FilterValue, Pagination, SortOrder, Sorter } from '../types';
 import { defaultColumnLayout, pruneColumnLayout, readColumnLayout, writeColumnLayout } from '../utils/columnLayoutStorage';
 import { activeFilter } from '../utils/filter/predicates';
 import { nextSortOrder } from '../utils/sort/nextSortOrder';
-
-function paginationChange(pagination: Pagination): PaginationChange {
-  const { currentPage, totalItems } = pagination;
-  const pageSize = pagination.pageSize > 0 ? pagination.pageSize : pagination.defaultPageSize || 10;
-  return {
-    currentPage, pageSize, totalItems,
-    from: totalItems === 0 ? 0 : (currentPage - 1) * pageSize + 1,
-    to: totalItems === 0 ? 0 : Math.min(currentPage * pageSize, totalItems),
-  };
-}
+import { paginationChange, resolvePagination } from '../utils/pagination';
 
 export function useTableState<T>({ columns, onChange, pagination, persistKey, debounceTime = 300 }: Pick<DataTableProps<T>, 'columns' | 'onChange' | 'pagination' | 'persistKey' | 'debounceTime'>) {
   const [sorter, setSorter] = useState<Sorter | undefined>(() => {
@@ -52,22 +43,28 @@ export function useTableState<T>({ columns, onChange, pagination, persistKey, de
 
   useEffect(() => () => clearTimeout(timerRef.current), []);
 
-  useEffect(() => {
-    setLayout(persistKey
-      ? readColumnLayout(persistKey, columns) ?? defaultColumnLayout(columns)
+  const loadLayout = useEffectEvent((key: string | undefined) => {
+    setLayout(key
+      ? readColumnLayout(key, columns) ?? defaultColumnLayout(columns)
       : defaultColumnLayout(columns));
-    setLoadedKey(persistKey);
+    setLoadedKey(key);
+  });
+  useEffect(() => {
+    // Changing columns prunes the current layout; only a new key loads saved defaults.
+    loadLayout(persistKey);
   }, [persistKey]);
 
+  const reconcileLayout = useEffectEvent(() => setLayout(validLayout));
   useEffect(() => {
-    if (layoutSignature !== validLayoutSignature) setLayout(validLayout);
+    if (layoutSignature !== validLayoutSignature) reconcileLayout();
   }, [layoutSignature, validLayoutSignature]);
 
+  const saveLayout = useEffectEvent((key: string) => writeColumnLayout(key, validLayout));
   useEffect(() => {
-    if (persistKey && loadedKey === persistKey) writeColumnLayout(persistKey, validLayout);
+    if (persistKey && loadedKey === persistKey) saveLayout(persistKey);
   }, [persistKey, loadedKey, validLayoutSignature]);
 
-  function notify(nextSorter: Sorter | undefined, nextFilters: Filter[], immediate = false, nextPagination?: Pagination) {
+  const notify = useCallback((nextSorter: Sorter | undefined, nextFilters: Filter[], immediate = false, nextPagination?: Pagination) => {
     clearTimeout(timerRef.current);
     if (callbackRef.current) {
       const requestedPagination = nextPagination ?? paginationRef.current;
@@ -81,7 +78,29 @@ export function useTableState<T>({ columns, onChange, pagination, persistKey, de
       if (immediate) callbackRef.current(snapshot);
       else timerRef.current = setTimeout(() => callbackRef.current?.(snapshot), Math.max(0, debounceTime));
     }
-  }
+  }, [debounceTime]);
+
+  const columnSignature = JSON.stringify(columns.map(({ dataIndex, sortable, filterable, searchable }) =>
+    [dataIndex, Boolean(sortable), Boolean(filterable), searchable === true]));
+  const reconcileDataState = useEffectEvent(() => {
+    const byField = new Map(columns.map((column) => [column.dataIndex, column]));
+    const currentSort = sorterRef.current;
+    const nextSorter = currentSort && byField.get(currentSort.sortField)?.sortable ? currentSort : undefined;
+    const nextFilters = filtersRef.current.filter((filter) => byField.get(filter.field)?.filterable);
+    const nextSearch = columnSearchRef.current.filter((search) => byField.get(search.searchField)?.searchable === true);
+    if (openFilter && !byField.get(openFilter)?.filterable) setOpenFilter(null);
+    if (openSearch && byField.get(openSearch)?.searchable !== true) setOpenSearch(null);
+    if (nextSorter === currentSort && nextFilters.length === filtersRef.current.length &&
+      nextSearch.length === columnSearchRef.current.length) return;
+    sorterRef.current = nextSorter;
+    filtersRef.current = nextFilters;
+    columnSearchRef.current = nextSearch;
+    setSorter(nextSorter);
+    setFilters(nextFilters);
+    setColumnSearchState(nextSearch);
+    notify(nextSorter, nextFilters, false, resetPage());
+  });
+  useEffect(() => { reconcileDataState(); }, [columnSignature]);
 
   function setSort(field: string, order?: SortOrder | null) {
     const current = sorterRef.current;
@@ -197,9 +216,7 @@ export function useTableState<T>({ columns, onChange, pagination, persistKey, de
 
   useEffect(() => {
     if (!pagination || !onChange) return;
-    const pageSize = pagination.pageSize > 0 ? pagination.pageSize : pagination.defaultPageSize || 10;
-    const lastPage = Math.max(1, Math.ceil(pagination.totalItems / pageSize));
-    const clampedPage = Math.min(Math.max(1, pagination.currentPage), lastPage);
+    const { pageSize, currentPage: clampedPage } = resolvePagination(pagination);
     const key = `${pagination.currentPage}:${pageSize}:${pagination.totalItems}`;
     if (clampedPage === pagination.currentPage) lastClampRef.current = null;
     if (clampedPage !== pagination.currentPage && lastClampRef.current !== key) {
@@ -209,7 +226,7 @@ export function useTableState<T>({ columns, onChange, pagination, persistKey, de
       delete next.to;
       notify(sorterRef.current, filtersRef.current, true, next);
     }
-  }, [pagination?.currentPage, pagination?.pageSize, pagination?.totalItems, onChange]);
+  }, [pagination, onChange, notify]);
 
   return { sorter, setSort, filters, setFilter, openFilter, setOpenFilter,
     columnSearch, setColumnSearch, openSearch, setOpenSearch, searchQuery, setSearchQuery,

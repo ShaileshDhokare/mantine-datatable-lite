@@ -19,7 +19,7 @@ export function GlobalSearch({
   useEffect(() => {
     apply.cancel();
     setDraft(searchQuery);
-  }, [searchQuery, resetVersion]);
+  }, [apply, searchQuery, resetVersion]);
 
   return (
     <>

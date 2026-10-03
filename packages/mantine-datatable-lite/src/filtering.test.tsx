@@ -2,19 +2,20 @@ import { MantineProvider } from '@mantine/core';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, expect, test, vi } from 'vitest';
 import { DataTable } from './components/DataTable';
-import type { NumericOperator } from './types';
+import type { NumericFilterValue } from './types';
 import { filterRows, matchesFilter } from './utils/filter/predicates';
 import { uniqueValues } from './utils/filter/uniqueValues';
 
 afterEach(() => { cleanup(); vi.useRealTimers(); });
 
 test.each([
-  ['eq', 5, [5]], ['neq', 5, [3, 7]], ['gt', 5, [7]],
-  ['gte', 5, [5, 7]], ['lt', 5, [3]], ['lte', 5, [3, 5]],
-  ['between', [7, 3], [3, 5, 7]],
-] as [NumericOperator, number | [number, number], number[]][])(
-  '%s number operator matches expected values', (operator, value, expected) => {
-    expect([3, 5, 7].filter((item) => matchesFilter(item, { operator, value }, 'number'))).toEqual(expected);
+  [{ operator: 'eq', value: 5 }, [5]], [{ operator: 'neq', value: 5 }, [3, 7]],
+  [{ operator: 'gt', value: 5 }, [7]], [{ operator: 'gte', value: 5 }, [5, 7]],
+  [{ operator: 'lt', value: 5 }, [3]], [{ operator: 'lte', value: 5 }, [3, 5]],
+  [{ operator: 'between', value: [7, 3] }, [3, 5, 7]],
+] satisfies [NumericFilterValue, number[]][])(
+  '%j number operator matches expected values', (value, expected) => {
+    expect([3, 5, 7].filter((item) => matchesFilter(item, value, 'number'))).toEqual(expected);
   },
 );
 
@@ -143,7 +144,7 @@ test.each([
   fireEvent.click(screen.getByRole('button', { name: 'Value menu' }));
   fireEvent.mouseEnter(screen.getByRole('menuitem', { name: 'Filter' }));
   expect(await screen.findByRole('combobox')).toBeTruthy();
-  expect(type === 'date' ? screen.getByRole('button', { name: 'Value' }) : screen.getByPlaceholderText('Value')).toBeTruthy();
+  expect(type === 'date' ? screen.getByRole('button', { name: 'Value filter value' }) : screen.getByPlaceholderText('Value')).toBeTruthy();
 });
 
 test('choosing Between keeps the filter open and shows both number bounds', async () => {
