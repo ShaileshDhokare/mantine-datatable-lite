@@ -24,8 +24,10 @@ export function PinningPage() {
   ];
   return <PlaygroundLayout section='pinning' scenarios={scenarios} active={active}
     onSelect={setActive} controls={<Stack gap='xs'><Text size='sm'>Open a column menu and choose Pin.</Text>
-      <Text size='sm'>Use Move left or Move right to reorder columns pinned on the same side.</Text></Stack>}>
+      <Text size='sm'>Use Move left or Move right to reorder columns pinned on the same side.</Text>
+      <Text size='sm'>Hide or pin columns, then reload to see the layout restored.</Text></Stack>}>
     <DataTable key={active} columns={columns} rows={employees.slice(0, 12)} minWidth={1250}
-      maxHeight={420} stickyHeader withTableBorder withRowBorders striped />
+      maxHeight={420} stickyHeader withTableBorder withRowBorders striped columnSelector
+      persistKey={`playground:pinning:${active}`} />
   </PlaygroundLayout>;
 }

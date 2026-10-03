@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Badge, Group, NavLink, Paper, Stack, Text, Title } from '@mantine/core';
+import { Badge, Group, NavLink, Paper, Stack, Switch, Text, Title, useComputedColorScheme, useMantineColorScheme } from '@mantine/core';
 import { NavLink as RouterLink } from 'react-router';
 import classes from '../App.module.css';
 
@@ -35,6 +35,8 @@ export function PlaygroundLayout<Id extends string>({
   section, scenarios, active, onSelect, controls, children,
 }: PlaygroundLayoutProps<Id>) {
   const current = scenarios.find((scenario) => scenario.id === active)!;
+  const colorScheme = useComputedColorScheme('light');
+  const { setColorScheme } = useMantineColorScheme();
 
   return (
     <div className={classes.shell}>
@@ -49,7 +51,11 @@ export function PlaygroundLayout<Id extends string>({
       </aside>
 
       <main className={classes.content}>
-        <Text size='sm' fw={700} c='blue'>DATATABLE PLAYGROUND</Text>
+        <Group justify='space-between' gap='sm'>
+          <Text size='sm' fw={700} c='blue'>DATATABLE PLAYGROUND</Text>
+          <Switch label='Dark theme' checked={colorScheme === 'dark'}
+            onChange={(event) => setColorScheme(event.currentTarget.checked ? 'dark' : 'light')} />
+        </Group>
         <Title order={1} mt='xs'>{current.label}</Title>
         <Text c='dimmed' mt='xs' mb='xl'>{current.description}</Text>
         <Paper withBorder radius='md' className={classes.preview}>

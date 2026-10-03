@@ -9,22 +9,36 @@
   background-color: var(--mantine-color-body);
 }
 
-.cell[data-pinned='left'] { inset-inline-start: var(--dt-pin-offset); }
-.cell[data-pinned='right'] { inset-inline-end: var(--dt-pin-offset); }
-.cell[data-pin-edge='left'] { box-shadow: inset -1px 0 var(--table-border-color); }
-.cell[data-pin-edge='right'] { box-shadow: inset 1px 0 var(--table-border-color); }
-.root thead .cell[data-pinned] { z-index: 4; }
-.root thead .cell[data-sticky-header] { z-index: 3; }
-.root thead .cell[data-sticky-header][data-pinned] { z-index: 5; }
+.cell[data-pinned='left'] {
+  inset-inline-start: var(--dt-pin-offset);
+}
+.cell[data-pinned='right'] {
+  inset-inline-end: var(--dt-pin-offset);
+}
+.cell[data-pin-edge='left'] {
+  box-shadow: inset -1px 0 var(--table-border-color);
+}
+.cell[data-pin-edge='right'] {
+  box-shadow: inset 1px 0 var(--table-border-color);
+}
+.root thead .cell[data-pinned] {
+  z-index: 4;
+}
+.root thead .cell[data-sticky-header] {
+  z-index: 3;
+}
+.root thead .cell[data-sticky-header][data-pinned] {
+  z-index: 5;
+}
 
-.root tbody tr[data-striped='odd']:nth-of-type(odd) > .cell[data-pinned],
-.root tbody tr[data-striped='even']:nth-of-type(even) > .cell[data-pinned] {
+.root tbody tr:where([data-striped='odd']:nth-of-type(odd), [data-striped='even']:nth-of-type(even)) > .cell[data-pinned] {
   background-color: var(--table-striped-color);
 }
 
-.root tbody tr[data-selected] > td { background-color: var(--mantine-color-blue-light); }
-.root tbody tr[data-hover]:hover > .cell[data-pinned],
-.root tbody tr[data-hover]:hover > .controlCell { background-color: var(--tr-hover-bg, var(--mantine-color-body)); }
+.root tbody tr:where([data-hover]:hover) > .cell[data-pinned],
+.root tbody tr:where([data-hover]:hover) > .controlCell {
+  background-color: var(--tr-hover-bg, var(--mantine-color-body));
+}
 .controlCell {
   position: sticky;
   inset-inline-start: var(--dt-pin-offset);
@@ -33,10 +47,25 @@
   min-width: 48px;
   background-color: var(--mantine-color-body);
 }
-.root thead .controlCell { z-index: 4; }
-.root tbody tr[data-striped='odd']:nth-of-type(odd) > .controlCell,
-.root tbody tr[data-striped='even']:nth-of-type(even) > .controlCell {
+.root thead .controlCell {
+  z-index: 4;
+}
+.root tbody tr:where([data-striped='odd']:nth-of-type(odd), [data-striped='even']:nth-of-type(even)) > .controlCell {
   background-color: var(--table-striped-color);
 }
-.expandPanel > td { background-color: var(--mantine-color-default-hover); }
-.bulkBar { position: absolute; inset: 0; z-index: 10; display: grid; align-items: center; min-height: 40px; }
+.root tbody tr[data-selected] > td,
+.root tbody tr[data-selected] > .cell[data-pinned],
+.root tbody tr[data-selected] > .controlCell {
+  background-color: color-mix(in srgb, var(--mantine-primary-color-filled) 18%, var(--mantine-color-body));
+}
+.expandPanel > td {
+  background-color: var(--mantine-color-default-hover);
+}
+.bulkBar {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: grid;
+  align-items: center;
+  min-height: 40px;
+}

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import type { ColumnSearch, DataTableProps, Filter, FilterValue, Pagination, PaginationChange, PinnedColumns, SortOrder, Sorter } from '../types';
+import type { ColumnSearch, DataTableProps, Filter, FilterValue, Pagination, PaginationChange, SortOrder, Sorter } from '../types';
+import { defaultColumnLayout, pruneColumnLayout, readColumnLayout, writeColumnLayout } from '../utils/columnLayoutStorage';
 import { activeFilter } from '../utils/filter/predicates';
 import { nextSortOrder } from '../utils/sort/nextSortOrder';
 
@@ -13,7 +14,7 @@ function paginationChange(pagination: Pagination): PaginationChange {
   };
 }
 
-export function useTableState<T>({ columns, onChange, pagination, debounceTime = 300 }: Pick<DataTableProps<T>, 'columns' | 'onChange' | 'pagination' | 'debounceTime'>) {
+export function useTableState<T>({ columns, onChange, pagination, persistKey, debounceTime = 300 }: Pick<DataTableProps<T>, 'columns' | 'onChange' | 'pagination' | 'persistKey' | 'debounceTime'>) {
   const [sorter, setSorter] = useState<Sorter | undefined>(() => {
     const column = columns.find((item) => item.sortable && item.defaultSortOrder);
     return column ? { sortField: column.dataIndex, sortOrder: column.defaultSortOrder! } : undefined;
@@ -31,11 +32,12 @@ export function useTableState<T>({ columns, onChange, pagination, debounceTime =
   ));
   const [openSearch, setOpenSearch] = useState<string | null>(null);
   const [searchQuery, setSearchQueryState] = useState('');
-  const [hiddenColumns, setHiddenColumnsState] = useState<string[]>([]);
-  const [pinned, setPinned] = useState<PinnedColumns>(() => ({
-    left: columns.filter((column) => column.sticky === 'left').map((column) => column.dataIndex),
-    right: columns.filter((column) => column.sticky === 'right').map((column) => column.dataIndex),
-  }));
+  const [layout, setLayout] = useState(() => defaultColumnLayout(columns));
+  const [loadedKey, setLoadedKey] = useState<string>();
+  const validLayout = pruneColumnLayout(layout, columns);
+  const layoutSignature = JSON.stringify(layout);
+  const validLayoutSignature = JSON.stringify(validLayout);
+  const { hiddenColumns, pinned } = validLayout;
   const [resetVersion, setResetVersion] = useState(0);
   const sorterRef = useRef(sorter);
   const filtersRef = useRef(filters);
@@ -49,6 +51,21 @@ export function useTableState<T>({ columns, onChange, pagination, debounceTime =
   paginationRef.current = pagination;
 
   useEffect(() => () => clearTimeout(timerRef.current), []);
+
+  useEffect(() => {
+    setLayout(persistKey
+      ? readColumnLayout(persistKey, columns) ?? defaultColumnLayout(columns)
+      : defaultColumnLayout(columns));
+    setLoadedKey(persistKey);
+  }, [persistKey]);
+
+  useEffect(() => {
+    if (layoutSignature !== validLayoutSignature) setLayout(validLayout);
+  }, [layoutSignature, validLayoutSignature]);
+
+  useEffect(() => {
+    if (persistKey && loadedKey === persistKey) writeColumnLayout(persistKey, validLayout);
+  }, [persistKey, loadedKey, validLayoutSignature]);
 
   function notify(nextSorter: Sorter | undefined, nextFilters: Filter[], immediate = false, nextPagination?: Pagination) {
     clearTimeout(timerRef.current);
@@ -101,43 +118,44 @@ export function useTableState<T>({ columns, onChange, pagination, debounceTime =
   }
 
   function setColumnHidden(field: string, hidden: boolean) {
-    setHiddenColumnsState((current) => hidden
-      ? current.includes(field) ? current : [...current, field]
-      : current.filter((item) => item !== field));
-    if (hidden) setPinned((current) => ({
-      left: current.left.filter((item) => item !== field),
-      right: current.right.filter((item) => item !== field),
-    }));
+    const column = columns.find((item) => item.dataIndex === field);
+    if (!column || (hidden && column.hideable === false)) return;
+    const next = hidden
+      ? [...new Set([...hiddenColumns, field])]
+      : hiddenColumns.filter((item) => item !== field);
+    setHiddenColumns(next);
   }
 
   function setHiddenColumns(fields: string[]) {
-    setHiddenColumnsState(fields);
-    setPinned((current) => ({
-      left: current.left.filter((field) => !fields.includes(field)),
-      right: current.right.filter((field) => !fields.includes(field)),
-    }));
+    setLayout((current) => pruneColumnLayout({
+      hiddenColumns: fields,
+      pinned: current.pinned,
+    }, columns));
   }
 
   function pinColumn(field: string, side: 'left' | 'right' | null) {
     if (columns.find((column) => column.dataIndex === field)?.pinnable === false) return;
-    setPinned((current) => ({
-      left: side === 'left' ? [...current.left.filter((item) => item !== field), field]
-        : current.left.filter((item) => item !== field),
-      right: side === 'right' ? [...current.right.filter((item) => item !== field), field]
-        : current.right.filter((item) => item !== field),
-    }));
+    setLayout((current) => pruneColumnLayout({
+      hiddenColumns: current.hiddenColumns,
+      pinned: {
+        left: side === 'left' ? [...current.pinned.left.filter((item) => item !== field), field]
+          : current.pinned.left.filter((item) => item !== field),
+        right: side === 'right' ? [...current.pinned.right.filter((item) => item !== field), field]
+          : current.pinned.right.filter((item) => item !== field),
+      },
+    }, columns));
   }
 
   function movePinned(field: string, direction: -1 | 1) {
-    setPinned((current) => {
-      const side = current.left.includes(field) ? 'left' : current.right.includes(field) ? 'right' : null;
+    setLayout((current) => {
+      const side = current.pinned.left.includes(field) ? 'left' : current.pinned.right.includes(field) ? 'right' : null;
       if (!side) return current;
-      const items = [...current[side]];
+      const items = [...current.pinned[side]];
       const from = items.indexOf(field);
       const to = from + direction;
       if (to < 0 || to >= items.length) return current;
       [items[from], items[to]] = [items[to], items[from]];
-      return { ...current, [side]: items };
+      return { ...current, pinned: { ...current.pinned, [side]: items } };
     });
   }
 
@@ -150,8 +168,7 @@ export function useTableState<T>({ columns, onChange, pagination, debounceTime =
     setFilters([]);
     setColumnSearchState([]);
     setSearchQueryState('');
-    setHiddenColumns([]);
-    setPinned({ left: [], right: [] });
+    setLayout({ hiddenColumns: [], pinned: { left: [], right: [] } });
     setResetVersion((version) => version + 1);
     setOpenFilter(null);
     setOpenSearch(null);
