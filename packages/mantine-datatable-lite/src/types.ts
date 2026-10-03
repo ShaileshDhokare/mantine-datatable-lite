@@ -182,6 +182,8 @@ export interface DataTableProps<T> {
   ) => void;
   rowProps?: (row: T, index: number) => ComponentProps<'tr'>;
   onChange?: (params: TableChange) => void;
+  /** Persist hidden and pinned column IDs in localStorage. */
+  persistKey?: string;
   /** Shown over the last supplied rows while the caller loads another page. */
   loading?: boolean;
   loaderProps?: LoaderProps;

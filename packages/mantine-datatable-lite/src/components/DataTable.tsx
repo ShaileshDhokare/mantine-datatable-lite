@@ -55,6 +55,7 @@ export function DataTable<T>({
   layout,
   onChange,
   pagination,
+  persistKey,
   globalSearch,
   columnSelector,
   showTableStatePills,
@@ -79,6 +80,7 @@ export function DataTable<T>({
     columns,
     onChange,
     pagination,
+    persistKey,
     debounceTime,
   });
   const rowKeys = useRef(new WeakMap<object, number>());
