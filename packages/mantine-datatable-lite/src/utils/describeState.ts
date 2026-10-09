@@ -46,7 +46,10 @@ export type StatePill = {
 
 export function describeState<T>(
   columns: DataTableColumn<T>[],
-  state: Pick<TableChange, 'sorter' | 'filters' | 'columnSearch' | 'searchQuery'> & {
+  state: Pick<
+    TableChange,
+    'sorter' | 'filters' | 'columnSearch' | 'searchQuery'
+  > & {
     hiddenColumns: string[];
     setSort: (field: string, order: null) => void;
     setFilter: (field: string, value?: FilterValue) => void;

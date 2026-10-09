@@ -28,7 +28,10 @@ import { useTableState } from '../hooks/useTableState';
 import { Icon } from '../icons/Icon';
 import classes from '../styles/styles.module.css';
 import type { DataTableProps, RowId } from '../types';
-import { CONTROL_COLUMN_WIDTH, useColumnLayout } from '../hooks/useColumnLayout';
+import {
+  CONTROL_COLUMN_WIDTH,
+  useColumnLayout,
+} from '../hooks/useColumnLayout';
 import { rowPanelId, useRowIdentity } from '../hooks/useRowIdentity';
 import { useSelection } from '../hooks/useSelection';
 import { filterRows } from '../utils/filter/predicates';
@@ -98,7 +101,13 @@ export function DataTable<T>({
     left,
     right,
     expansionOffset,
-  } = useColumnLayout(columns, tableState.hiddenColumns, tableState.pinned, Boolean(selection), Boolean(expandConfig));
+  } = useColumnLayout(
+    columns,
+    tableState.hiddenColumns,
+    tableState.pinned,
+    Boolean(selection),
+    Boolean(expandConfig),
+  );
   const [localExpanded, setLocalExpanded] = useState<RowId[]>([]);
   const expandedIds = expandConfig?.expandedIds ?? localExpanded;
   const expandedSet = new Set(expandedIds);
@@ -133,7 +142,11 @@ export function DataTable<T>({
     [searchedRows, columns, tableState.sorter, pagination],
   );
 
-  const rowEntries = useRowIdentity(visibleRows, idAccessor, Boolean(selection || expandConfig));
+  const rowEntries = useRowIdentity(
+    visibleRows,
+    idAccessor,
+    Boolean(selection || expandConfig),
+  );
 
   function toggleExpanded(id: RowId) {
     const next = expandedSet.has(id)
@@ -150,12 +163,29 @@ export function DataTable<T>({
     columnSearch: tableState.columnSearch,
     search: tableState.searchQuery,
   };
-  const { selectedIds, selectedSet, pageIds, selectedOnPage, allPageSelected, snapshot, changeSelection, togglePage } =
-    useSelection(rowEntries, selection, query);
-  const columnSearchByField = new Map(tableState.columnSearch.map((item) => [item.searchField, item.searchValue]));
-  const cellColumns = visibleColumns.map((column) => ({ column, pin: offsets.get(column.dataIndex),
-    terms: column.render ? [] : [column.searchable !== false ? tableState.searchQuery : '',
-      columnSearchByField.get(column.dataIndex)].filter((term): term is string => Boolean(term)) }));
+  const {
+    selectedIds,
+    selectedSet,
+    pageIds,
+    selectedOnPage,
+    allPageSelected,
+    snapshot,
+    changeSelection,
+    togglePage,
+  } = useSelection(rowEntries, selection, query);
+  const columnSearchByField = new Map(
+    tableState.columnSearch.map((item) => [item.searchField, item.searchValue]),
+  );
+  const cellColumns = visibleColumns.map((column) => ({
+    column,
+    pin: offsets.get(column.dataIndex),
+    terms: column.render
+      ? []
+      : [
+          column.searchable !== false ? tableState.searchQuery : '',
+          columnSearchByField.get(column.dataIndex),
+        ].filter((term): term is string => Boolean(term)),
+  }));
 
   const extraColumns =
     Number(Boolean(selection)) + Number(Boolean(expandConfig));
@@ -163,15 +193,24 @@ export function DataTable<T>({
   const standardToolbarRef = useRef<HTMLDivElement>(null);
   const bulkToolbarRef = useRef<HTMLDivElement>(null);
   const restoreToolbarFocus = useRef(false);
-  const showStandardToolbar = Boolean(globalSearch || columnSelector || showTableStatePills || showReset);
-  const showBulkToolbar = Boolean(toolbar && selection && selectedIds.length > 1);
+  const showStandardToolbar = Boolean(
+    globalSearch || columnSelector || showTableStatePills || showReset,
+  );
+  const showBulkToolbar = Boolean(
+    toolbar && selection && selectedIds.length > 1,
+  );
   useEffect(() => {
-    if (showBulkToolbar && standardToolbarRef.current?.contains(document.activeElement)) {
+    if (
+      showBulkToolbar &&
+      standardToolbarRef.current?.contains(document.activeElement)
+    ) {
       bulkToolbarRef.current?.querySelector<HTMLElement>('button')?.focus();
     }
     if (!showBulkToolbar && restoreToolbarFocus.current) {
       restoreToolbarFocus.current = false;
-      standardToolbarRef.current?.querySelector<HTMLElement>('input, button')?.focus();
+      standardToolbarRef.current
+        ?.querySelector<HTMLElement>('input, button')
+        ?.focus();
     }
   }, [showBulkToolbar]);
   function clearSelection() {
@@ -202,7 +241,9 @@ export function DataTable<T>({
     <Table
       ref={tableRef}
       className={classes.root}
-      style={{ '--dt-control-width': `${CONTROL_COLUMN_WIDTH}px` } as CSSProperties}
+      style={
+        { '--dt-control-width': `${CONTROL_COLUMN_WIDTH}px` } as CSSProperties
+      }
       borderColor={borderColor}
       withTableBorder={withTableBorder}
       withColumnBorders={withColumnBorders}
@@ -288,19 +329,23 @@ export function DataTable<T>({
         )}
         {rowEntries.map(({ row, id, key }, index) => {
           const expanded = id !== undefined && expandedSet.has(id);
-          const panelId = id === undefined ? undefined : rowPanelId(panelPrefix, id);
+          const panelId =
+            id === undefined ? undefined : rowPanelId(panelPrefix, id);
           const selectable = id !== undefined && pageIds.has(id);
           const suppliedProps = rowProps?.(row, index) ?? {};
           return (
             <Fragment key={key}>
               <Table.Tr
                 {...suppliedProps}
-                data-selected={(id !== undefined && selectedSet.has(id)) || undefined}
+                data-selected={
+                  (id !== undefined && selectedSet.has(id)) || undefined
+                }
                 onClick={(event) => {
                   suppliedProps.onClick?.(event);
                   if (event.defaultPrevented) return;
                   if (!window.getSelection?.()?.toString()) {
-                    if (expandConfig?.trigger === 'row' && id !== undefined) toggleExpanded(id);
+                    if (expandConfig?.trigger === 'row' && id !== undefined)
+                      toggleExpanded(id);
                     onRowClick?.(row, index, event);
                   }
                 }}
@@ -312,7 +357,11 @@ export function DataTable<T>({
                   >
                     <Checkbox
                       size='sm'
-                      aria-label={id === undefined ? `Select row ${index + 1} (invalid ID)` : `Select row ${String(id)}`}
+                      aria-label={
+                        id === undefined
+                          ? `Select row ${index + 1} (invalid ID)`
+                          : `Select row ${String(id)}`
+                      }
                       checked={id !== undefined && selectedSet.has(id)}
                       disabled={!selectable}
                       onClick={(event) => event.stopPropagation()}
@@ -411,7 +460,11 @@ export function DataTable<T>({
       {(showStandardToolbar || showBulkToolbar) && (
         <Box pos='relative'>
           {showStandardToolbar && (
-            <Box ref={standardToolbarRef} inert={showBulkToolbar} aria-hidden={showBulkToolbar || undefined}>
+            <Box
+              ref={standardToolbarRef}
+              inert={showBulkToolbar}
+              aria-hidden={showBulkToolbar || undefined}
+            >
               <TableToolbar
                 columns={columns}
                 globalSearch={globalSearch}

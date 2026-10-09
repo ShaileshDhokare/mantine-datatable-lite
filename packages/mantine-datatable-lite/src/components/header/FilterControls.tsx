@@ -134,17 +134,26 @@ export function FilterControls<T>({
       : draft.second === null || draft.second === ''
         ? null
         : Number(draft.second);
-    if (first === null || (typeof first === 'number' && !Number.isFinite(first))) {
+    if (
+      first === null ||
+      (typeof first === 'number' && !Number.isFinite(first))
+    ) {
       onDone();
       return;
     }
     if (draft.operator === 'between') {
-      if (first instanceof Date && second instanceof Date) commit({ operator: 'between', value: [first, second] });
-      else if (typeof first === 'number' && typeof second === 'number' && Number.isFinite(second))
+      if (first instanceof Date && second instanceof Date)
+        commit({ operator: 'between', value: [first, second] });
+      else if (
+        typeof first === 'number' &&
+        typeof second === 'number' &&
+        Number.isFinite(second)
+      )
         commit({ operator: 'between', value: [first, second] });
       else onDone();
     } else {
-      if (first instanceof Date) commit({ operator: draft.operator, value: first });
+      if (first instanceof Date)
+        commit({ operator: draft.operator, value: first });
       else commit({ operator: draft.operator, value: first });
     }
   }
@@ -266,11 +275,7 @@ export function FilterControls<T>({
       </Box>
       <Divider />
       <Group justify='space-between' p={6}>
-        <Button
-          size='xs'
-          variant='subtle'
-          onClick={() => commit()}
-        >
+        <Button size='xs' variant='subtle' onClick={() => commit()}>
           Reset
         </Button>
         <Button size='xs' onClick={apply}>

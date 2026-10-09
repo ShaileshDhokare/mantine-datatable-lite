@@ -40,7 +40,13 @@ export function TablePagination({
   onChange: (page: number, pageSize: number) => void;
 }) {
   const { totalItems } = pagination;
-  const { pageSize, pageCount, currentPage, from: firstItem, to: lastItem } = resolvePagination(pagination);
+  const {
+    pageSize,
+    pageCount,
+    currentPage,
+    from: firstItem,
+    to: lastItem,
+  } = resolvePagination(pagination);
   const options =
     pagination.pageSizeOptions === false
       ? null

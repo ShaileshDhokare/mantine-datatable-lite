@@ -1,9 +1,5 @@
 import type { MouseEvent, ReactNode, ComponentProps } from 'react';
-import type {
-  MantineSpacing,
-  MantineColor,
-  LoaderProps,
-} from '@mantine/core';
+import type { MantineSpacing, MantineColor, LoaderProps } from '@mantine/core';
 
 export type ColumnType = 'string' | 'number' | 'boolean' | 'date';
 export type SortOrder = 'asc' | 'desc';
@@ -39,9 +35,11 @@ export type IconName =
 
 export type MenuOption = 'sort' | 'filter' | 'search' | 'pin' | 'display';
 export type RowId = string | number;
-export type IdAccessor<T> = {
-  [K in keyof T]-?: T[K] extends RowId ? K : never;
-}[keyof T] | ((row: T) => RowId);
+export type IdAccessor<T> =
+  | {
+      [K in keyof T]-?: T[K] extends RowId ? K : never;
+    }[keyof T]
+  | ((row: T) => RowId);
 export type PinnedColumns = { left: string[]; right: string[] };
 
 export type SelectionSnapshot<T> = {

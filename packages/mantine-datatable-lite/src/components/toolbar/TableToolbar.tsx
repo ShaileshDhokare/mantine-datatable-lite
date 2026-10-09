@@ -33,12 +33,18 @@ export function TableToolbar<T>({
       <Group justify='space-between' align='center' gap='lg' p='4' wrap='wrap'>
         <Group gap='xs' flex={1}>
           {showTableStatePills && (
-            <AppliedChips pills={pills} maxChips={maxChips} inactive={inactive} />
+            <AppliedChips
+              pills={pills}
+              maxChips={maxChips}
+              inactive={inactive}
+            />
           )}
         </Group>
         <Group gap='xs' wrap='nowrap'>
           {globalSearch && <GlobalSearch debounceTime={debounceTime} />}
-          {columnSelector && <ColumnPicker columns={columns} inactive={inactive} />}
+          {columnSelector && (
+            <ColumnPicker columns={columns} inactive={inactive} />
+          )}
           {showReset && (
             <Tooltip label='Reset table state' withArrow>
               <ActionIcon

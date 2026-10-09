@@ -31,7 +31,13 @@
   z-index: 5;
 }
 
-.root tbody tr:where([data-striped='odd']:nth-of-type(odd), [data-striped='even']:nth-of-type(even)) > .cell[data-pinned] {
+.root
+  tbody
+  tr:where(
+    [data-striped='odd']:nth-of-type(odd),
+    [data-striped='even']:nth-of-type(even)
+  )
+  > .cell[data-pinned] {
   background-color: var(--table-striped-color);
 }
 
@@ -50,13 +56,23 @@
 .root thead .controlCell {
   z-index: 4;
 }
-.root tbody tr:where([data-striped='odd']:nth-of-type(odd), [data-striped='even']:nth-of-type(even)) > .controlCell {
+.root
+  tbody
+  tr:where(
+    [data-striped='odd']:nth-of-type(odd),
+    [data-striped='even']:nth-of-type(even)
+  )
+  > .controlCell {
   background-color: var(--table-striped-color);
 }
 .root tbody tr[data-selected] > td,
 .root tbody tr[data-selected] > .cell[data-pinned],
 .root tbody tr[data-selected] > .controlCell {
-  background-color: color-mix(in srgb, var(--mantine-primary-color-filled) 18%, var(--mantine-color-body));
+  background-color: color-mix(
+    in srgb,
+    var(--mantine-primary-color-filled) 18%,
+    var(--mantine-color-body)
+  );
 }
 .expandPanel > td {
   background-color: var(--mantine-color-default-hover);
