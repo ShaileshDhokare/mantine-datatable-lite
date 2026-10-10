@@ -11,6 +11,7 @@ import { ExpandablePage } from './pages/ExpandablePage';
 import { SelectionPage } from './pages/SelectionPage';
 import { GuidePage, InstallationPage } from './pages/GuidePage';
 import { ApiPage } from './pages/ApiPage';
+import { LlmPage } from './pages/LlmPage';
 
 export function App() {
   const { pathname, search } = useLocation();
@@ -21,6 +22,7 @@ export function App() {
     <Route path='/toolbar' element={<GuidePage guide='toolbar' />} />
     <Route path='/theming' element={<GuidePage guide='theming' />} />
     <Route path='/api' element={<ApiPage />} />
+    <Route path='/llm' element={<LlmPage />} />
     <Route path='/basic' element={<BasicPage />} />
     <Route path='/sorting' element={<SortingPage />} />
     <Route path='/filtering' element={<FilteringPage />} />

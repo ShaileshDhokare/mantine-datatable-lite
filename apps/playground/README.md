@@ -34,6 +34,10 @@ live in `src/docs/propDescriptions.ts`.
   in the route query, for example `#/filtering?scenario=number`.
 - `src/examples/*.tsx`: small complete examples; the displayed source is imported
   directly from the same files that execute the demos.
+- `src/docs/content/llm.md`: authored guide for AI coding tools. The existing
+  `docs:generate` step adds the installed npm declarations and writes identical
+  copies to `src/docs/generated/llm.md` (the LLM page) and `public/llm.md` (the
+  stable Markdown URL and download). Commit both generated files with edits.
 - `src/components/SourceCode.tsx`: lazy source tabs from real playground files,
   including the server adapter and query helper. These show the full playground
   implementation; the short usage blocks focus on the package API.

@@ -14,7 +14,7 @@ export const navigation = [
   ] },
   { label: 'Reference', items: [
     { id: 'theming', label: 'Theming' }, { id: 'api', label: 'API reference' },
-    { id: 'advanced', label: 'Advanced example' },
+    { id: 'advanced', label: 'Advanced example' }, { id: 'llm', label: 'LLM' },
   ] },
 ] as const;
 export const allPages = navigation.flatMap((group) => [...group.items]);
