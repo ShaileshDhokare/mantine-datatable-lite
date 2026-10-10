@@ -11,7 +11,7 @@
     "dev:playground": "npm run dev -w playground",
     "build:lib": "npm run build -w @scope/mantine-datatable-lite",
     "build:playground": "npm run build -w playground",
-    "typecheck": "npm run typecheck -w @scope/mantine-datatable-lite && npm run typecheck -w playground",
+    "typecheck": "npm run build:lib && npm run typecheck -w playground",
     "test": "npm run test -w @scope/mantine-datatable-lite",
     "lint": "eslint ."
   },
@@ -23,6 +23,7 @@
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.1",
     "eslint": "^10.11.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
     "jsdom": "^30.1.1",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.70.1",

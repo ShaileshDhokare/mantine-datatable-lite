@@ -1,51 +1,124 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { DataTableColumn, PinnedColumns } from '../types';
 
-export function useColumnLayout<T>(columns: DataTableColumn<T>[], hidden: string[], pinned: PinnedColumns) {
-  const tableRef = useRef<HTMLTableElement>(null);
-  const [widths, setWidths] = useState<Record<string, number>>({});
-  const visible = columns.filter((column) => !hidden.includes(column.dataIndex));
-  const left = pinned.left.filter((field) => visible.some((column) => column.dataIndex === field));
-  const right = pinned.right.filter((field) => visible.some((column) => column.dataIndex === field));
-  const ordered = [
-    ...left.map((field) => visible.find((column) => column.dataIndex === field)!),
-    ...visible.filter((column) => !left.includes(column.dataIndex) && !right.includes(column.dataIndex)),
-    ...right.map((field) => visible.find((column) => column.dataIndex === field)!),
-  ];
+export const CONTROL_COLUMN_WIDTH = 48;
+
+type Measurements = {
+  columns: Map<string, number>;
+  selection: number;
+  expansion: number;
+};
+
+export function useColumnLayout<T>(
+  columns: DataTableColumn<T>[],
+  hidden: string[],
+  pinned: PinnedColumns,
+  selection: boolean,
+  expansion: boolean,
+) {
+  const [tableElement, tableRef] = useState<HTMLTableElement | null>(null);
+  const [widths, setWidths] = useState<Measurements>({
+    columns: new Map(),
+    selection: 0,
+    expansion: 0,
+  });
+  const { ordered, left, right } = useMemo(() => {
+    const hiddenSet = new Set(hidden);
+    const visible = columns.filter(
+      (column) => !hiddenSet.has(column.dataIndex),
+    );
+    const byField = new Map(
+      visible.map((column) => [column.dataIndex, column]),
+    );
+    const left = pinned.left.filter((field) => byField.has(field));
+    const right = pinned.right.filter((field) => byField.has(field));
+    const pinnedSet = new Set([...left, ...right]);
+    return {
+      left,
+      right,
+      ordered: [
+        ...left.map((field) => byField.get(field)!),
+        ...visible.filter((column) => !pinnedSet.has(column.dataIndex)),
+        ...right.map((field) => byField.get(field)!),
+      ],
+    };
+  }, [columns, hidden, pinned]);
+  const headerSignature = JSON.stringify([
+    ordered.map((column) => column.dataIndex),
+    selection,
+    expansion,
+  ]);
 
   useEffect(() => {
-    const table = tableRef.current;
+    const table = tableElement;
     if (!table || typeof ResizeObserver === 'undefined') return;
     const measure = () => {
-      const next: Record<string, number> = {};
-      table.querySelectorAll<HTMLElement>('thead th[data-column]').forEach((cell) => {
-        next[cell.dataset.column!] = cell.getBoundingClientRect().width;
+      const next: Measurements = {
+        columns: new Map(),
+        selection: 0,
+        expansion: 0,
+      };
+      table.querySelectorAll<HTMLElement>('thead th').forEach((cell) => {
+        const width = cell.getBoundingClientRect().width;
+        if (cell.dataset.column !== undefined)
+          next.columns.set(cell.dataset.column, width);
+        if (cell.dataset.control === 'selection') next.selection = width;
+        if (cell.dataset.control === 'expansion') next.expansion = width;
       });
-      setWidths((current) => Object.keys(next).every((key) => current[key] === next[key]) &&
-        Object.keys(current).length === Object.keys(next).length ? current : next);
+      setWidths((current) =>
+        current.selection === next.selection &&
+        current.expansion === next.expansion &&
+        current.columns.size === next.columns.size &&
+        [...next.columns].every(
+          ([field, width]) => current.columns.get(field) === width,
+        )
+          ? current
+          : next,
+      );
     };
     const observer = new ResizeObserver(measure);
-    table.querySelectorAll('thead th[data-column]').forEach((cell) => observer.observe(cell));
+    table
+      .querySelectorAll('thead th')
+      .forEach((cell) => observer.observe(cell));
     measure();
     return () => observer.disconnect();
-  }, [ordered.map((column) => column.dataIndex).join('|')]);
+  }, [tableElement, headerSignature]);
+
+  const selectionWidth = selection
+    ? widths.selection || CONTROL_COLUMN_WIDTH
+    : 0;
+  const expansionWidth = expansion
+    ? widths.expansion || CONTROL_COLUMN_WIDTH
+    : 0;
 
   const offsets = useMemo(() => {
-    const result: Record<string, { side: 'left' | 'right'; offset: number }> = {};
-    let start = 0;
+    const result = new Map<
+      string,
+      { side: 'left' | 'right'; offset: number }
+    >();
+    let start = selectionWidth + expansionWidth;
     for (const field of left) {
-      if (!widths[field]) break;
-      result[field] = { side: 'left', offset: start };
-      start += widths[field];
+      const width = widths.columns.get(field);
+      if (!width) break;
+      result.set(field, { side: 'left', offset: start });
+      start += width;
     }
     let end = 0;
     for (const field of [...right].reverse()) {
-      if (!widths[field]) break;
-      result[field] = { side: 'right', offset: end };
-      end += widths[field];
+      const width = widths.columns.get(field);
+      if (!width) break;
+      result.set(field, { side: 'right', offset: end });
+      end += width;
     }
     return result;
-  }, [widths, left.join('|'), right.join('|')]);
+  }, [widths, left, right, selectionWidth, expansionWidth]);
 
-  return { tableRef, ordered, offsets, left, right };
+  return {
+    tableRef,
+    ordered,
+    offsets,
+    left,
+    right,
+    expansionOffset: selectionWidth,
+  };
 }

@@ -1,3 +1,4 @@
+import { columnLabel } from '../../utils/columnLabel';
 import { ActionIcon, Menu } from '@mantine/core';
 import { useState } from 'react';
 import { Icon } from '../../icons/Icon';
@@ -84,7 +85,7 @@ export function ColumnMenu<T>({
           size='sm'
           color='var(--mantine-color-gray-6)'
           ml='auto'
-          aria-label={`${String(column.header)} menu`}
+          aria-label={`${columnLabel(column)} menu`}
         >
           <Icon name='menu' size={16} />
         </ActionIcon>

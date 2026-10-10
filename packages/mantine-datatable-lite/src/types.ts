@@ -1,9 +1,5 @@
 import type { MouseEvent, ReactNode, ComponentProps } from 'react';
-import type {
-  MantineSpacing,
-  MantineColor,
-  LoaderProps,
-} from '@mantine/core';
+import type { MantineSpacing, MantineColor, LoaderProps } from '@mantine/core';
 
 export type ColumnType = 'string' | 'number' | 'boolean' | 'date';
 export type SortOrder = 'asc' | 'desc';
@@ -39,6 +35,11 @@ export type IconName =
 
 export type MenuOption = 'sort' | 'filter' | 'search' | 'pin' | 'display';
 export type RowId = string | number;
+export type IdAccessor<T> =
+  | {
+      [K in keyof T]-?: T[K] extends RowId ? K : never;
+    }[keyof T]
+  | ((row: T) => RowId);
 export type PinnedColumns = { left: string[]; right: string[] };
 
 export type SelectionSnapshot<T> = {
@@ -68,15 +69,12 @@ export type ExpandableConfig<T> = {
 };
 
 export type StringFilterValue = string[];
-export type NumericFilterValue = {
-  operator: NumericOperator;
-  value: number | [number, number];
-};
+type RangeFilterValue<T> =
+  | { operator: 'between'; value: [T, T] }
+  | { operator: Exclude<NumericOperator, 'between'>; value: T };
+export type NumericFilterValue = RangeFilterValue<number>;
 export type BooleanFilterValue = boolean[];
-export type DateFilterValue = {
-  operator: NumericOperator;
-  value: Date | [Date, Date];
-};
+export type DateFilterValue = RangeFilterValue<Date>;
 
 export type FilterValue =
   | StringFilterValue
@@ -171,7 +169,8 @@ export interface DataTableProps<T> {
   pagination?: Pagination;
   globalSearch?: boolean;
   columnSelector?: boolean;
-  idAccessor?: keyof T | ((row: T) => RowId);
+  /** Selection and expansion require a unique, stable string or finite numeric ID. */
+  idAccessor?: IdAccessor<T>;
   selection?: SelectionConfig<T>;
   expandable?: ExpandableConfig<T> | boolean;
   expandedRowRender?: (row: T, index: number) => ReactNode;

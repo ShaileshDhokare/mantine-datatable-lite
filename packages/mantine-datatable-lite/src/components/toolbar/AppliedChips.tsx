@@ -12,9 +12,11 @@ import type { StatePill } from '../../utils/describeState';
 export function AppliedChips({
   pills,
   maxChips = 5,
+  inactive,
 }: {
   pills: StatePill[];
   maxChips?: number;
+  inactive?: boolean;
 }) {
   const limit = Math.max(0, Math.floor(maxChips));
   const renderPill = (pill: StatePill) => (
@@ -51,7 +53,7 @@ export function AppliedChips({
     <Group gap='xs' wrap='wrap'>
       {pills.slice(0, limit).map(renderPill)}
       {pills.length > limit && (
-        <Popover position='bottom-start' withinPortal>
+        <Popover position='bottom-start' withinPortal disabled={inactive}>
           <Popover.Target>
             <UnstyledButton fz='xs' c='dimmed' fw={500}>
               +{pills.length - limit} more
