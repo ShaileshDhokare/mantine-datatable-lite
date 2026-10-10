@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, expect, test, vi } from 'vitest';
-import type { TableChange } from '@scope/mantine-datatable-lite';
+import type { TableChange } from 'mantine-datatable-lite';
 import { useServerData } from './useServerData';
 
 const first: TableChange = { pagination: { currentPage: 1, pageSize: 10, totalItems: 0 }, filters: [], columnSearch: [], searchQuery: '' };

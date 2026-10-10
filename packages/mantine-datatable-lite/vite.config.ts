@@ -2,7 +2,15 @@ import { defineConfig } from 'vite';
 import dts from 'vite-plugin-dts';
 
 export default defineConfig({
-  plugins: [dts({ tsconfigPath: './tsconfig.build.json' })],
+  plugins: [
+    dts({
+      tsconfigPath: './tsconfig.build.json',
+      outDirs: [
+        { dir: 'dist', moduleFormat: 'esm' },
+        { dir: 'dist', moduleFormat: 'cjs' },
+      ],
+    }),
+  ],
   build: {
     lib: {
       entry: 'src/index.ts',

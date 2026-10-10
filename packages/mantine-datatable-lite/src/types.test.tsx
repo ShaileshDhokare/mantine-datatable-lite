@@ -1,11 +1,11 @@
 import { expectTypeOf, test } from 'vitest';
-import { DataTable } from './components/DataTable';
+import { DataTable } from './index';
 import type {
   DataTableProps,
   IdAccessor,
   NumericFilterValue,
   DateFilterValue,
-} from './types';
+} from './index';
 
 test('row inference and public filter/identity contracts remain type safe', () => {
   type Row = { id: number; name: string; active: boolean };

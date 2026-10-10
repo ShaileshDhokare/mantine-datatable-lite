@@ -1,0 +1,38 @@
+name: Publish alpha to npm
+
+on:
+  push:
+    tags: ['v*-alpha.*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: npm-alpha-release
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+          package-manager-cache: false
+      - name: Use an npm CLI with trusted publishing support
+        run: npm install --global npm@11
+      - run: npm ci
+      - run: node scripts/validate-release.mjs
+      - run: npm run check:release
+      - name: Check whether this version is already published
+        id: release
+        run: node scripts/check-published.mjs
+      - name: Publish with npm trusted publishing
+        if: steps.release.outputs.published != 'true'
+        run: npm publish --workspace packages/mantine-datatable-lite --access public --tag alpha
