@@ -14,7 +14,7 @@ import {
   type DataTableColumn,
   type RowId,
   type SelectionSnapshot,
-} from '@scope/mantine-datatable-lite';
+} from 'mantine-datatable-lite';
 import { PlaygroundLayout } from '../components/PlaygroundLayout';
 import { employees, type Employee } from '../data';
 

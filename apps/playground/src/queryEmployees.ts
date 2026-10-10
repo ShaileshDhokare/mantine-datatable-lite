@@ -1,4 +1,4 @@
-import type { ColumnSearch, Filter, NumericOperator, Sorter, TableChange } from '@scope/mantine-datatable-lite';
+import type { ColumnSearch, Filter, NumericOperator, Sorter, TableChange } from 'mantine-datatable-lite';
 import type { Employee } from './data';
 
 const globalSearchFields: (keyof Employee)[] = ['name', 'email', 'department', 'role'];

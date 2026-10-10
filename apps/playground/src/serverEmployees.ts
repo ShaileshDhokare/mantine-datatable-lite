@@ -1,4 +1,4 @@
-import type { TableChange } from '@scope/mantine-datatable-lite';
+import type { TableChange } from 'mantine-datatable-lite';
 import type { Employee } from './data';
 import { queryEmployees } from './queryEmployees';
 

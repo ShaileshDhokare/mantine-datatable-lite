@@ -7,12 +7,16 @@
     "apps/*"
   ],
   "scripts": {
-    "dev:lib": "npm run dev -w @scope/mantine-datatable-lite",
+    "dev:lib": "npm run dev -w packages/mantine-datatable-lite",
     "dev:playground": "npm run dev -w playground",
-    "build:lib": "npm run build -w @scope/mantine-datatable-lite",
+    "build:lib": "npm run build -w packages/mantine-datatable-lite",
     "build:playground": "npm run build -w playground",
     "typecheck": "npm run build:lib && npm run typecheck -w playground",
-    "test": "npm run test -w @scope/mantine-datatable-lite",
+    "test": "npm run test -w packages/mantine-datatable-lite",
+    "test:playground": "npm run test -w playground",
+    "check:package": "node scripts/check-package.mjs",
+    "check:published": "node scripts/check-package.mjs --published",
+    "check:release": "node scripts/validate-release.mjs && npm run typecheck && npm test && npm run test:playground && npm run build:playground && npm run check:package",
     "lint": "eslint ."
   },
   "devDependencies": {

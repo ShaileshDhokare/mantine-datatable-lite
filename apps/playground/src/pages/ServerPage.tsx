@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ActionIcon, Badge, Code, Modal, ScrollArea, Stack, Text, Tooltip } from '@mantine/core';
-import { DataTable, Icon, type DataTableColumn, type RowId, type TableChange } from '@scope/mantine-datatable-lite';
+import { DataTable, Icon, type DataTableColumn, type RowId, type TableChange } from 'mantine-datatable-lite';
 import { PlaygroundLayout } from '../components/PlaygroundLayout';
 import type { Employee } from '../data';
 import { fetchEmployeePage } from '../serverEmployees';

@@ -2,7 +2,7 @@ import type { SVGProps } from 'react';
 import type { IconName } from '../types';
 import React from 'react';
 
-type IconProps = Omit<SVGProps<SVGSVGElement>, 'children'> & {
+export type IconProps = Omit<SVGProps<SVGSVGElement>, 'children'> & {
   name: IconName;
   size?: number;
   fill?: string;

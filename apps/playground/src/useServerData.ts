@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { TableChange } from '@scope/mantine-datatable-lite';
+import type { TableChange } from 'mantine-datatable-lite';
 
 type Page<T> = { rows: T[]; totalItems: number };
 

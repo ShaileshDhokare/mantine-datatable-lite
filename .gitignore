@@ -5,3 +5,5 @@ coverage/
 *.tsbuildinfo
 .vite/
 .npm-cache/
+*.tgz
+.package-check-*/

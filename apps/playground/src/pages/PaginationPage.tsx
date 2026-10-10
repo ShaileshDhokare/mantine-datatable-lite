@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Stack, Switch, Text } from '@mantine/core';
-import { DataTable, type DataTableColumn, type Pagination } from '@scope/mantine-datatable-lite';
+import { DataTable, type DataTableColumn, type Pagination } from 'mantine-datatable-lite';
 import { PlaygroundLayout } from '../components/PlaygroundLayout';
 import { employees, type Employee } from '../data';
 
