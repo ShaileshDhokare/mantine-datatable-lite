@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { SegmentedControl, Stack, Switch, Text } from '@mantine/core';
 import { DataTable, type DataTableColumn } from 'mantine-datatable-lite';
+import { useScenario } from '../useScenario';
 import { PlaygroundLayout } from '../components/PlaygroundLayout';
 import { employees, type Employee } from '../data';
 
@@ -35,7 +36,7 @@ const scenarios = [
 type SearchScenario = (typeof scenarios)[number]['id'];
 
 export function SearchingPage() {
-  const [active, setActive] = useState<SearchScenario>('column');
+  const [active, setActive] = useScenario(scenarios);
   const [showSearchIcon, setShowSearchIcon] = useState(true);
   const [showMenu, setShowMenu] = useState(true);
   const [rowCount, setRowCount] = useState('30');

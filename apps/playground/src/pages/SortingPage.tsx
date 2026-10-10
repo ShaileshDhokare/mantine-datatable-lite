@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { SegmentedControl, Stack, Switch, Text } from '@mantine/core';
 import { DataTable, type DataTableColumn } from 'mantine-datatable-lite';
+import { useScenario } from '../useScenario';
 import { PlaygroundLayout } from '../components/PlaygroundLayout';
 import { employees, type Employee } from '../data';
 
@@ -14,7 +15,7 @@ const scenarios = [
 type SortingScenario = (typeof scenarios)[number]['id'];
 
 export function SortingPage() {
-  const [active, setActive] = useState<SortingScenario>('types');
+  const [active, setActive] = useScenario(scenarios);
   const [showSortIcon, setShowSortIcon] = useState(true);
   const [showMenu, setShowMenu] = useState(false);
   const [tableBorder, setTableBorder] = useState(false);

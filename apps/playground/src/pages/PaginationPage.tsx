@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Stack, Switch, Text } from '@mantine/core';
 import { DataTable, type DataTableColumn, type Pagination } from 'mantine-datatable-lite';
+import { useScenario } from '../useScenario';
 import { PlaygroundLayout } from '../components/PlaygroundLayout';
 import { employees, type Employee } from '../data';
 
@@ -24,8 +25,8 @@ function initialPage(scenario: PaginationScenario) {
 }
 
 export function PaginationPage() {
-  const [active, setActive] = useState<PaginationScenario>('default');
-  const [page, setPage] = useState(initialPage('default'));
+  const [active, setActive] = useScenario(scenarios);
+  const [page, setPage] = useState(initialPage(active));
   const [shrink, setShrink] = useState(false);
   const source = active === 'empty' ? [] : employees.slice(0, active === 'clamp' && shrink ? 12 : 30);
   const pagination: Pagination = {

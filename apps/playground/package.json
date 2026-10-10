@@ -7,7 +7,10 @@
     "dev": "vite",
     "build": "tsc --noEmit -p tsconfig.json && vite build",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "vitest run --pool=threads --maxWorkers=1"
+    "test": "vitest run --pool=threads --maxWorkers=1",
+    "docs:generate": "node scripts/generate-api.mjs",
+    "predev": "npm run docs:generate",
+    "prebuild": "npm run docs:generate"
   },
   "dependencies": {
     "@mantine/core": "^9.6.2",
@@ -16,6 +19,12 @@
     "mantine-datatable-lite": "alpha",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
-    "react-router": "^7.18.4"
+    "react-markdown": "^10.1.0",
+    "react-router": "^7.18.4",
+    "react-syntax-highlighter": "^16.1.2",
+    "remark-gfm": "^4.0.1"
+  },
+  "devDependencies": {
+    "@types/react-syntax-highlighter": "^15.5.13"
   }
 }

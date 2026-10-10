@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { DataList, Stack, Text } from '@mantine/core';
 import { DataTable, type DataTableColumn } from 'mantine-datatable-lite';
+import { useScenario } from '../useScenario';
 import { PlaygroundLayout } from '../components/PlaygroundLayout';
 import { employees, type Employee } from '../data';
 
@@ -16,7 +17,7 @@ const columns: DataTableColumn<Employee>[] = [
 ];
 
 export function ExpandablePage() {
-  const [active, setActive] = useState<(typeof scenarios)[number]['id']>('single');
+  const [active, setActive] = useScenario(scenarios);
   return <PlaygroundLayout section='expandable' scenarios={scenarios} active={active}
     onSelect={setActive} controls={<Stack gap='xs'><Text size='sm'>Use the plus and minus controls to show row details.</Text></Stack>}>
     <DataTable key={active} columns={columns} rows={employees.slice(0, 8)} withTableBorder withRowBorders

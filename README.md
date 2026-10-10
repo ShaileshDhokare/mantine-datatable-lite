@@ -11,6 +11,11 @@ npm install --save-exact mantine-datatable-lite@alpha
 See the [package README](packages/mantine-datatable-lite/README.md) for installation,
 usage, compatibility, features, and all public exports.
 
+The [documentation site](https://shaileshdhokare.github.io/mantine-datatable-lite/)
+reuses the interactive playground with Markdown guides, highlighted code, live
+demos and a generated API reference. See [the docs setup guide](apps/playground/README.md)
+for editing content and publishing to GitHub Pages.
+
 ## Local development
 
 Use Node.js 24 and npm 11. From the repository root:
@@ -45,6 +50,7 @@ npm and applies the same consumer checks to that artifact.
 
 ## Publishing
 
-Releases are published manually through the npm CLI. CI/CD is deferred.
+Package releases are published manually through the npm CLI. The documentation
+has a separate GitHub Pages workflow; it does not publish the npm package.
 See [RELEASING.md](RELEASING.md) for validation, publishing, and updating the
 playground's installed release.

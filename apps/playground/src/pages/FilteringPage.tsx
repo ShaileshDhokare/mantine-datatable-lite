@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { SegmentedControl, Stack, Switch, Text } from '@mantine/core';
 import { DataTable, type DataTableColumn } from 'mantine-datatable-lite';
+import { useScenario } from '../useScenario';
 import { PlaygroundLayout } from '../components/PlaygroundLayout';
 import { employees, type Employee } from '../data';
 
@@ -21,7 +22,7 @@ const scenarios = [
 type FilteringScenario = (typeof scenarios)[number]['id'];
 
 export function FilteringPage() {
-  const [active, setActive] = useState<FilteringScenario>('string');
+  const [active, setActive] = useScenario(scenarios);
   const [searchableFilter, setSearchableFilter] = useState(false);
   const [optionSource, setOptionSource] = useState('Derived');
   const [showFilterIcon, setShowFilterIcon] = useState(true);

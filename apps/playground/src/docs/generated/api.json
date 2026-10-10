@@ -1,0 +1,591 @@
+{
+  "version": "0.1.0-alpha.0",
+  "api": {
+    "DataTableProps": [
+      {
+        "name": "columns",
+        "type": "DataTableColumn<T>[]",
+        "required": true,
+        "description": ""
+      },
+      {
+        "name": "rows",
+        "type": "T[]",
+        "required": true,
+        "description": ""
+      },
+      {
+        "name": "pagination",
+        "type": "Pagination",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "globalSearch",
+        "type": "boolean",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "columnSelector",
+        "type": "boolean",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "idAccessor",
+        "type": "IdAccessor<T>",
+        "required": false,
+        "description": "Selection and expansion require a unique, stable string or finite numeric ID."
+      },
+      {
+        "name": "selection",
+        "type": "SelectionConfig<T>",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "expandable",
+        "type": "ExpandableConfig<T> | boolean",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "expandedRowRender",
+        "type": "(row: T, index: number) => ReactNode",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "onRowClick",
+        "type": "(row: T, index: number, event: MouseEvent<HTMLTableRowElement>) => void",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "rowProps",
+        "type": "(row: T, index: number) => ComponentProps<'tr'>",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "onChange",
+        "type": "(params: TableChange) => void",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "persistKey",
+        "type": "string",
+        "required": false,
+        "description": "Persist hidden and pinned column IDs in localStorage."
+      },
+      {
+        "name": "loading",
+        "type": "boolean",
+        "required": false,
+        "description": "Shown over the last supplied rows while the caller loads another page."
+      },
+      {
+        "name": "loaderProps",
+        "type": "LoaderProps",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "error",
+        "type": "ReactNode",
+        "required": false,
+        "description": "Fetch error supplied by the caller. Previous rows remain visible."
+      },
+      {
+        "name": "onRetry",
+        "type": "() => void",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "toolbar",
+        "type": "boolean",
+        "required": false,
+        "description": "Show selection actions when more than one row is selected."
+      },
+      {
+        "name": "toolbarActions",
+        "type": "ReactNode[]",
+        "required": false,
+        "description": "ActionIcon elements, optionally wrapped in Tooltip. Requires toolbar."
+      },
+      {
+        "name": "borderColor",
+        "type": "MantineColor",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "withTableBorder",
+        "type": "boolean",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "withColumnBorders",
+        "type": "boolean",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "withRowBorders",
+        "type": "boolean",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "horizontalSpacing",
+        "type": "MantineSpacing",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "verticalSpacing",
+        "type": "MantineSpacing",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "striped",
+        "type": "boolean | 'odd' | 'even'",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "stripedColor",
+        "type": "MantineColor",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "highlightOnHover",
+        "type": "boolean",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "highlightOnHoverColor",
+        "type": "MantineColor",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "stickyHeader",
+        "type": "boolean",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "minWidth",
+        "type": "React.CSSProperties['minWidth']",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "maxHeight",
+        "type": "React.CSSProperties['maxHeight']",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "layout",
+        "type": "'auto' | 'fixed'",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "debounceTime",
+        "type": "number",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "emptyState",
+        "type": "ReactNode",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "showTableStatePills",
+        "type": "boolean",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "showReset",
+        "type": "boolean",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "maxChips",
+        "type": "number",
+        "required": false,
+        "description": ""
+      }
+    ],
+    "DataTableColumn": [
+      {
+        "name": "dataIndex",
+        "type": "Extract<keyof T, string> | (string & {})",
+        "required": true,
+        "description": ""
+      },
+      {
+        "name": "header",
+        "type": "ReactNode",
+        "required": true,
+        "description": ""
+      },
+      {
+        "name": "type",
+        "type": "ColumnType",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "align",
+        "type": "'left' | 'center' | 'right'",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "render",
+        "type": "(row: T, index: number) => ReactNode",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "sortable",
+        "type": "boolean",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "showSortIcon",
+        "type": "boolean",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "defaultSortOrder",
+        "type": "SortOrder",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "sortFn",
+        "type": "(a: T, b: T) => number",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "filterable",
+        "type": "boolean",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "searchable",
+        "type": "boolean",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "showSearchIcon",
+        "type": "boolean",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "defaultSearchValue",
+        "type": "string",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "showFilterIcon",
+        "type": "boolean",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "searchableFilter",
+        "type": "boolean",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "defaultFilterValue",
+        "type": "FilterValue",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "filterOptions",
+        "type": "FilterOption[] | string[]",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "filterFn",
+        "type": "(row: T, filterValue: FilterValue) => boolean",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "renderFilter",
+        "type": "(context: FilterRenderContext) => ReactNode",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "width",
+        "type": "string | number",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "showMenu",
+        "type": "boolean",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "menuOptions",
+        "type": "MenuOption[]",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "sticky",
+        "type": "'left' | 'right'",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "pinnable",
+        "type": "boolean",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "hideable",
+        "type": "boolean",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "stopRowClick",
+        "type": "boolean",
+        "required": false,
+        "description": "Used by rowActionsColumn to keep action clicks out of row handlers."
+      }
+    ],
+    "Pagination": [
+      {
+        "name": "currentPage",
+        "type": "number",
+        "required": true,
+        "description": ""
+      },
+      {
+        "name": "pageSize",
+        "type": "number",
+        "required": true,
+        "description": ""
+      },
+      {
+        "name": "totalItems",
+        "type": "number",
+        "required": true,
+        "description": ""
+      },
+      {
+        "name": "defaultPageSize",
+        "type": "number",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "pageSizeOptions",
+        "type": "number[] | false",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "from",
+        "type": "number",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "to",
+        "type": "number",
+        "required": false,
+        "description": ""
+      }
+    ],
+    "TableChange": [
+      {
+        "name": "pagination",
+        "type": "PaginationChange",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "sorter",
+        "type": "Sorter",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "filters",
+        "type": "Filter[]",
+        "required": true,
+        "description": ""
+      },
+      {
+        "name": "columnSearch",
+        "type": "ColumnSearch[]",
+        "required": true,
+        "description": ""
+      },
+      {
+        "name": "searchQuery",
+        "type": "string",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "SelectionConfig": [
+      {
+        "name": "selectedIds",
+        "type": "RowId[]",
+        "required": true,
+        "description": ""
+      },
+      {
+        "name": "onChange",
+        "type": "(selection: SelectionSnapshot<T>) => void",
+        "required": true,
+        "description": ""
+      },
+      {
+        "name": "isSelectable",
+        "type": "(row: T) => boolean",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "showSelectionCount",
+        "type": "boolean",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "renderBulkActions",
+        "type": "(context: SelectionSnapshot<T> & { clear: () => void; }) => ReactNode",
+        "required": false,
+        "description": ""
+      }
+    ],
+    "SelectionSnapshot": [
+      {
+        "name": "kind",
+        "type": "'include'",
+        "required": true,
+        "description": ""
+      },
+      {
+        "name": "ids",
+        "type": "RowId[]",
+        "required": true,
+        "description": ""
+      },
+      {
+        "name": "loadedRows",
+        "type": "T[]",
+        "required": true,
+        "description": ""
+      },
+      {
+        "name": "count",
+        "type": "number",
+        "required": true,
+        "description": ""
+      },
+      {
+        "name": "query",
+        "type": "{ filters: Filter[]; columnSearch: ColumnSearch[]; search: string; }",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "ExpandableConfig": [
+      {
+        "name": "render",
+        "type": "(row: T, index: number) => ReactNode",
+        "required": true,
+        "description": ""
+      },
+      {
+        "name": "expandedIds",
+        "type": "RowId[]",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "onChange",
+        "type": "(ids: RowId[]) => void",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "allowMultiple",
+        "type": "boolean",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "trigger",
+        "type": "'icon' | 'row'",
+        "required": false,
+        "description": ""
+      }
+    ],
+    "FilterRenderContext": [
+      {
+        "name": "value",
+        "type": "FilterValue",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "onChange",
+        "type": "(value?: FilterValue) => void",
+        "required": true,
+        "description": ""
+      },
+      {
+        "name": "apply",
+        "type": "() => void",
+        "required": true,
+        "description": ""
+      },
+      {
+        "name": "reset",
+        "type": "() => void",
+        "required": true,
+        "description": ""
+      }
+    ]
+  }
+}

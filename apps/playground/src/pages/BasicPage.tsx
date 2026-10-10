@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Badge, NumberInput, SegmentedControl, Select, Stack, Switch, Text } from '@mantine/core';
 import { DataTable, type DataTableColumn } from 'mantine-datatable-lite';
+import { useScenario } from '../useScenario';
 import { PlaygroundLayout } from '../components/PlaygroundLayout';
 import { employees, type Employee } from '../data';
 
@@ -30,7 +31,7 @@ const colorOptions = [
 ];
 
 export function BasicPage() {
-  const [active, setActive] = useState<BasicScenario>('basic');
+  const [active, setActive] = useScenario(scenarios);
   const [rowCount, setRowCount] = useState('6');
   const [striped, setStriped] = useState(false);
   const [hover, setHover] = useState(false);

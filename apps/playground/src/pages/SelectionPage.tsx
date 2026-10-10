@@ -15,6 +15,7 @@ import {
   type RowId,
   type SelectionSnapshot,
 } from 'mantine-datatable-lite';
+import { useScenario } from '../useScenario';
 import { PlaygroundLayout } from '../components/PlaygroundLayout';
 import { employees, type Employee } from '../data';
 
@@ -43,7 +44,7 @@ const columns: DataTableColumn<Employee>[] = [
 ];
 
 export function SelectionPage() {
-  const [active, setActive] = useState<(typeof scenarios)[number]['id']>('all');
+  const [active, setActive] = useScenario(scenarios);
   const [rows, setRows] = useState(employees.slice(0, 12));
   const [selectedIds, setSelectedIds] = useState<RowId[]>([]);
   const [pendingDelete, setPendingDelete] = useState<Employee[]>([]);

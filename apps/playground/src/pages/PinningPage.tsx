@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Stack, Text } from '@mantine/core';
 import { DataTable, type DataTableColumn } from 'mantine-datatable-lite';
+import { useScenario } from '../useScenario';
 import { PlaygroundLayout } from '../components/PlaygroundLayout';
 import { employees, type Employee } from '../data';
 
@@ -10,7 +11,7 @@ const scenarios = [
 ] as const;
 
 export function PinningPage() {
-  const [active, setActive] = useState<(typeof scenarios)[number]['id']>('menu');
+  const [active, setActive] = useScenario(scenarios);
   const columns: DataTableColumn<Employee>[] = [
     { dataIndex: 'id', header: 'ID', width: 80, showMenu: true },
     { dataIndex: 'name', header: 'Name', width: 190, showMenu: true, sticky: active === 'initial' ? 'left' : undefined },
