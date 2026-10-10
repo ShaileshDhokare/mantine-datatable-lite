@@ -112,10 +112,10 @@ export function DocsLayout({
                     viewBox='0 0 24 24'
                     fill='none'
                     stroke='currentColor'
-                    stroke-width='1.5'
-                    stroke-linecap='round'
-                    stroke-linejoin='round'
-                    class='lucide lucide-table-2 preview-icon'
+                    strokeWidth='1.5'
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                    className='lucide lucide-table-2 preview-icon'
                   >
                     <path d='M3 9h18' />
                     <path d='M9 3v18' />
@@ -148,9 +148,9 @@ export function DocsLayout({
                   viewBox='0 0 24 24'
                   fill='none'
                   stroke='currentColor'
-                  stroke-width='1.5'
-                  stroke-linecap='round'
-                  stroke-linejoin='round'
+                  strokeWidth='1.5'
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
                 >
                   <path d='M21 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h6' />
                   <path d='m21 3-9 9' />
@@ -176,9 +176,9 @@ export function DocsLayout({
                   viewBox='0 0 24 24'
                   fill='none'
                   stroke='currentColor'
-                  stroke-width='1.5'
-                  stroke-linecap='round'
-                  stroke-linejoin='round'
+                  strokeWidth='1.5'
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
                 >
                   <path d='M21 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h6' />
                   <path d='m21 3-9 9' />
@@ -202,9 +202,9 @@ export function DocsLayout({
                   viewBox='0 0 24 24'
                   fill='none'
                   stroke='currentColor'
-                  stroke-width='1.5'
-                  stroke-linecap='round'
-                  stroke-linejoin='round'
+                  strokeWidth='1.5'
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
                 >
                   <circle cx='12' cy='12' r='4' />
                   <path d='M12 2v2' />
@@ -224,9 +224,9 @@ export function DocsLayout({
                   viewBox='0 0 24 24'
                   fill='none'
                   stroke='currentColor'
-                  stroke-width='1.5'
-                  stroke-linecap='round'
-                  stroke-linejoin='round'
+                  strokeWidth='1.5'
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
                 >
                   <path d='M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401' />
                 </svg>
