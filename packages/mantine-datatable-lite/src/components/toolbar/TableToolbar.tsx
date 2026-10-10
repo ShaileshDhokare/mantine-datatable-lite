@@ -29,7 +29,7 @@ export function TableToolbar<T>({
   const state = useDataTableContext();
   const pills = showTableStatePills ? describeState(columns, state) : [];
   return (
-    <Paper shadow='xs' mb={'xs'}>
+    <Paper radius='sm' withBorder mb={'xs'}>
       <Group justify='space-between' align='center' gap='lg' p='4' wrap='wrap'>
         <Group gap='xs' flex={1}>
           {showTableStatePills && (

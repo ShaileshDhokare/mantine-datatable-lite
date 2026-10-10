@@ -36,9 +36,9 @@ test('row inference and public filter/identity contracts remain type safe', () =
   const date: DateFilterValue = { operator: 'eq', value: new Date() };
   // @ts-expect-error Between requires two bounds.
   const invalidRange: NumericFilterValue = { operator: 'between', value: 1 };
-  // @ts-expect-error Scalar operators cannot take a tuple.
   const invalidScalar: DateFilterValue = {
     operator: 'eq',
+    // @ts-expect-error Scalar operators cannot take a tuple.
     value: [new Date(), new Date()],
   };
   // @ts-expect-error Boolean fields do not identify rows.

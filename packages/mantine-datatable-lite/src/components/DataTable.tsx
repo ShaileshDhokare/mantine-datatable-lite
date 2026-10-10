@@ -446,9 +446,14 @@ export function DataTable<T>({
     </Table>
   );
 
+  // Side padding exposes scrolling cells beyond the right-pinned column.
   const tableContent =
     minWidth != null || maxHeight != null ? (
-      <Table.ScrollContainer minWidth={minWidth ?? 0} maxHeight={maxHeight}>
+      <Table.ScrollContainer
+        minWidth={minWidth ?? 0}
+        maxHeight={maxHeight}
+        scrollAreaProps={{ scrollbarSize: '8px', offsetScrollbars: 'x' }}
+      >
         {table}
       </Table.ScrollContainer>
     ) : (
@@ -485,7 +490,8 @@ export function DataTable<T>({
             {(styles) => (
               <Paper
                 ref={bulkToolbarRef}
-                shadow='xs'
+                radius='sm'
+                withBorder
                 className={showStandardToolbar ? classes.bulkBar : undefined}
                 style={styles}
               >

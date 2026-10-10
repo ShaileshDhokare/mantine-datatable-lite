@@ -5,7 +5,6 @@
 .cell[data-pinned='left'],
 .cell[data-pinned='right'] {
   position: sticky;
-  z-index: 2;
   background-color: var(--mantine-color-body);
 }
 
