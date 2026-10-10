@@ -257,6 +257,9 @@ exposed Mantine styling props and your Mantine theme.
 
 ## Examples and feedback
 
+Read the [documentation](https://shaileshdhokare.github.io/mantine-datatable-lite/#/getting-started)
+and [download the Markdown guide for AI coding tools](https://shaileshdhokare.github.io/mantine-datatable-lite/llm.md).
+
 The [playground source](https://github.com/ShaileshDhokare/mantine-datatable-lite/tree/master/apps/playground)
 contains basic, sorting, filtering, search, pagination, server, pinning, expansion,
 selection, and combined examples.

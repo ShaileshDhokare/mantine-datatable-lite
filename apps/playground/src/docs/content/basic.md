@@ -7,8 +7,12 @@ import { employees, type Employee } from './data';
 const columns: DataTableColumn<Employee>[] = [
   { dataIndex: 'name', header: 'Name' },
   { dataIndex: 'department', header: 'Department' },
-  { dataIndex: 'salary', header: 'Salary', align: 'right',
-    render: (row) => `$${row.salary.toLocaleString()}` },
+  {
+    dataIndex: 'salary',
+    header: 'Salary',
+    align: 'right',
+    render: (row) => `$${row.salary.toLocaleString()}`,
+  },
 ];
 
 export function Demo() {
