@@ -15,6 +15,7 @@
     "test": "npm run test -w packages/mantine-datatable-lite",
     "test:playground": "npm run test -w playground",
     "check:package": "node scripts/check-package.mjs",
+    "check:published": "node scripts/check-package.mjs --published",
     "check:release": "node scripts/validate-release.mjs && npm run typecheck && npm test && npm run test:playground && npm run build:playground && npm run check:package",
     "lint": "eslint ."
   },

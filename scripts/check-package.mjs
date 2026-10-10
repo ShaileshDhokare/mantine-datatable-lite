@@ -9,6 +9,7 @@ import process from 'node:process';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const library = join(root, 'packages/mantine-datatable-lite');
 const pkg = JSON.parse(readFileSync(join(library, 'package.json'), 'utf8'));
+const published = process.argv.includes('--published');
 const npmCli = process.env.npm_execpath;
 assert(npmCli, 'Run this check with npm run check:package.');
 const fixture = mkdtempSync(join(root, '.package-check-'));
@@ -20,7 +21,7 @@ function run(args, cwd = fixture) {
 }
 
 try {
-  const [packed] = JSON.parse(run([npmCli, 'pack', '--ignore-scripts', '--json', '--pack-destination', fixture], library));
+  const [packed] = JSON.parse(run([npmCli, 'pack', ...(published ? [`${pkg.name}@${pkg.version}`, '--registry=https://registry.npmjs.org/'] : []), '--ignore-scripts', '--json', '--pack-destination', fixture], library));
   const files = packed.files.map(({ path }) => path);
   for (const file of ['package.json', 'README.md', 'LICENSE', 'dist/index.js', 'dist/index.cjs', 'dist/index.d.mts', 'dist/index.d.cts', 'dist/styles.css']) {
     assert(files.includes(file), `Missing packed file: ${file}`);
@@ -29,13 +30,17 @@ try {
   assert(files.every((file) => file.startsWith('dist/') || ['package.json', 'README.md', 'LICENSE', 'THIRD_PARTY_NOTICES'].includes(file)), 'Only built assets, metadata, README, and license notices should ship.');
   assert(!files.some((file) => /test|node_modules/.test(file)), 'Tests and dependencies must not ship.');
   assert.equal(Object.keys(pkg.dependencies ?? {}).length, 0, 'Keep runtime dependencies as peers.');
-  const gzipBytes = gzipSync(readFileSync(join(library, 'dist/index.js'))).length + gzipSync(readFileSync(join(library, 'dist/styles.css'))).length;
-  assert(gzipBytes <= 25 * 1024, `Library JS + CSS exceeds the 25 KiB gzip budget: ${gzipBytes}`);
-
   writeFileSync(join(fixture, 'package.json'), JSON.stringify({ name: 'release-consumer', private: true, type: 'module' }));
   // Install the real tarball; reuse the workspace's peer versions through ancestor resolution.
   run([npmCli, 'install', '--prefix', fixture, join(fixture, packed.filename), '--offline', '--ignore-scripts', '--legacy-peer-deps', '--package-lock=false', '--no-audit', '--no-fund', '--workspaces=false']);
   assert.equal(realpathSync(join(fixture, 'node_modules', pkg.name)), join(fixture, 'node_modules', pkg.name), 'Consumer must install the tarball instead of resolving the workspace link.');
+  const installed = join(fixture, 'node_modules', pkg.name);
+  const installedPackage = JSON.parse(readFileSync(join(installed, 'package.json'), 'utf8'));
+  assert.equal(installedPackage.name, pkg.name);
+  assert.equal(installedPackage.version, pkg.version);
+  assert.equal(Object.keys(installedPackage.dependencies ?? {}).length, 0, 'The installed artifact must keep runtime dependencies as peers.');
+  const gzipBytes = gzipSync(readFileSync(join(installed, 'dist/index.js'))).length + gzipSync(readFileSync(join(installed, 'dist/styles.css'))).length;
+  assert(gzipBytes <= 25 * 1024, `Library JS + CSS exceeds the 25 KiB gzip budget: ${gzipBytes}`);
 
   const api = `
 import { DataTable, Icon, rowActionsColumn } from '${pkg.name}';
@@ -76,7 +81,7 @@ if (!html.includes('Packed consumer')) throw new Error('Packed table did not ren
   writeFileSync(join(fixture, 'build.mjs'), `import { build } from 'vite'; await build({ configFile: false, root: ${JSON.stringify(fixture)}, logLevel: 'error', build: { lib: { entry: 'consumer.tsx', formats: ['es'], fileName: 'consumer', cssFileName: 'consumer' }, rolldownOptions: { external: [/^react(?:\\/|$)/, /^react-dom(?:\\/|$)/, /^@mantine\\//] } } });`);
   run(['build.mjs']);
   assert(existsSync(join(fixture, 'dist/consumer.css')), 'The consumer bundler must resolve the public CSS export.');
-  process.stdout.write(`Packed ${pkg.name}@${pkg.version}: ${files.length} files, ${(packed.size / 1024).toFixed(1)} KiB tarball, ${(gzipBytes / 1024).toFixed(1)} KiB gzip JS + CSS.\nESM/CJS rendering, NodeNext/Bundler types, all public exports, and a Vite consumer build passed.\n`);
+  process.stdout.write(`${published ? 'Published npm artifact' : 'Packed'} ${pkg.name}@${pkg.version}: ${files.length} files, ${(packed.size / 1024).toFixed(1)} KiB tarball, ${(gzipBytes / 1024).toFixed(1)} KiB gzip JS + CSS.\nESM/CJS rendering, NodeNext/Bundler types, all public exports, and a Vite consumer build passed.\n`);
 } finally {
   assert(dirname(fixture) === root && fixture.startsWith(join(root, '.package-check-')));
   rmSync(fixture, { recursive: true, force: true });
