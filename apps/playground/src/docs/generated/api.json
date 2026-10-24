@@ -109,7 +109,7 @@
         "name": "loaderProps",
         "type": "LoaderProps",
         "required": false,
-        "description": ""
+        "description": "Props for the Mantine `Loader` in the loading overlay, merged over the default\n`{ type: 'bars', size: 'sm' }`. Set `type` (`'oval'`, `'bars'` or `'dots'`) to change\nthe animation; `variant` is Mantine's style variant and does not change it."
       },
       {
         "name": "error",

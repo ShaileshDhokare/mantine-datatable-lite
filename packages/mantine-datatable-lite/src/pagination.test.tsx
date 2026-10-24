@@ -1,4 +1,4 @@
-import { MantineProvider } from '@mantine/core';
+import { Loader, MantineProvider } from '@mantine/core';
 import {
   act,
   cleanup,
@@ -191,6 +191,31 @@ test('loading keeps supplied rows visible and marks the table busy', () => {
   );
   expect(screen.getByRole('table').textContent).toContain('Alice');
   expect(screen.getByRole('table').getAttribute('aria-busy')).toBe('true');
+});
+
+test('loaderProps reach the overlay loader and override its defaults', () => {
+  const view = render(
+    <MantineProvider env='test'>
+      <DataTable columns={columns} rows={rows} loading />
+    </MantineProvider>,
+  );
+  const loader = () =>
+    view.container.querySelector('.mantine-Loader-root') as HTMLElement;
+  // Default: Mantine's bars loader, small.
+  expect(loader().classList.contains(Loader.classes.dotsLoader)).toBe(true);
+  expect(loader().getAttribute('data-size')).toBe('md');
+  view.rerender(
+    <MantineProvider env='test'>
+      <DataTable
+        columns={columns}
+        rows={rows}
+        loading
+        loaderProps={{ type: 'dots', size: 'lg', color: 'red' }}
+      />
+    </MantineProvider>,
+  );
+  expect(loader().classList.contains(Loader.classes.dotsLoader)).toBe(true);
+  expect(loader().getAttribute('data-size')).toBe('lg');
 });
 
 test('an error replaces the rows and lets the caller retry', () => {

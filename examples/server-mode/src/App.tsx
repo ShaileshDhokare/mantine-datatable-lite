@@ -269,7 +269,8 @@ export function App() {
             pageSizeOptions: [10, 25, 50, 100],
           }}
           loading={query.loading}
-          loaderProps={{ variant: 'dots' }}
+          // Mantine's Loader picks its animation from `type` ('oval', 'bars' or 'dots').
+          loaderProps={{ type: 'dots', size: 'md' }}
           error={query.error}
           onRetry={query.refresh}
           globalSearch

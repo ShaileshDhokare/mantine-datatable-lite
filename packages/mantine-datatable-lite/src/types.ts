@@ -351,6 +351,11 @@ export interface DataTableProps<T> extends MantineTableProps {
 
   /** Show an overlay over the current rows while the caller loads data. */
   loading?: boolean;
+  /**
+   * Props for the Mantine `Loader` in the loading overlay, merged over the default
+   * `{ type: 'bars', size: 'sm' }`. Set `type` (`'oval'`, `'bars'` or `'dots'`) to change
+   * the animation; `variant` is Mantine's style variant and does not change it.
+   */
   loaderProps?: LoaderProps;
   /**
    * Error from the caller, shown in place of the rows with an error icon. Pass a message,

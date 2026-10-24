@@ -507,7 +507,7 @@ export function DataTable<T>({
             <LoadingOverlay
               visible={Boolean(loading)}
               overlayProps={{ radius: 'sm', blur: 2 }}
-              loaderProps={{ type: 'bars', size: 'sm', ...loaderProps }}
+              loaderProps={{ type: 'dots', size: 'md', ...loaderProps }}
             />
             {tableContent}
           </Box>
