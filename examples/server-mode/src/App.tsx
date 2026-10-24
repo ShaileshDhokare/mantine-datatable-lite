@@ -5,21 +5,23 @@ import {
   Button,
   Code,
   Container,
-  DataList,
   Group,
   Loader,
   Modal,
+  Notification,
   Paper,
   Spoiler,
   Stack,
   Switch,
   Text,
   Title,
+  Tooltip,
+  useComputedColorScheme,
   useMantineColorScheme,
 } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
-import { DataTable, type RowId } from 'mantine-datatable-lite';
-import { useEffect, useMemo, useState } from 'react';
+import { DataTable, Icon, type RowId } from 'mantine-datatable-lite';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   deleteEmployees,
   errorMessage,
@@ -31,23 +33,79 @@ import {
   type FilterOptions,
 } from './api';
 import { employeeColumns } from './columns';
+import { EmployeeDetailsPanel } from './EmployeeDetailsPanel';
 import { EmployeeDrawer } from './EmployeeDrawer';
 import { useEmployeeQuery } from './useEmployeeQuery';
 
 type PendingDelete = { ids: RowId[]; label: string } | null;
+type Action = 'activate' | 'deactivate' | 'delete' | 'reset';
+type Notice = { id: number; color: 'teal' | 'red'; text: string };
 
 const employees = (count: number) => `${count} ${count === 1 ? 'employee' : 'employees'}`;
 
+function ThemeIcon({ dark }: { dark: boolean }) {
+  return (
+    <svg
+      width={18}
+      height={18}
+      viewBox='0 0 24 24'
+      fill='none'
+      stroke='currentColor'
+      strokeWidth={1.75}
+      strokeLinecap='round'
+      strokeLinejoin='round'
+      aria-hidden
+    >
+      {dark ? (
+        <>
+          <circle cx='12' cy='12' r='4' />
+          <path d='M12 2v2M12 20v2m-7.07-17.07 1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41' />
+        </>
+      ) : (
+        <path d='M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z' />
+      )}
+    </svg>
+  );
+}
+
+/** Success messages close themselves; errors stay until dismissed. */
+function Toast({ notice, onClose }: { notice: Notice | undefined; onClose: () => void }) {
+  useEffect(() => {
+    if (notice?.color !== 'teal') return;
+    const timer = setTimeout(onClose, 4000);
+    return () => clearTimeout(timer);
+  }, [notice, onClose]);
+  if (!notice) return null;
+  return (
+    <Notification
+      key={notice.id}
+      color={notice.color}
+      title={notice.color === 'red' ? 'Something went wrong' : 'Done'}
+      withBorder
+      onClose={onClose}
+      pos='fixed'
+      bottom={24}
+      right={24}
+      w={360}
+      maw='calc(100vw - 48px)'
+      style={{ zIndex: 400 }}
+    >
+      {notice.text}
+    </Notification>
+  );
+}
+
 export function App() {
-  const { colorScheme, toggleColorScheme } = useMantineColorScheme();
+  const { setColorScheme } = useMantineColorScheme();
+  const scheme = useComputedColorScheme('light', { getInitialValueInEffect: true });
   const query = useEmployeeQuery();
   const [options, setOptions] = useState<FilterOptions>();
   const [optionsError, setOptionsError] = useState<string>();
   const [selectedIds, setSelectedIds] = useState<RowId[]>([]);
   const [viewing, setViewing] = useState<number | null>(null);
   const [pendingDelete, setPendingDelete] = useState<PendingDelete>(null);
-  const [busy, setBusy] = useState(false);
-  const [notice, setNotice] = useState<{ color: string; text: string }>();
+  const [running, setRunning] = useState<Action | null>(null);
+  const [notice, setNotice] = useState<Notice>();
   const [slow, setSlow] = useState(simulation.slow);
   const [failing, setFailing] = useState(simulation.failing);
   // Remounting the table after a data reset also clears its sort, filters and page.
@@ -71,40 +129,60 @@ export function App() {
     [options],
   );
 
+  const closeNotice = useCallback(() => setNotice(undefined), []);
+  const notify = (color: Notice['color'], text: string) =>
+    setNotice({ id: Date.now(), color, text });
+
   /** Runs a mutation, reports the result, and refetches the current page. */
-  async function mutate(action: () => Promise<string>, after?: () => void) {
-    setBusy(true);
+  async function mutate(action: Action, run: () => Promise<string>, after?: () => void) {
+    setRunning(action);
     try {
-      setNotice({ color: 'teal', text: await action() });
+      notify('teal', await run());
       after?.();
       query.refresh();
     } catch (cause) {
-      setNotice({ color: 'red', text: errorMessage(cause) });
+      notify('red', errorMessage(cause));
     } finally {
-      setBusy(false);
+      setRunning(null);
     }
   }
 
-  if (optionsError) return <Alert color='red' m='xl'>{optionsError}. Is the API running?</Alert>;
-  if (!options) return <Loader m='xl' />;
+  if (optionsError)
+    return (
+      <Container size='sm' py='xl'>
+        <Alert color='red' title='Could not reach the employee API'>
+          {optionsError}. Start it with <Code>npm run dev</Code> in this folder.
+        </Alert>
+      </Container>
+    );
+  if (!options)
+    return (
+      <Group justify='center' py='xl'>
+        <Loader size='sm' />
+      </Group>
+    );
 
   return (
-    <Container size='xl' py='lg'>
+    <Container component='main' size='xl' py='lg'>
       <Stack gap='md'>
-        <Group justify='space-between' align='flex-start'>
-          <div>
-            <Title order={2}>Employee directory</Title>
+        <Group justify='space-between' align='flex-start' gap='sm'>
+          <Box flex='1 1 320px'>
+            <Title id='employees-title' order={1} size='h2'>
+              Employee directory
+            </Title>
             <Text c='dimmed' size='sm'>
               mantine-datatable-lite in server mode: every sort, filter, search and page
               change becomes one request to an Express + SQLite API.
             </Text>
-          </div>
-          <Group gap='xs'>
+          </Box>
+          <Group gap='xs' wrap='nowrap'>
             <Button
               variant='default'
-              loading={busy}
+              loading={running === 'reset'}
+              disabled={running !== null && running !== 'reset'}
               onClick={() =>
                 mutate(
+                  'reset',
                   async () => {
                     await resetDemoData();
                     return 'Demo data restored.';
@@ -118,14 +196,16 @@ export function App() {
             >
               Reset demo data
             </Button>
-            <ActionIcon
-              variant='default'
-              size='lg'
-              aria-label='Toggle color scheme'
-              onClick={toggleColorScheme}
-            >
-              {colorScheme === 'dark' ? '☀' : '☾'}
-            </ActionIcon>
+            <Tooltip label={scheme === 'dark' ? 'Light mode' : 'Dark mode'} withArrow>
+              <ActionIcon
+                variant='default'
+                size={36}
+                aria-label={scheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+                onClick={() => setColorScheme(scheme === 'dark' ? 'light' : 'dark')}
+              >
+                <ThemeIcon dark={scheme === 'dark'} />
+              </ActionIcon>
+            </Tooltip>
           </Group>
         </Group>
 
@@ -146,19 +226,14 @@ export function App() {
               setFailing(simulation.failing);
             }}
           />
-          <Text size='sm' c='dimmed'>
-            {employees(query.total)} matching
+          <Text size='sm' c='dimmed' aria-live='polite'>
+            {query.loaded ? `${employees(query.total)} matching` : 'Loading employees…'}
           </Text>
         </Group>
 
-        {notice && (
-          <Alert color={notice.color} withCloseButton onClose={() => setNotice(undefined)}>
-            {notice.text}
-          </Alert>
-        )}
-
         <DataTable<Employee>
           key={tableKey}
+          aria-labelledby='employees-title'
           mode='server'
           rows={query.rows}
           columns={columns}
@@ -178,7 +253,15 @@ export function App() {
           showReset
           persistKey='server-mode-example:employees'
           dateInput={DatePickerInput}
-          labels={{ noRecords: 'No employees match these filters' }}
+          emptyState={
+            <Stack align='center' gap={4} py='md'>
+              <Icon name='search' size={28} strokeWidth={1.5} color='var(--mantine-color-dimmed)' />
+              <Text fw={500}>No employees match these filters</Text>
+              <Text size='sm' c='dimmed'>
+                Remove a filter or clear the search to see more people.
+              </Text>
+            </Stack>
+          }
           selection={{
             selectedIds,
             onChange: ({ ids }) => setSelectedIds(ids),
@@ -187,9 +270,14 @@ export function App() {
                 <Button
                   size='xs'
                   variant='light'
-                  loading={busy}
+                  loading={running === 'activate'}
+                  disabled={running !== null && running !== 'activate'}
                   onClick={() =>
-                    mutate(async () => `${employees(await setActive(ids, true))} activated.`, clear)
+                    mutate(
+                      'activate',
+                      async () => `${employees(await setActive(ids, true))} activated.`,
+                      clear,
+                    )
                   }
                 >
                   Activate
@@ -198,9 +286,14 @@ export function App() {
                   size='xs'
                   variant='light'
                   color='gray'
-                  loading={busy}
+                  loading={running === 'deactivate'}
+                  disabled={running !== null && running !== 'deactivate'}
                   onClick={() =>
-                    mutate(async () => `${employees(await setActive(ids, false))} deactivated.`, clear)
+                    mutate(
+                      'deactivate',
+                      async () => `${employees(await setActive(ids, false))} deactivated.`,
+                      clear,
+                    )
                   }
                 >
                   Deactivate
@@ -209,6 +302,7 @@ export function App() {
                   size='xs'
                   variant='light'
                   color='red'
+                  disabled={running !== null}
                   onClick={() =>
                     setPendingDelete({ ids, label: `${employees(ids.length)} (selected)` })
                   }
@@ -220,24 +314,8 @@ export function App() {
           }}
           expandable={{
             allowMultiple: true,
-            render: (row) => (
-              <DataList orientation='horizontal' size='sm'>
-                <DataList.Item>
-                  <DataList.ItemLabel>Employee ID</DataList.ItemLabel>
-                  <DataList.ItemValue>{row.id}</DataList.ItemValue>
-                </DataList.Item>
-                <DataList.Item>
-                  <DataList.ItemLabel>Office</DataList.ItemLabel>
-                  <DataList.ItemValue>{row.city}</DataList.ItemValue>
-                </DataList.Item>
-                <DataList.Item>
-                  <DataList.ItemLabel>Tenure</DataList.ItemLabel>
-                  <DataList.ItemValue>
-                    {new Date().getFullYear() - row.joinDate.getFullYear()} years
-                  </DataList.ItemValue>
-                </DataList.Item>
-              </DataList>
-            ),
+            // Fetched from GET /api/employees/:id/details when the row opens.
+            render: (row) => <EmployeeDetailsPanel employee={row} />,
           }}
           onRowClick={(row) => setViewing(row.id)}
           minWidth={1450}
@@ -266,33 +344,40 @@ export function App() {
 
       <Modal
         opened={pendingDelete !== null}
-        onClose={() => setPendingDelete(null)}
-        title='Delete employees?'
+        onClose={() => running !== 'delete' && setPendingDelete(null)}
+        title={<Text fw={600}>Delete employees?</Text>}
         centered
       >
-        <Text size='sm'>Delete {pendingDelete?.label}? You can restore everything with Reset demo data.</Text>
-        <Box mt='lg'>
-          <Group justify='flex-end'>
-            <Button variant='default' onClick={() => setPendingDelete(null)}>
-              Cancel
-            </Button>
-            <Button
-              color='red'
-              loading={busy}
-              onClick={() => {
-                const ids = pendingDelete?.ids ?? [];
-                setPendingDelete(null);
-                mutate(
-                  async () => `${employees(await deleteEmployees(ids))} deleted.`,
-                  () => setSelectedIds((current) => current.filter((id) => !ids.includes(id))),
-                );
-              }}
-            >
-              Delete
-            </Button>
-          </Group>
-        </Box>
+        <Text size='sm'>
+          Delete {pendingDelete?.label}? You can restore everything with Reset demo data.
+        </Text>
+        <Group justify='flex-end' mt='lg'>
+          <Button
+            variant='default'
+            disabled={running === 'delete'}
+            onClick={() => setPendingDelete(null)}
+          >
+            Cancel
+          </Button>
+          <Button
+            color='red'
+            loading={running === 'delete'}
+            onClick={async () => {
+              const ids = pendingDelete?.ids ?? [];
+              await mutate(
+                'delete',
+                async () => `${employees(await deleteEmployees(ids))} deleted.`,
+                () => setSelectedIds((current) => current.filter((id) => !ids.includes(id))),
+              );
+              setPendingDelete(null);
+            }}
+          >
+            Delete
+          </Button>
+        </Group>
       </Modal>
+
+      <Toast notice={notice} onClose={closeNotice} />
     </Container>
   );
 }

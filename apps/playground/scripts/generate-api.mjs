@@ -36,7 +36,9 @@ for (const name of names) {
   });
 }
 mkdirSync(resolve(root, 'src/docs/generated'), { recursive: true });
-writeFileSync(resolve(root, 'src/docs/generated/api.json'), `${JSON.stringify({ version: pkg.version, api }, null, 2)}\n`);
+// The npm dist-tag that installs this version: alpha, next (release candidates) or latest.
+const tag = pkg.publishConfig?.tag ?? 'latest';
+writeFileSync(resolve(root, 'src/docs/generated/api.json'), `${JSON.stringify({ version: pkg.version, tag, api }, null, 2)}\n`);
 // The rendered guide and stable download share one authored source and the npm API.
 const typeFile = publicSymbol('DataTableProps').declarations[0].getSourceFile();
 const types = typeFile.statements
@@ -44,7 +46,7 @@ const types = typeFile.statements
   .map((node) => node.getText()).join('\n\n');
 const iconProps = publicSymbol('IconProps').declarations[0].getText();
 const actions = publicSymbol('rowActionsColumn').declarations[0].getText();
-const guide = readFileSync(resolve(root, 'src/docs/content/llm.md'), 'utf8').replaceAll('{{version}}', pkg.version);
+const guide = readFileSync(resolve(root, 'src/docs/content/llm.md'), 'utf8').replaceAll('{{version}}', pkg.version).replaceAll('{{tag}}', tag);
 const reference = [
   "import type { ComponentProps, ComponentType, CSSProperties, MouseEvent, ReactNode, SVGProps } from 'react';",
   "import type { LoaderProps, MantineSize, TableProps } from '@mantine/core';",

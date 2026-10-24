@@ -3,7 +3,7 @@
 A small, typed data table for [Mantine](https://mantine.dev) 9 and React 19, with
 the features real screens need and nothing more.
 
-[![npm](https://img.shields.io/npm/v/mantine-datatable-lite/alpha?label=npm)](https://www.npmjs.com/package/mantine-datatable-lite)
+[![npm](https://img.shields.io/npm/v/mantine-datatable-lite/next?label=npm)](https://www.npmjs.com/package/mantine-datatable-lite)
 [![license](https://img.shields.io/npm/l/mantine-datatable-lite)](https://github.com/ShaileshDhokare/mantine-datatable-lite/blob/master/packages/mantine-datatable-lite/LICENSE)
 ![types](https://img.shields.io/badge/types-included-blue)
 
@@ -24,7 +24,8 @@ the features real screens need and nothing more.
 - **Light.** About 17 KB gzipped (JS + CSS) and no runtime dependencies beyond
   React and Mantine.
 
-> **Prerelease.** The API is stabilising for 1.0. Pin an exact version, and see
+> **Release candidate.** `1.0.0-rc.0` is the API planned for 1.0. It is published
+> under the `next` tag; pin an exact version, and see
 > [Upgrading from earlier alphas](#upgrading-from-earlier-alphas).
 
 ## Contents
@@ -40,6 +41,7 @@ the features real screens need and nothing more.
 - [Toolbar, column menu and pinning](#toolbar-column-menu-and-pinning)
 - [Styling](#styling)
 - [Translations](#translations)
+- [Accessibility](#accessibility)
 - [TypeScript](#typescript)
 - [Props](#props)
 - [Upgrading from earlier alphas](#upgrading-from-earlier-alphas)
@@ -47,7 +49,7 @@ the features real screens need and nothing more.
 ## Install
 
 ```sh
-npm install mantine-datatable-lite@alpha
+npm install mantine-datatable-lite@next
 ```
 
 Peer dependencies:
@@ -393,7 +395,47 @@ defaults.
 />
 ```
 
-See the `DataTableLabels` type for every key.
+See the `DataTableLabels` type for every key. It covers visible text, screen
+reader labels (for example `sortColumn`, `columnMenu`, `removePill` and
+`pageControl`) and `formatDate`, which formats dates in filter pills. Labels that
+include a column or a count are functions, so word order can follow the
+language:
+
+```tsx
+labels={{
+  sortColumn: (column, order) =>
+    `${column} sortieren (${order === 'asc' ? 'aufsteigend' : order === 'desc' ? 'absteigend' : 'unsortiert'})`,
+  columnMenu: (column) => `Menü für ${column}`,
+  removePill: (pill) => `${pill} entfernen`,
+  formatDate: (date) => date.toLocaleDateString('de-DE'),
+}}
+```
+
+Right-to-left layouts work with Mantine's `DirectionProvider`. Pinning uses
+logical sides: `pinned: 'left'` is the start side, which is on the right in a
+right-to-left layout, so translate `pinLeft`, `pinRight`, `moveLeft` and
+`moveRight` as start and end.
+
+## Accessibility
+
+- Sortable headers set `aria-sort`, and every icon button has a translatable
+  label. Menus, popovers and the page-size select come from Mantine and support
+  the keyboard.
+- Name the table with `aria-label`, or point `aria-labelledby` at a visible
+  heading.
+- Clickable rows (`onRowClick` or `expandable.trigger: 'row'`) are focusable,
+  show a focus ring, and open with Enter or Space. Expand buttons set
+  `aria-expanded` and `aria-controls`.
+- A status region announces the selected count, including the first selection.
+  While the bulk action bar is shown, the toolbar under it is inert and hidden
+  from screen readers, and focus moves between them.
+- `aria-busy` marks the table while `loading` is set, and `error` renders as an
+  alert.
+- Colors come from your Mantine theme. Mantine's default `dimmed` text and
+  light-mode primary color are below the WCAG AA contrast ratio for small text;
+  raise them in your theme if you need AA (the
+  [server-mode example](https://github.com/ShaileshDhokare/mantine-datatable-lite/tree/master/examples/server-mode)
+  shows one way).
 
 ## TypeScript
 
@@ -433,6 +475,7 @@ types are exported from the package root.
 | `onRetry` | `() => void` | |
 | `emptyState` | `ReactNode` | "No records found" |
 | `labels` | `Partial<DataTableLabels>` | English |
+| `aria-label`, `aria-labelledby` | `string` | |
 | `dateInput` | `ComponentType<DateInputProps>` | native date input |
 
 Plus the Mantine `Table` styling props listed under [Styling](#styling).
@@ -486,6 +529,12 @@ Behavior changes:
 - The table uses separate borders (`border-collapse: separate`), and a scrolling
   table draws its outer border on the scroll frame, so pinned columns keep their
   borders while scrolling.
+- The table renders one root element, so a parent `Stack` or flex `gap` no
+  longer adds space between the toolbar, the table and the pagination.
+- The bulk action bar covers the toolbar at exactly the same size, and both keep
+  the same height when the global search opens.
+- The expand column header has screen-reader text instead of an `aria-label`,
+  and the selected count is announced through a status region.
 
 ## Not included
 

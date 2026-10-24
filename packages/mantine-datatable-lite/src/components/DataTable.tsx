@@ -11,6 +11,7 @@ import {
   Text,
   Transition,
   useMantineTheme,
+  VisuallyHidden,
 } from '@mantine/core';
 import {
   useEffect,
@@ -83,6 +84,8 @@ export function DataTable<T>({
   highlightOnHoverColor,
   stickyHeader,
   layout,
+  'aria-label': ariaLabel,
+  'aria-labelledby': ariaLabelledBy,
 }: DataTableProps<T>) {
   const server = mode === 'server';
   const scrolls = minWidth != null || maxHeight != null;
@@ -268,6 +271,8 @@ export function DataTable<T>({
       highlightOnHoverColor={highlightOnHoverColor}
       stickyHeader={stickyHeader}
       layout={layout}
+      aria-label={ariaLabel}
+      aria-labelledby={ariaLabelledBy}
       aria-busy={Boolean(loading)}
     >
       <Table.Thead>
@@ -300,8 +305,10 @@ export function DataTable<T>({
                     '--dt-pin-offset': `${expansionOffset}px`,
                   } as CSSProperties
                 }
-                aria-label={labels.expandRow}
-              />
+              >
+                {/* Header cells need text for screen readers; this column has no visible title. */}
+                <VisuallyHidden>{labels.expandRow}</VisuallyHidden>
+              </Table.Th>
             )}
             {cellColumns.map(({ column }) => (
               <ColumnHeader
@@ -404,15 +411,12 @@ export function DataTable<T>({
   return (
     <DataTableConfigContext.Provider value={config}>
       <DataTableContext.Provider value={tableState}>
-        {(showStandardToolbar || showBulkToolbar) && (
-          <Box pos='relative'>
-            {showStandardToolbar && (
-              <Box
-                ref={standardToolbarRef}
-                inert={showBulkToolbar}
-                aria-hidden={showBulkToolbar || undefined}
-              >
+        <Box className={classes.wrapper}>
+          {(showStandardToolbar || showBulkToolbar) && (
+            <Box className={classes.toolbars}>
+              {showStandardToolbar && (
                 <TableToolbar
+                  ref={standardToolbarRef}
                   columns={columns}
                   globalSearch={globalSearch}
                   columnSelector={columnSelector}
@@ -422,59 +426,71 @@ export function DataTable<T>({
                   maxChips={maxChips}
                   inactive={showBulkToolbar}
                 />
-              </Box>
-            )}
-            <Transition
-              mounted={showBulkToolbar}
-              transition='fade'
-              duration={100}
-            >
-              {(styles) => (
-                <BulkActionBar
-                  ref={bulkToolbarRef}
-                  count={selectedIds.length}
-                  showCount={selection?.showSelectionCount !== false}
-                  overlay={showStandardToolbar ? classes.bulkBar : undefined}
-                  style={styles}
-                  onClear={clearSelection}
-                  actions={selection?.renderBulkActions?.({
-                    ...snapshot(selectedIds),
-                    clear: clearSelection,
-                  })}
-                />
               )}
-            </Transition>
+              <Transition
+                mounted={showBulkToolbar}
+                transition='fade'
+                duration={100}
+              >
+                {(styles) => (
+                  <BulkActionBar
+                    ref={bulkToolbarRef}
+                    count={selectedIds.length}
+                    showCount={selection?.showSelectionCount !== false}
+                    style={styles}
+                    onClear={clearSelection}
+                    actions={selection?.renderBulkActions?.({
+                      ...snapshot(selectedIds),
+                      clear: clearSelection,
+                    })}
+                  />
+                )}
+              </Transition>
+            </Box>
+          )}
+          {selection && (
+            // Always mounted, so screen readers announce the first selection too.
+            <VisuallyHidden role='status'>
+              {selectedIds.length
+                ? labels.selectedCount(selectedIds.length)
+                : ''}
+            </VisuallyHidden>
+          )}
+          <Box pos='relative'>
+            <LoadingOverlay
+              visible={Boolean(loading)}
+              overlayProps={{ radius: 'sm', blur: 2 }}
+              loaderProps={{ type: 'bars', size: 'sm', ...loaderProps }}
+            />
+            {tableContent}
           </Box>
-        )}
-        <Box pos='relative'>
-          <LoadingOverlay
-            visible={Boolean(loading)}
-            overlayProps={{ radius: 'sm', blur: 2 }}
-            loaderProps={{ type: 'bars', size: 'sm', ...loaderProps }}
-          />
-          {tableContent}
+          {error && (
+            <Alert color='red' role='alert' mt='xs'>
+              <Group justify='space-between' gap='sm'>
+                <Text size='sm'>{error}</Text>
+                {onRetry && (
+                  <Button
+                    size='xs'
+                    variant='light'
+                    color='red'
+                    onClick={onRetry}
+                  >
+                    {labels.retry}
+                  </Button>
+                )}
+              </Group>
+            </Alert>
+          )}
+          {pagination && (
+            <TablePagination
+              page={page.currentPage}
+              pageSize={page.pageSize}
+              total={totalItems}
+              pageSizeOptions={pagination.pageSizeOptions}
+              onChange={tableState.setPagination}
+            />
+          )}
         </Box>
-        {error && (
-          <Alert color='red' role='alert' mt='xs'>
-            <Group justify='space-between' gap='sm'>
-              <Text size='sm'>{error}</Text>
-              {onRetry && (
-                <Button size='xs' variant='light' color='red' onClick={onRetry}>
-                  {labels.retry}
-                </Button>
-              )}
-            </Group>
-          </Alert>
-        )}
-        {pagination && (
-          <TablePagination
-            page={page.currentPage}
-            pageSize={page.pageSize}
-            total={totalItems}
-            pageSizeOptions={pagination.pageSizeOptions}
-            onChange={tableState.setPagination}
-          />
-        )}
       </DataTableContext.Provider>
     </DataTableConfigContext.Provider>
   );

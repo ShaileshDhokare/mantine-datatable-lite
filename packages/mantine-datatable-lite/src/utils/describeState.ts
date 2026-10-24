@@ -16,7 +16,7 @@ const operatorSymbols = {
 } as const;
 
 function displayValue(value: unknown, labels: DataTableLabels) {
-  if (value instanceof Date) return value.toLocaleDateString();
+  if (value instanceof Date) return labels.formatDate(value);
   if (typeof value === 'boolean') return value ? labels.true : labels.false;
   return String(value);
 }
@@ -100,7 +100,7 @@ export function describeState<T>(
     addPill(
       'sort',
       labels.sortedBy,
-      `${name(sorter.field)} ${sorter.order.toUpperCase()}`,
+      `${name(sorter.field)} ${labels.sortOrder[sorter.order]}`,
       () => state.setSort(sorter.field, null),
     );
   for (const filter of state.filters) {

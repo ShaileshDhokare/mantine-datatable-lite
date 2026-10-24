@@ -71,7 +71,9 @@ export function TablePagination({
           onChange={(next) => onChange(next, pageSize)}
           disabled={total === 0}
           withEdges
-          getControlProps={(control) => ({ 'aria-label': `${control} page` })}
+          getControlProps={(control) => ({
+            'aria-label': labels.pageControl(control),
+          })}
           nextIcon={NextIcon}
           previousIcon={PreviousIcon}
           firstIcon={FirstIcon}

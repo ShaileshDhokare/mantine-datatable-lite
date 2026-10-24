@@ -17,6 +17,17 @@ type EmployeeJson = Omit<Employee, 'joinDate'> & { joinDate: string };
 
 export type EmployeePage = { rows: Employee[]; total: number };
 
+/** Extra details for an expanded row, from GET /api/employees/:id/details. */
+export type EmployeeDetails = {
+  id: number;
+  manager: { id: number; name: string; role: string } | null;
+  employmentType: 'Full-time' | 'Part-time' | 'Contractor';
+  workMode: 'Hybrid' | 'On-site' | 'Remote';
+  timeZone: string;
+  skills: string[];
+  projects: string[];
+};
+
 export type FilterOptions = {
   departments: string[];
   roles: string[];
@@ -93,6 +104,14 @@ export async function fetchFilterOptions(): Promise<FilterOptions> {
 export async function fetchEmployee(id: RowId): Promise<Employee> {
   const { data } = await api.get<EmployeeJson>(`/employees/${id}`);
   return toEmployee(data);
+}
+
+export async function fetchEmployeeDetails(
+  id: RowId,
+  signal: AbortSignal,
+): Promise<EmployeeDetails> {
+  const { data } = await api.get<EmployeeDetails>(`/employees/${id}/details`, { signal });
+  return data;
 }
 
 export async function setActive(ids: RowId[], isActive: boolean) {

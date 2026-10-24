@@ -4,7 +4,7 @@ A typed DataTable for **Mantine 9.6+ and React 19.2+**, [published on
 npm](https://www.npmjs.com/package/mantine-datatable-lite) under the MIT license.
 
 ```sh
-npm install --save-exact mantine-datatable-lite@alpha
+npm install --save-exact mantine-datatable-lite@next
 ```
 
 See the [package README](packages/mantine-datatable-lite/README.md) for installation,
@@ -56,7 +56,16 @@ npm and applies the same consumer checks to that artifact.
 
 ## Publishing
 
-Package releases are published manually through the npm CLI. The documentation
-has a separate GitHub Pages workflow; it does not publish the npm package.
-See [RELEASING.md](RELEASING.md) for validation, publishing, and updating the
-playground's installed release.
+Package releases are published manually through the npm CLI. Prereleases use
+their own dist-tag (`alpha`, or `next` for release candidates), which
+`scripts/validate-release.mjs` checks against `publishConfig.tag`:
+
+```sh
+npm run check:release
+npm publish --workspace packages/mantine-datatable-lite --access public --tag next --dry-run
+npm publish --workspace packages/mantine-datatable-lite --access public --tag next
+npm run check:published
+```
+
+The documentation has a separate GitHub Pages workflow; it does not publish the
+npm package.

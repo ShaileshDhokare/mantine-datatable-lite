@@ -74,16 +74,12 @@ export function GlobalSearch({
     <Tooltip label={labels.globalSearch} withArrow>
       <ActionIcon
         variant='subtle'
+        size='lg'
+        color='var(--mantine-color-dimmed)'
         aria-label={labels.openGlobalSearch}
         onClick={() => setExpanded(true)}
-        size='lg'
       >
-        <Icon
-          name='search'
-          strokeWidth={1.5}
-          size={20}
-          color='var(--mantine-color-dimmed)'
-        />
+        <Icon name='search' strokeWidth={1.5} size={20} />
       </ActionIcon>
     </Tooltip>
   );

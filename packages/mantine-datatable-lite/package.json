@@ -1,6 +1,6 @@
 {
   "name": "mantine-datatable-lite",
-  "version": "0.1.0-alpha.2",
+  "version": "1.0.0-rc.0",
   "description": "A typed React DataTable for Mantine 9 with sorting, filtering, search, client or server pagination, pinning, selection, and expandable rows.",
   "license": "MIT",
   "repository": {
@@ -45,7 +45,7 @@
   ],
   "publishConfig": {
     "access": "public",
-    "tag": "alpha",
+    "tag": "next",
     "registry": "https://registry.npmjs.org/"
   },
   "scripts": {

@@ -1,6 +1,7 @@
 import { Alert, Badge, DataList, Drawer, Loader, Stack, Text } from '@mantine/core';
 import { useEffect, useState } from 'react';
 import { errorMessage, fetchEmployee, type Employee } from './api';
+import { formatDate, formatSalary } from './format';
 
 /** Loads one employee by id, showing how row actions can call the API. */
 export function EmployeeDrawer({
@@ -39,7 +40,7 @@ export function EmployeeDrawer({
         <Loader size='sm' />
       ) : (
         <Stack>
-          <Badge variant='light' color={employee.isActive ? 'teal' : 'gray'} w='fit-content'>
+          <Badge variant='dot' color={employee.isActive ? 'teal' : 'gray'} w='fit-content'>
             {employee.isActive ? 'Active' : 'Inactive'}
           </Badge>
           <DataList orientation='horizontal'>
@@ -49,8 +50,8 @@ export function EmployeeDrawer({
               ['Department', employee.department],
               ['Role', employee.role],
               ['City', employee.city],
-              ['Salary', `$${employee.salary.toLocaleString()}`],
-              ['Joined', employee.joinDate.toLocaleDateString()],
+              ['Salary', formatSalary(employee.salary)],
+              ['Joined', formatDate(employee.joinDate)],
             ].map(([label, value]) => (
               <DataList.Item key={label}>
                 <DataList.ItemLabel>{label}</DataList.ItemLabel>

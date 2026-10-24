@@ -123,16 +123,60 @@
     var(--mantine-color-body)
   );
 }
+/*
+ * Keyboard focus on clickable rows. The ring is drawn by the cells, so sticky
+ * pinned and control cells cannot cover part of it.
+ */
+.root tbody tr[tabindex]:focus-visible {
+  outline: none;
+}
+.root tbody tr[tabindex]:focus-visible > td {
+  --dt-focus-ring: var(--mantine-primary-color-filled);
+  box-shadow:
+    inset 0 2px 0 var(--dt-focus-ring),
+    inset 0 -2px 0 var(--dt-focus-ring);
+}
+.root tbody tr[tabindex]:focus-visible > td:first-child {
+  box-shadow:
+    inset 2px 0 0 var(--dt-focus-ring),
+    inset 0 2px 0 var(--dt-focus-ring),
+    inset 0 -2px 0 var(--dt-focus-ring);
+}
+.root tbody tr[tabindex]:focus-visible > td:last-child {
+  box-shadow:
+    inset -2px 0 0 var(--dt-focus-ring),
+    inset 0 2px 0 var(--dt-focus-ring),
+    inset 0 -2px 0 var(--dt-focus-ring);
+}
 .expandPanel > td {
   background-color: var(--mantine-color-default-hover);
 }
-.bulkBar {
-  position: absolute;
-  inset: 0;
-  z-index: 10;
+/* The table's parts share one root, so a parent Stack or flex gap cannot change the spacing between them. */
+.wrapper {
+  min-width: 0;
+}
+
+/*
+ * The standard toolbar and the bulk action bar share one grid cell: the bulk bar
+ * covers the toolbar exactly, and both always have the same height.
+ */
+.toolbars {
   display: grid;
-  align-items: center;
-  min-height: 40px;
+  margin-bottom: var(--mantine-spacing-xs);
+}
+.toolbars > * {
+  grid-area: 1 / 1;
+  min-width: 0;
+}
+/* Shared padding, and room for an expanded search input, so the bars never change height. */
+.toolbarContent {
+  min-height: calc(2.25rem * var(--mantine-scale));
+  box-sizing: content-box;
+  padding: 4px 4px 4px var(--mantine-spacing-xs);
+}
+.bulkBar {
+  position: relative;
+  z-index: 1;
 }
 
 .pill {

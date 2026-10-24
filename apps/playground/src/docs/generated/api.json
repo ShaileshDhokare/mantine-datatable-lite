@@ -1,5 +1,6 @@
 {
-  "version": "0.1.0-alpha.2",
+  "version": "1.0.0-rc.0",
+  "tag": "next",
   "api": {
     "DataTableProps": [
       {
@@ -151,6 +152,18 @@
         "type": "Partial<DataTableLabels>",
         "required": false,
         "description": "Replace built-in UI text."
+      },
+      {
+        "name": "aria-label",
+        "type": "string",
+        "required": false,
+        "description": "Accessible name for the table. Set this or `aria-labelledby` when no visible heading names the table."
+      },
+      {
+        "name": "aria-labelledby",
+        "type": "string",
+        "required": false,
+        "description": "ID of the element that names the table, such as a page heading."
       },
       {
         "name": "dateInput",

@@ -25,6 +25,12 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
+/** The bulk bar shows the count, and a status region announces it. */
+function expectSelectedCount(text: string) {
+  expect(screen.getByRole('status').textContent).toBe(text);
+  expect(screen.getAllByText(text)).toHaveLength(2);
+}
+
 test('pin menu moves a column to each side and reorders pinned neighbors', async () => {
   render(
     <MantineProvider env='test'>
@@ -161,11 +167,11 @@ test('page selection is tri-state and supplies row objects', () => {
     ).indeterminate,
   ).toBe(true);
   // The bulk bar appears from the first selected row.
-  expect(screen.getByText('1 row selected')).toBeTruthy();
+  expectSelectedCount('1 row selected');
   fireEvent.click(
     screen.getByRole('checkbox', { name: 'Select all rows on this page' }),
   );
-  expect(screen.getByText('2 rows selected')).toBeTruthy();
+  expectSelectedCount('2 rows selected');
   fireEvent.click(screen.getByRole('button', { name: 'Bulk' }));
   expect(onBulk).toHaveBeenCalledWith(rows);
   fireEvent.click(screen.getByRole('button', { name: 'Clear selection' }));
@@ -217,7 +223,7 @@ test('bulk action receives IDs selected across server pages', () => {
   fireEvent.click(
     screen.getByRole('checkbox', { name: 'Select all rows on this page' }),
   );
-  expect(screen.getByText('4 rows selected')).toBeTruthy();
+  expectSelectedCount('4 rows selected');
   fireEvent.click(screen.getByRole('button', { name: 'Bulk' }));
   expect(onBulk).toHaveBeenCalledWith([1, 2, 3, 4], second);
   view.rerender(

@@ -1,5 +1,12 @@
 import type { DataTableLabels } from './types';
 
+const pageControls = {
+  first: 'First page',
+  previous: 'Previous page',
+  next: 'Next page',
+  last: 'Last page',
+} as const;
+
 export const defaultLabels: DataTableLabels = {
   noRecords: 'No records found',
   apply: 'Apply',
@@ -14,10 +21,15 @@ export const defaultLabels: DataTableLabels = {
   sortAsc: 'Sort Ascending',
   sortDesc: 'Sort Descending',
   clearSort: 'Clear Sorting',
+  sortColumn: (column, order) => `Sort ${column}: ${order ?? 'none'}`,
+  sortOrder: { asc: 'ASC', desc: 'DESC' },
+  columnMenu: (column) => `${column} menu`,
   filter: 'Filter',
   search: 'Search',
   searchOptions: 'Search in filters',
   noOptions: 'No options',
+  filterOperator: (column) => `${column} filter operator`,
+  filterInput: (column, input) => `${column} filter ${input.toLowerCase()}`,
   true: 'True',
   false: 'False',
   pin: 'Pin',
@@ -43,6 +55,8 @@ export const defaultLabels: DataTableLabels = {
   searchPill: 'Search:',
   hiddenPill: 'Hidden:',
   morePills: (count) => `+${count} more`,
+  removePill: (pill) => `Remove ${pill}`,
+  formatDate: (date) => date.toLocaleDateString(),
   selectAll: 'Select all rows on this page',
   selectRow: 'Select row',
   expandRow: 'Expand row',
@@ -52,6 +66,7 @@ export const defaultLabels: DataTableLabels = {
   pageRange: ({ from, to, total }) => `Showing ${from} - ${to} of ${total} items`,
   pageSize: (size) => `${size} / page`,
   rowsPerPage: 'Rows per page',
+  pageControl: (control) => pageControls[control],
 };
 
 export function mergeLabels(
@@ -62,5 +77,6 @@ export function mergeLabels(
     ...defaultLabels,
     ...labels,
     operators: { ...defaultLabels.operators, ...labels.operators },
+    sortOrder: { ...defaultLabels.sortOrder, ...labels.sortOrder },
   };
 }

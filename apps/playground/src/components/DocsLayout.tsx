@@ -127,8 +127,8 @@ export function DocsLayout({
                 </Text>
               </Group>
             </Anchor>
-            <Badge variant='light' color='gray' visibleFrom='md'>
-              {version}
+            <Badge variant='light' color='gray' tt='none' visibleFrom='md'>
+              v{version}
             </Badge>
           </Group>
           <Group gap='xs' wrap='nowrap'>

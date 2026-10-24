@@ -99,7 +99,6 @@ export function FilterControls<T>({
   const { labels, dateInput: DateInput = NativeDateInput } =
     useDataTableConfig();
   const name = columnLabel(column);
-  const filterWord = labels.filter.toLocaleLowerCase();
   const applied = filters.find(
     (filter) => filter.field === column.dataIndex,
   )?.value;
@@ -192,7 +191,7 @@ export function FilterControls<T>({
     date ? (
       <DateInput
         size='xs'
-        aria-label={`${name} ${filterWord} ${label.toLocaleLowerCase()}`}
+        aria-label={labels.filterInput(name, label)}
         placeholder={label}
         value={typeof value === 'string' ? value : null}
         onChange={(next) => onChange(next)}
@@ -201,7 +200,7 @@ export function FilterControls<T>({
     ) : (
       <NumberInput
         size='xs'
-        aria-label={`${name} ${filterWord} ${label.toLocaleLowerCase()}`}
+        aria-label={labels.filterInput(name, label)}
         placeholder={label}
         value={value ?? ''}
         onChange={(next) => onChange(next === '' ? null : next)}
@@ -267,7 +266,7 @@ export function FilterControls<T>({
           <Stack gap='xs'>
             <Select
               size='xs'
-              aria-label={`${name} ${filterWord} operator`}
+              aria-label={labels.filterOperator(name)}
               data={operatorOrder.map((operator) => ({
                 value: operator,
                 label: labels.operators[operator],

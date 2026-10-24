@@ -1,5 +1,6 @@
 import express from 'express';
 import { db, toEmployee } from './db.js';
+import { employeeDetails } from './details.js';
 import { BadRequest, buildQuery } from './query.js';
 import { seed } from './seed.js';
 
@@ -15,7 +16,11 @@ app.use(express.json());
 app.use('/api', async (request, response, next) => {
   const delay = Math.min(Number(request.get('x-simulate-delay') ?? 250) || 0, 5000);
   if (delay) await new Promise((resolve) => setTimeout(resolve, delay));
-  if (request.get('x-simulate-error') === '1' && request.method === 'POST' && request.path === '/employees/query') {
+  // Simulated errors cover the reads that the table and expanded rows make.
+  const simulated =
+    (request.method === 'POST' && request.path === '/employees/query') ||
+    (request.method === 'GET' && /^\/employees\/\d+\/details$/.test(request.path));
+  if (request.get('x-simulate-error') === '1' && simulated) {
     response.status(503).json({ message: 'The employee service is unavailable (simulated).' });
     return;
   }
@@ -50,6 +55,16 @@ app.get('/api/employees/:id', (request, response) => {
     return;
   }
   response.json(toEmployee(row));
+});
+
+/** Details for an expanded row, loaded only when the row opens. */
+app.get('/api/employees/:id/details', (request, response) => {
+  const row = db.prepare('SELECT * FROM employees WHERE id = ?').get(Number(request.params.id));
+  if (!row) {
+    response.status(404).json({ message: 'Employee not found' });
+    return;
+  }
+  response.json(employeeDetails(db, row));
 });
 
 function ids(body) {

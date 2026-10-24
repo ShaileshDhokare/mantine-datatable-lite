@@ -1,12 +1,8 @@
 import { ActionIcon, Anchor, Badge, Group, Tooltip } from '@mantine/core';
 import { Icon, rowActionsColumn, type DataTableColumn } from 'mantine-datatable-lite';
 import type { Employee, FilterOptions } from './api';
-
-const currency = new Intl.NumberFormat('en-US', {
-  style: 'currency',
-  currency: 'USD',
-  maximumFractionDigits: 0,
-});
+import { formatDate, formatSalary } from './format';
+import { SalaryRangeFilter } from './SalaryRangeFilter';
 
 type RowActions = {
   onView: (employee: Employee) => void;
@@ -38,8 +34,10 @@ export function employeeColumns(
       searchable: true,
       showMenu: true,
       menuOptions: ['search', 'pin', 'display'],
+      // Clicking the link opens the mail app, not the row's drawer.
+      stopRowClick: true,
       render: (row) => (
-        <Anchor href={`mailto:${row.email}`} size='sm' onClick={(event) => event.stopPropagation()}>
+        <Anchor href={`mailto:${row.email}`} size='sm'>
           {row.email}
         </Anchor>
       ),
@@ -86,7 +84,9 @@ export function employeeColumns(
       sortable: true,
       filterable: true,
       searchable: false,
-      render: (row) => currency.format(row.salary),
+      // A custom filter UI; the value is still a standard `between` filter.
+      renderFilter: (context) => <SalaryRangeFilter {...context} />,
+      render: (row) => formatSalary(row.salary),
     },
     {
       dataIndex: 'isActive',
@@ -101,7 +101,7 @@ export function employeeColumns(
         { value: 'false', label: 'Inactive' },
       ],
       render: (row) => (
-        <Badge variant='light' color={row.isActive ? 'teal' : 'gray'}>
+        <Badge variant='dot' color={row.isActive ? 'teal' : 'gray'}>
           {row.isActive ? 'Active' : 'Inactive'}
         </Badge>
       ),
@@ -116,13 +116,13 @@ export function employeeColumns(
       filterable: true,
       searchable: false,
       showMenu: true,
-      render: (row) => row.joinDate.toLocaleDateString(),
+      render: (row) => formatDate(row.joinDate),
     },
     rowActionsColumn<Employee>({
       width: 96,
       render: (row) => (
         <Group gap={4} wrap='nowrap'>
-          <Tooltip label='View details'>
+          <Tooltip label='View details' withArrow>
             <ActionIcon
               variant='subtle'
               aria-label={`View ${row.name}`}
@@ -131,7 +131,7 @@ export function employeeColumns(
               <Icon name='show' size={18} />
             </ActionIcon>
           </Tooltip>
-          <Tooltip label='Delete'>
+          <Tooltip label='Delete' withArrow>
             <ActionIcon
               variant='subtle'
               color='red'

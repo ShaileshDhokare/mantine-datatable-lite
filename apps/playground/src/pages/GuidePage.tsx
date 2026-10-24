@@ -13,6 +13,7 @@ import toolbarCode from '../examples/Toolbar.tsx?raw';
 import { Theming } from '../examples/Theming';
 import themingCode from '../examples/Theming.tsx?raw';
 import classes from '../App.module.css';
+import { tag, version } from '../docs/generated/api.json';
 
 const guides = {
   'getting-started': {
@@ -63,16 +64,16 @@ export function InstallationPage() {
   return <DocsLayout title='Installation' description='Install the npm package and connect it to your Mantine application.' toc={[
     { id: 'install', label: 'Install dependencies' }, { id: 'styles', label: 'Styles & provider' }, { id: 'next', label: 'Next steps' },
   ]}>
-    <DocSection id='install' title='Install dependencies'><Markdown>{`The current release is available under the npm \`alpha\` tag. The supported peer baseline is React 19.2 and Mantine 9.6 or newer within major version 9. If React and Mantine are already installed, add the table package:
+    <DocSection id='install' title='Install dependencies'><Markdown>{`The current release, ${version}, is available under the npm \`${tag}\` tag. The supported peer baseline is React 19.2 and Mantine 9.6 or newer within major version 9. If React and Mantine are already installed, add the table package:
 
 \`\`\`bash
-npm install mantine-datatable-lite@alpha
+npm install mantine-datatable-lite@${tag}
 \`\`\`
 
 For a new React application, install the peer dependencies too:
 
 \`\`\`bash
-npm install mantine-datatable-lite@alpha react@^19.2 react-dom@^19.2 @mantine/core@^9.6 @mantine/hooks@^9.6
+npm install mantine-datatable-lite@${tag} react@^19.2 react-dom@^19.2 @mantine/core@^9.6 @mantine/hooks@^9.6
 \`\`\`
 
 Use the same version for the Mantine packages. The package ships its own TypeScript declarations.

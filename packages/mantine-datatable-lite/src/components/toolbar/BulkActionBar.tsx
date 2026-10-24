@@ -2,13 +2,14 @@ import { ActionIcon, Group, Paper, Text, Tooltip } from '@mantine/core';
 import type { CSSProperties, ReactNode, Ref } from 'react';
 import { useDataTableConfig } from '../../context/DataTableConfigContext';
 import { Icon } from '../../icons/Icon';
+import classes from '../../styles/styles.module.css';
 
+/** Replaces the standard toolbar while rows are selected, at the same size and padding. */
 export function BulkActionBar({
   ref,
   count,
   showCount,
   actions,
-  overlay,
   style,
   onClear,
 }: {
@@ -16,17 +17,27 @@ export function BulkActionBar({
   count: number;
   showCount: boolean;
   actions: ReactNode;
-  /** Covers the standard toolbar instead of taking its own row. */
-  overlay: string | undefined;
   style: CSSProperties;
   onClear: () => void;
 }) {
   const { labels } = useDataTableConfig();
   return (
-    <Paper ref={ref} radius='sm' withBorder className={overlay} style={style}>
-      <Group justify='space-between' align='center' gap='lg' p={4} wrap='nowrap'>
+    <Paper
+      ref={ref}
+      radius='sm'
+      withBorder
+      className={classes.bulkBar}
+      style={style}
+    >
+      <Group
+        className={classes.toolbarContent}
+        justify='space-between'
+        align='center'
+        gap='lg'
+        wrap='nowrap'
+      >
         {showCount ? (
-          <Text fw={600} size='sm' ml='xs' aria-live='polite'>
+          <Text fw={600} size='sm'>
             {labels.selectedCount(count)}
           </Text>
         ) : (
@@ -34,14 +45,15 @@ export function BulkActionBar({
         )}
         <Group gap='xs' wrap='nowrap'>
           {actions}
-          <Tooltip label={labels.clearSelection}>
+          <Tooltip label={labels.clearSelection} withArrow>
             <ActionIcon
-              variant='transparent'
+              variant='subtle'
               size='lg'
+              color='var(--mantine-color-dimmed)'
               aria-label={labels.clearSelection}
               onClick={onClear}
             >
-              <Icon name='clear' size={20} />
+              <Icon name='clear' size={20} strokeWidth={1.5} />
             </ActionIcon>
           </Tooltip>
         </Group>

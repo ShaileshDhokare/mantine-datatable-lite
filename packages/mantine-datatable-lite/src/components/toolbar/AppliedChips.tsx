@@ -30,7 +30,7 @@ export function AppliedChips({
       w={'min-content'}
       onRemove={pill.remove}
       removeButtonProps={{
-        'aria-label': `Remove ${pill.label}`,
+        'aria-label': labels.removePill(pill.label),
         'aria-hidden': false,
         tabIndex: 0,
       }}

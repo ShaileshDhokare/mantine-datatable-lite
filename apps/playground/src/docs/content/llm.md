@@ -1,11 +1,11 @@
 # Mantine DataTable Lite: guide for AI coding tools
 
-This guide describes `mantine-datatable-lite@{{version}}`. Download it and attach it to an AI coding assistant, or give the assistant its direct URL. Check the installed package version before generating code: this is an alpha API and later releases may differ.
+This guide describes `mantine-datatable-lite@{{version}}`. Download it and attach it to an AI coding assistant, or give the assistant its direct URL. Check the installed package version before generating code: this is a prerelease API and later releases may differ.
 
 ## Package and compatibility
 
 - npm package: `mantine-datatable-lite`.
-- Documented version: `{{version}}`; npm release tag: `alpha`.
+- Documented version: `{{version}}`; npm release tag: `{{tag}}`.
 - Documentation: https://shaileshdhokare.github.io/mantine-datatable-lite/#/getting-started
 - This guide: https://shaileshdhokare.github.io/mantine-datatable-lite/llm.md
 - API page: https://shaileshdhokare.github.io/mantine-datatable-lite/#/api
@@ -31,7 +31,7 @@ In a new React app, also install the peers:
 npm install react@^19.2.0 react-dom@^19.2.0 @mantine/core@^9.6.0 @mantine/hooks@^9.6.0
 ```
 
-TypeScript projects need matching React type declarations. The `alpha` tag can move; an exact version makes generated code reproducible.
+TypeScript projects need matching React type declarations. The `{{tag}}` tag can move; an exact version makes generated code reproducible.
 
 Import CSS once in the application entry point, in this order. Put the app inside `MantineProvider`:
 
@@ -259,7 +259,9 @@ Use your Mantine theme and the public props:
 - `onRowClick(row, index, event)` handles row clicks; clickable rows are focusable and Enter or Space activates them. Action, selection and expansion controls are excluded.
 - `rowProps(row, index)` adds standard `<tr>` attributes/styles. Use `render` for custom cell content.
 
-- `labels` replaces built-in UI text, for example for translations. Unlisted labels keep their defaults.
+- `labels` replaces built-in UI text, for example for translations. Unlisted labels keep their defaults. It also covers screen reader labels (`sortColumn`, `columnMenu`, `filterOperator`, `filterInput`, `removePill`, `pageControl`), the pill sort order (`sortOrder`) and pill date formatting (`formatDate`). Labels that include a column name or a count are functions.
+- Name the table with `aria-label`, or with `aria-labelledby` pointing at a visible heading. Selection counts are announced through a status region; clickable rows are focusable and show a focus ring.
+- `pinned: 'left'` is the start side. In right-to-left layouts (Mantine `DirectionProvider`) it appears on the right.
 
 There are no public DataTable `classNames`, `styles` or `vars` slots in this release. Reuse Mantine components, theme tokens and the supported appearance props.
 

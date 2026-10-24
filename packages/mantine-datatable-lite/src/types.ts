@@ -225,7 +225,7 @@ export type DateInputProps = {
   popoverProps?: { withinPortal?: boolean };
 };
 
-/** Built-in UI text. */
+/** Built-in UI text, including screen reader labels, and date formatting for pills. */
 export type DataTableLabels = {
   noRecords: string;
   apply: string;
@@ -236,14 +236,25 @@ export type DataTableLabels = {
   clearGlobalSearch: string;
   selectColumns: string;
   resetTable: string;
+  /** Column menu item, and the prefix of the header filter and search buttons' labels. */
   sort: string;
   sortAsc: string;
   sortDesc: string;
   clearSort: string;
+  /** Header sort button label. `order` is the current sort. */
+  sortColumn: (column: string, order: SortOrder | undefined) => string;
+  /** Sort order shown in the sort pill. */
+  sortOrder: Record<SortOrder, string>;
+  /** Column menu button label. */
+  columnMenu: (column: string) => string;
   filter: string;
   search: string;
   searchOptions: string;
   noOptions: string;
+  /** Number and date filter operator select label. */
+  filterOperator: (column: string) => string;
+  /** Number and date filter input label. `input` is the `value`, `from` or `to` label. */
+  filterInput: (column: string, input: string) => string;
   /** Boolean filter choice labels. */
   true: string;
   false: string;
@@ -262,6 +273,10 @@ export type DataTableLabels = {
   searchPill: string;
   hiddenPill: string;
   morePills: (count: number) => string;
+  /** Remove button label of a pill. `pill` is the pill's text. */
+  removePill: (pill: string) => string;
+  /** Dates in filter pills. Default: the browser locale's short date. */
+  formatDate: (date: Date) => string;
   selectAll: string;
   selectRow: string;
   expandRow: string;
@@ -271,6 +286,8 @@ export type DataTableLabels = {
   pageRange: (range: { from: number; to: number; total: number }) => string;
   pageSize: (size: number) => string;
   rowsPerPage: string;
+  /** First, previous, next and last page button labels. */
+  pageControl: (control: 'first' | 'previous' | 'next' | 'last') => string;
 };
 
 type MantineTableProps = Pick<
@@ -346,6 +363,10 @@ export interface DataTableProps<T> extends MantineTableProps {
   maxHeight?: CSSProperties['maxHeight'];
   /** Replace built-in UI text. */
   labels?: Partial<DataTableLabels>;
+  /** Accessible name for the table. Set this or `aria-labelledby` when no visible heading names the table. */
+  'aria-label'?: string;
+  /** ID of the element that names the table, such as a page heading. */
+  'aria-labelledby'?: string;
   /** Date input for date filters, e.g. `DatePickerInput` from `@mantine/dates`. Default: a native date input. */
   dateInput?: ComponentType<DateInputProps>;
 }

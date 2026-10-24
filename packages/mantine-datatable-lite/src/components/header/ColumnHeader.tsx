@@ -67,7 +67,7 @@ export function ColumnHeader<T>({
                 ? 'var(--mantine-primary-color-filled)'
                 : 'var(--mantine-color-dimmed)'
             }
-            aria-label={`${labels.sort} ${columnLabel(column)}: ${order ?? 'none'}`}
+            aria-label={labels.sortColumn(columnLabel(column), order)}
             onClick={() => setSort(column.dataIndex)}
           >
             <Icon

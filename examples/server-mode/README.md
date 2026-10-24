@@ -16,13 +16,16 @@ It covers every table feature that works with server data:
 | Server pagination with page size choices | `App.tsx` (`pagination`) |
 | Sorting, with a default sort sent in the first request | `columns.tsx` (`sortable`, `defaultSortOrder`) |
 | Choice filters with complete option lists from the API | `columns.tsx`, `GET /api/employees/filter-options` |
-| Number and date filters, with Mantine's date picker | `columns.tsx`, `App.tsx` (`dateInput`) |
+| Date filters with Mantine's date picker | `columns.tsx`, `App.tsx` (`dateInput`) |
+| A custom salary range filter (`renderFilter`) sent as a `between` filter | `SalaryRangeFilter.tsx` |
 | Column search and debounced global search | `columns.tsx` (`searchable`), `App.tsx` (`globalSearch`) |
 | Column menu, header buttons, pinning, column picker, saved layout | `columns.tsx`, `App.tsx` (`persistKey`) |
 | State pills and reset | `App.tsx` (`showTableStatePills`, `showReset`) |
 | Selection across pages with bulk activate, deactivate and delete | `App.tsx` (`selection`) |
-| Expandable rows, row actions, row click | `App.tsx`, `columns.tsx` (`rowActionsColumn`) |
+| Expandable rows that load details from the API, with loading, error and retry | `EmployeeDetailsPanel.tsx`, `GET /api/employees/:id/details` |
+| Row actions, row click and `stopRowClick` links | `columns.tsx` (`rowActionsColumn`), `App.tsx` |
 | Loading overlay, errors and retry | `useEmployeeQuery.ts`, `App.tsx` |
+| Custom empty state, accessible table name, AA-contrast theme | `App.tsx` (`emptyState`, `aria-labelledby`), `main.tsx` |
 | `TableChange` → SQL, with whitelisted fields and parameters | `server/query.js` |
 
 ## Run it
@@ -65,10 +68,14 @@ rows.
 4. `server/query.js` maps each field to a known column, builds `WHERE`,
    `ORDER BY` and `LIMIT/OFFSET` clauses with bound parameters, and rejects
    anything else with `400 Bad Request`.
+5. An expanded row renders `EmployeeDetailsPanel`, which requests
+   `GET /api/employees/:id/details` the first time the row opens. It shows a
+   loader until the response arrives, an error with **Retry** if it fails, and
+   keeps loaded details in memory, so reopening a row is instant.
 
 The two switches above the table send `X-Simulate-Delay` and
-`X-Simulate-Error` headers, so you can see the loading overlay and the retry
-action.
+`X-Simulate-Error` headers, so you can see the loading states and the retry
+actions of both the table and expanded rows.
 
 ## API
 
@@ -77,6 +84,7 @@ action.
 | `POST /api/employees/query` | `TableChange` | `{ rows, total }` |
 | `GET /api/employees/filter-options` | | `{ departments, roles, cities }` |
 | `GET /api/employees/:id` | | employee |
+| `GET /api/employees/:id/details` | | `{ manager, employmentType, workMode, timeZone, skills, projects }` |
 | `PATCH /api/employees/status` | `{ ids, isActive }` | `{ updated }` |
 | `DELETE /api/employees` | `{ ids }` | `{ deleted }` |
 | `DELETE /api/employees/:id` | | `{ deleted }` |

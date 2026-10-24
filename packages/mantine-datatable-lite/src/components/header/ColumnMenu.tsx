@@ -308,7 +308,7 @@ export function ColumnMenu<T>({
           size='sm'
           color='var(--mantine-color-dimmed)'
           ml='auto'
-          aria-label={`${columnLabel(column)} menu`}
+          aria-label={labels.columnMenu(columnLabel(column))}
         >
           <Icon name='menu' size={16} />
         </ActionIcon>

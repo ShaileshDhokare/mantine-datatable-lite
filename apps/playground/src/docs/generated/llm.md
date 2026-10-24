@@ -1,11 +1,11 @@
 # Mantine DataTable Lite: guide for AI coding tools
 
-This guide describes `mantine-datatable-lite@0.1.0-alpha.2`. Download it and attach it to an AI coding assistant, or give the assistant its direct URL. Check the installed package version before generating code: this is an alpha API and later releases may differ.
+This guide describes `mantine-datatable-lite@1.0.0-rc.0`. Download it and attach it to an AI coding assistant, or give the assistant its direct URL. Check the installed package version before generating code: this is a prerelease API and later releases may differ.
 
 ## Package and compatibility
 
 - npm package: `mantine-datatable-lite`.
-- Documented version: `0.1.0-alpha.2`; npm release tag: `alpha`.
+- Documented version: `1.0.0-rc.0`; npm release tag: `next`.
 - Documentation: https://shaileshdhokare.github.io/mantine-datatable-lite/#/getting-started
 - This guide: https://shaileshdhokare.github.io/mantine-datatable-lite/llm.md
 - API page: https://shaileshdhokare.github.io/mantine-datatable-lite/#/api
@@ -22,7 +22,7 @@ Public runtime exports are `DataTable`, `Icon` and `rowActionsColumn`. Import ty
 In an existing compatible React/Mantine app:
 
 ```bash
-npm install --save-exact mantine-datatable-lite@0.1.0-alpha.2
+npm install --save-exact mantine-datatable-lite@1.0.0-rc.0
 ```
 
 In a new React app, also install the peers:
@@ -31,7 +31,7 @@ In a new React app, also install the peers:
 npm install react@^19.2.0 react-dom@^19.2.0 @mantine/core@^9.6.0 @mantine/hooks@^9.6.0
 ```
 
-TypeScript projects need matching React type declarations. The `alpha` tag can move; an exact version makes generated code reproducible.
+TypeScript projects need matching React type declarations. The `next` tag can move; an exact version makes generated code reproducible.
 
 Import CSS once in the application entry point, in this order. Put the app inside `MantineProvider`:
 
@@ -259,7 +259,9 @@ Use your Mantine theme and the public props:
 - `onRowClick(row, index, event)` handles row clicks; clickable rows are focusable and Enter or Space activates them. Action, selection and expansion controls are excluded.
 - `rowProps(row, index)` adds standard `<tr>` attributes/styles. Use `render` for custom cell content.
 
-- `labels` replaces built-in UI text, for example for translations. Unlisted labels keep their defaults.
+- `labels` replaces built-in UI text, for example for translations. Unlisted labels keep their defaults. It also covers screen reader labels (`sortColumn`, `columnMenu`, `filterOperator`, `filterInput`, `removePill`, `pageControl`), the pill sort order (`sortOrder`) and pill date formatting (`formatDate`). Labels that include a column name or a count are functions.
+- Name the table with `aria-label`, or with `aria-labelledby` pointing at a visible heading. Selection counts are announced through a status region; clickable rows are focusable and show a focus ring.
+- `pinned: 'left'` is the start side. In right-to-left layouts (Mantine `DirectionProvider`) it appears on the right.
 
 There are no public DataTable `classNames`, `styles` or `vars` slots in this release. Reuse Mantine components, theme tokens and the supported appearance props.
 
@@ -273,7 +275,7 @@ There are no public DataTable `classNames`, `styles` or `vars` slots in this rel
 6. Keep remote fetching, initial load, loading/error state, cancellation, retry and destructive-action confirmation in the consuming app.
 7. Do not invent APIs from other table libraries. This release has no `manualSorting`, public `useDataTable`, virtualization, column resizing, editing, grouped/tree rows, multi-column sorting, row drag and drop, built-in CSV/Excel export or select-all-matching-server-records mode.
 
-Suggested prompt: "Use the attached mantine-datatable-lite guide for version 0.1.0-alpha.2. Build a typed Mantine table for my existing React app. Use only the documented public API. Explain whether the table or my application owns the data operations."
+Suggested prompt: "Use the attached mantine-datatable-lite guide for version 1.0.0-rc.0. Build a typed Mantine table for my existing React app. Use only the documented public API. Explain whether the table or my application owns the data operations."
 
 ## Feature links
 
@@ -293,7 +295,7 @@ Suggested prompt: "Use the attached mantine-datatable-lite guide for version 0.1
 
 ## API reference
 
-These declarations come from the package, version `0.1.0-alpha.2`. They are reference definitions; import public values and types from `mantine-datatable-lite` in your application. The `RangeFilterValue` and `MantineTableProps` helpers below are not public exports.
+These declarations come from the package, version `1.0.0-rc.0`. They are reference definitions; import public values and types from `mantine-datatable-lite` in your application. The `RangeFilterValue` and `MantineTableProps` helpers below are not public exports.
 
 ```tsx
 import type { ComponentProps, ComponentType, CSSProperties, MouseEvent, ReactNode, SVGProps } from 'react';
@@ -496,14 +498,25 @@ export type DataTableLabels = {
     clearGlobalSearch: string;
     selectColumns: string;
     resetTable: string;
+    /** Column menu item, and the prefix of the header filter and search buttons' labels. */
     sort: string;
     sortAsc: string;
     sortDesc: string;
     clearSort: string;
+    /** Header sort button label. `order` is the current sort. */
+    sortColumn: (column: string, order: SortOrder | undefined) => string;
+    /** Sort order shown in the sort pill. */
+    sortOrder: Record<SortOrder, string>;
+    /** Column menu button label. */
+    columnMenu: (column: string) => string;
     filter: string;
     search: string;
     searchOptions: string;
     noOptions: string;
+    /** Number and date filter operator select label. */
+    filterOperator: (column: string) => string;
+    /** Number and date filter input label. `input` is the `value`, `from` or `to` label. */
+    filterInput: (column: string, input: string) => string;
     /** Boolean filter choice labels. */
     true: string;
     false: string;
@@ -522,6 +535,10 @@ export type DataTableLabels = {
     searchPill: string;
     hiddenPill: string;
     morePills: (count: number) => string;
+    /** Remove button label of a pill. `pill` is the pill's text. */
+    removePill: (pill: string) => string;
+    /** Dates in filter pills. Default: the browser locale's short date. */
+    formatDate: (date: Date) => string;
     selectAll: string;
     selectRow: string;
     expandRow: string;
@@ -535,6 +552,8 @@ export type DataTableLabels = {
     }) => string;
     pageSize: (size: number) => string;
     rowsPerPage: string;
+    /** First, previous, next and last page button labels. */
+    pageControl: (control: 'first' | 'previous' | 'next' | 'last') => string;
 };
 
 type MantineTableProps = Pick<TableProps, 'borderColor' | 'withTableBorder' | 'withColumnBorders' | 'withRowBorders' | 'horizontalSpacing' | 'verticalSpacing' | 'striped' | 'stripedColor' | 'highlightOnHover' | 'highlightOnHoverColor' | 'stickyHeader' | 'layout'>;
@@ -588,6 +607,10 @@ export interface DataTableProps<T> extends MantineTableProps {
     maxHeight?: CSSProperties['maxHeight'];
     /** Replace built-in UI text. */
     labels?: Partial<DataTableLabels>;
+    /** Accessible name for the table. Set this or `aria-labelledby` when no visible heading names the table. */
+    'aria-label'?: string;
+    /** ID of the element that names the table, such as a page heading. */
+    'aria-labelledby'?: string;
     /** Date input for date filters, e.g. `DatePickerInput` from `@mantine/dates`. Default: a native date input. */
     dateInput?: ComponentType<DateInputProps>;
 }

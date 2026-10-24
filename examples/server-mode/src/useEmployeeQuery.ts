@@ -11,7 +11,7 @@ import { errorMessage, isCancel, queryEmployees, type EmployeePage } from './api
 export function useEmployeeQuery() {
   const [request, setRequest] = useState<TableChange | null>(null);
   const [version, setVersion] = useState(0);
-  const [page, setPage] = useState<EmployeePage>({ rows: [], total: 0 });
+  const [page, setPage] = useState<EmployeePage | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>();
 
@@ -35,7 +35,10 @@ export function useEmployeeQuery() {
     request,
     /** Pass to the table's onChange. */
     setRequest,
-    ...page,
+    rows: page?.rows ?? [],
+    total: page?.total ?? 0,
+    /** False until the first page arrives. */
+    loaded: page !== null,
     loading,
     error,
     /** Fetch the current request again, e.g. after a mutation or an error. */
