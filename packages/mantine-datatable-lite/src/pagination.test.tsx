@@ -177,8 +177,7 @@ test('sort, filter, and search requests return to page one while retaining size'
   );
 });
 
-test('loading and error keep supplied rows visible and let the caller retry', () => {
-  const onRetry = vi.fn();
+test('loading keeps supplied rows visible and marks the table busy', () => {
   render(
     <MantineProvider env='test'>
       <DataTable
@@ -187,16 +186,63 @@ test('loading and error keep supplied rows visible and let the caller retry', ()
         rows={rows}
         pagination={{ currentPage: 1, pageSize: 10, totalItems: 20 }}
         loading
+      />
+    </MantineProvider>,
+  );
+  expect(screen.getByRole('table').textContent).toContain('Alice');
+  expect(screen.getByRole('table').getAttribute('aria-busy')).toBe('true');
+});
+
+test('an error replaces the rows and lets the caller retry', () => {
+  const onRetry = vi.fn();
+  const view = render(
+    <MantineProvider env='test'>
+      <DataTable
+        mode='server'
+        columns={columns}
+        rows={rows}
+        pagination={{ currentPage: 1, pageSize: 10, totalItems: 20 }}
+        selection={{}}
         error='Request failed'
         onRetry={onRetry}
       />
     </MantineProvider>,
   );
-  expect(screen.getByRole('table').textContent).toContain('Alice');
-  expect(screen.getByRole('alert').textContent).toContain('Request failed');
-  expect(screen.getByRole('table').getAttribute('aria-busy')).toBe('true');
+  const alert = screen.getByRole('alert');
+  // Icon, message and Retry, in one cell that spans the table.
+  expect(alert.closest('td')?.getAttribute('colspan')).toBe('2');
+  expect(alert.querySelector('svg')).toBeTruthy();
+  expect(alert.textContent).toBe('Request failedRetry');
+  expect(screen.getByRole('table').textContent).not.toContain('Alice');
+  expect(screen.queryByText('No records found')).toBeNull();
+  // No rows to select while the error shows.
+  expect(
+    (
+      screen.getByRole('checkbox', {
+        name: 'Select all rows on this page',
+      }) as HTMLInputElement
+    ).disabled,
+  ).toBe(true);
   fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
   expect(onRetry).toHaveBeenCalledTimes(1);
+
+  view.rerender(
+    <MantineProvider env='test'>
+      <DataTable mode='server' columns={columns} rows={rows} error />
+    </MantineProvider>,
+  );
+  expect(screen.getByRole('alert').textContent).toBe(
+    'Something went wrong while loading the data.',
+  );
+  expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
+
+  view.rerender(
+    <MantineProvider env='test'>
+      <DataTable mode='server' columns={columns} rows={rows} />
+    </MantineProvider>,
+  );
+  expect(screen.queryByRole('alert')).toBeNull();
+  expect(screen.getByRole('table').textContent).toContain('Alice');
 });
 
 test('page change sends the latest sort in the complete request', () => {

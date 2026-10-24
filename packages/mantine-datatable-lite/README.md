@@ -197,8 +197,9 @@ A `TableChange` looks like this:
 
 `onChange` fires immediately for every change except typing in the global
 search, which waits `debounceTime` (300 ms by default). Sorting, filtering and
-searching return to page 1. Pass `loading`, `error` and `onRetry` to show a
-loading overlay and a retry action; the current rows stay visible meanwhile.
+searching return to page 1. `loading` shows an overlay over the current rows.
+`error` replaces the rows with an error icon and message (pass `true` for the
+default `loadError` text), and `onRetry` adds a Retry button under it.
 
 The repository has a complete
 [React + Express + SQLite example](https://github.com/ShaileshDhokare/mantine-datatable-lite/tree/master/examples/server-mode)
@@ -471,7 +472,7 @@ types are exported from the package root.
 | `minWidth`, `maxHeight` | CSS length | |
 | `loading` | `boolean` | `false` |
 | `loaderProps` | Mantine `LoaderProps` | |
-| `error` | `ReactNode` | |
+| `error` | `ReactNode`, or `true` for the default message | |
 | `onRetry` | `() => void` | |
 | `emptyState` | `ReactNode` | "No records found" |
 | `labels` | `Partial<DataTableLabels>` | English |
@@ -533,6 +534,9 @@ Behavior changes:
   longer adds space between the toolbar, the table and the pagination.
 - The bulk action bar covers the toolbar at exactly the same size, and both keep
   the same height when the global search opens.
+- `error` replaces the rows inside the table, with an icon and a Retry button
+  under the message, instead of an alert under the table. `error={true}` shows
+  the new `loadError` label.
 - The expand column header has screen-reader text instead of an `aria-label`,
   and the selected count is announced through a status region.
 

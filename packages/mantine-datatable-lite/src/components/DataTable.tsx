@@ -1,10 +1,8 @@
 import {
-  Alert,
   Box,
   Button,
   Checkbox,
   getThemeColor,
-  Group,
   LoadingOverlay,
   Stack,
   Table,
@@ -20,6 +18,7 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type ReactNode,
 } from 'react';
 import { DataTableConfigContext } from '../context/DataTableConfigContext';
 import { DataTableContext } from '../context/DataTableContext';
@@ -44,6 +43,26 @@ import { ColumnHeader } from './header/ColumnHeader';
 import { HeaderPopoverScope } from './header/HeaderPopoverScope';
 import { BulkActionBar } from './toolbar/BulkActionBar';
 import { TableToolbar } from './toolbar/TableToolbar';
+
+/** A full-width body row for the empty and error states. */
+function BodyMessage({
+  colSpan,
+  children,
+}: {
+  colSpan: number;
+  children: ReactNode;
+}) {
+  return (
+    <Table.Tr>
+      <Table.Td colSpan={colSpan} ta='center' py='xl' px={0}>
+        <div className={classes.bodyMessage}>{children}</div>
+      </Table.Td>
+    </Table.Tr>
+  );
+}
+
+/** Stable empty rows while an error is shown. */
+const NO_ROWS: never[] = [];
 
 export function DataTable<T>({
   columns,
@@ -151,11 +170,15 @@ export function DataTable<T>({
   const missingTotal = server && pagination?.totalItems === undefined;
   useEffect(() => {
     if (missingTotal && process.env.NODE_ENV !== 'production')
-      console.warn('[DataTable] Server pagination needs pagination.totalItems.');
+      console.warn(
+        '[DataTable] Server pagination needs pagination.totalItems.',
+      );
   }, [missingTotal]);
 
+  // An error replaces the rows, so selection and expansion see no rows either.
+  const failed = Boolean(error);
   const rowEntries = useRowIdentity(
-    visibleRows,
+    failed ? (NO_ROWS as T[]) : visibleRows,
     idAccessor,
     Boolean(selection || expandable),
   );
@@ -219,7 +242,9 @@ export function DataTable<T>({
   }));
 
   const colSpan = Math.max(
-    visibleColumns.length + Number(Boolean(selection)) + Number(Boolean(expandable)),
+    visibleColumns.length +
+      Number(Boolean(selection)) +
+      Number(Boolean(expandable)),
     1,
   );
 
@@ -328,24 +353,42 @@ export function DataTable<T>({
         </HeaderPopoverScope>
       </Table.Thead>
       <Table.Tbody>
-        {visibleRows.length === 0 && (
-          <Table.Tr>
-            <Table.Td colSpan={colSpan} ta='center' py='xl'>
-              {emptyState ?? (
-                <Stack align='center' gap='xs' py='md'>
-                  <Icon
-                    name='empty'
-                    strokeWidth={1}
-                    size={36}
-                    color='var(--mantine-color-dimmed)'
-                  />
-                  <Text size='sm' c='dimmed'>
-                    {labels.noRecords}
-                  </Text>
-                </Stack>
+        {failed && (
+          <BodyMessage colSpan={colSpan}>
+            <Stack align='center' gap='xs' py='md' role='alert'>
+              <Icon
+                name='error'
+                strokeWidth={1.25}
+                size={36}
+                color='var(--mantine-color-error)'
+              />
+              <Text component='div' size='sm'>
+                {error === true ? labels.loadError : error}
+              </Text>
+              {onRetry && (
+                <Button size='xs' variant='default' mt={4} onClick={onRetry}>
+                  {labels.retry}
+                </Button>
               )}
-            </Table.Td>
-          </Table.Tr>
+            </Stack>
+          </BodyMessage>
+        )}
+        {!failed && visibleRows.length === 0 && (
+          <BodyMessage colSpan={colSpan}>
+            {emptyState ?? (
+              <Stack align='center' gap='xs' py='md'>
+                <Icon
+                  name='empty'
+                  strokeWidth={1.25}
+                  size={36}
+                  color='var(--mantine-color-dimmed)'
+                />
+                <Text size='sm' c='dimmed'>
+                  {labels.noRecords}
+                </Text>
+              </Stack>
+            )}
+          </BodyMessage>
         )}
         {rowEntries.map(({ row, id, key }, index) => (
           <TableRow
@@ -400,7 +443,11 @@ export function DataTable<T>({
             } as CSSProperties)
           : undefined
       }
-      scrollAreaProps={{ scrollbarSize: '8px', offsetScrollbars: 'x' }}
+      scrollAreaProps={{
+        scrollbarSize: '8px',
+        offsetScrollbars: 'x',
+        classNames: { viewport: classes.viewport },
+      }}
     >
       {table}
     </Table.ScrollContainer>
@@ -464,23 +511,6 @@ export function DataTable<T>({
             />
             {tableContent}
           </Box>
-          {error && (
-            <Alert color='red' role='alert' mt='xs'>
-              <Group justify='space-between' gap='sm'>
-                <Text size='sm'>{error}</Text>
-                {onRetry && (
-                  <Button
-                    size='xs'
-                    variant='light'
-                    color='red'
-                    onClick={onRetry}
-                  >
-                    {labels.retry}
-                  </Button>
-                )}
-              </Group>
-            </Alert>
-          )}
           {pagination && (
             <TablePagination
               page={page.currentPage}

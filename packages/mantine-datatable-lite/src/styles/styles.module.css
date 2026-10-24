@@ -148,6 +148,22 @@
     inset 0 2px 0 var(--dt-focus-ring),
     inset 0 -2px 0 var(--dt-focus-ring);
 }
+/* Empty and error states. */
+.bodyMessage {
+  padding-inline: var(--mantine-spacing-md);
+}
+/*
+ * In a horizontally scrolling table, the message box is as wide as the visible
+ * area and stays in it, so it is centered on screen rather than on the full table.
+ */
+.viewport {
+  container-type: inline-size;
+}
+.viewport .bodyMessage {
+  position: sticky;
+  inset-inline-start: 0;
+  width: 100cqi;
+}
 .expandPanel > td {
   background-color: var(--mantine-color-default-hover);
 }

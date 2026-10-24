@@ -37,7 +37,8 @@ export type IconName =
   | 'collapse'
   | 'expand'
   | 'menu'
-  | 'empty';
+  | 'empty'
+  | 'error';
 
 export type MenuOption = 'sort' | 'filter' | 'search' | 'pin' | 'display';
 export type RowId = string | number;
@@ -231,6 +232,8 @@ export type DataTableLabels = {
   apply: string;
   reset: string;
   retry: string;
+  /** Error message shown when `error` is `true`. */
+  loadError: string;
   globalSearch: string;
   openGlobalSearch: string;
   clearGlobalSearch: string;
@@ -349,8 +352,12 @@ export interface DataTableProps<T> extends MantineTableProps {
   /** Show an overlay over the current rows while the caller loads data. */
   loading?: boolean;
   loaderProps?: LoaderProps;
-  /** Error from the caller. The current rows stay visible. */
+  /**
+   * Error from the caller, shown in place of the rows with an error icon. Pass a message,
+   * or `true` for the default `loadError` label.
+   */
   error?: ReactNode;
+  /** Shows a Retry button under the error. */
   onRetry?: () => void;
   /** Content shown when there are no rows. */
   emptyState?: ReactNode;

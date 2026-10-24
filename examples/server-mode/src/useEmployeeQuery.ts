@@ -6,7 +6,8 @@ import { errorMessage, isCancel, queryEmployees, type EmployeePage } from './api
  * Owns the request lifecycle for a server-mode table:
  * - `request` stays null until the table reports its first request on mount.
  * - Each new request aborts the previous one, so late responses never win.
- * - The last good page stays on screen while loading or after an error.
+ * - The last good page stays on screen while loading. After an error the table
+ *   shows the message and Retry instead, and keeps the page for the next success.
  */
 export function useEmployeeQuery() {
   const [request, setRequest] = useState<TableChange | null>(null);

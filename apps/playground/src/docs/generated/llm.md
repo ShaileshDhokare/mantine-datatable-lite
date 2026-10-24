@@ -188,7 +188,7 @@ export function RemoteTable({ loadPage }: { loadPage: LoadPage }) {
 }
 ```
 
-Keep `loadPage` stable across renders (a module-level function or memoized callback). Aborting and checking the signal prevents obsolete responses from overwriting newer results. Preserve the last successful rows during loading/error. Use `loaderProps` to customize the Mantine loader, and `emptyState` for an empty result.
+Keep `loadPage` stable across renders (a module-level function or memoized callback). Aborting and checking the signal prevents obsolete responses from overwriting newer results. Preserve the last successful rows during loading. While `error` is set, the table shows the error message (or the `loadError` label for `error={true}`) and a Retry button for `onRetry` in place of the rows. Use `loaderProps` to customize the Mantine loader, and `emptyState` for an empty result.
 
 The documentation server demo fetches a static `employees.json` on every request and applies the request locally; GitHub Pages does not implement a backend. Do not copy that static URL as a production API.
 
@@ -308,7 +308,7 @@ export type SortOrder = 'asc' | 'desc';
 
 export type NumericOperator = 'eq' | 'neq' | 'gt' | 'lt' | 'gte' | 'lte' | 'between';
 
-export type IconName = 'sort' | 'sortAsc' | 'sortDesc' | 'filter' | 'search' | 'clear' | 'delete' | 'nextPage' | 'prevPage' | 'firstPage' | 'lastPage' | 'pin' | 'show' | 'hide' | 'collapse' | 'expand' | 'menu' | 'empty';
+export type IconName = 'sort' | 'sortAsc' | 'sortDesc' | 'filter' | 'search' | 'clear' | 'delete' | 'nextPage' | 'prevPage' | 'firstPage' | 'lastPage' | 'pin' | 'show' | 'hide' | 'collapse' | 'expand' | 'menu' | 'empty' | 'error';
 
 export type MenuOption = 'sort' | 'filter' | 'search' | 'pin' | 'display';
 
@@ -493,6 +493,8 @@ export type DataTableLabels = {
     apply: string;
     reset: string;
     retry: string;
+    /** Error message shown when `error` is `true`. */
+    loadError: string;
     globalSearch: string;
     openGlobalSearch: string;
     clearGlobalSearch: string;
@@ -594,8 +596,12 @@ export interface DataTableProps<T> extends MantineTableProps {
     /** Show an overlay over the current rows while the caller loads data. */
     loading?: boolean;
     loaderProps?: LoaderProps;
-    /** Error from the caller. The current rows stay visible. */
+    /**
+     * Error from the caller, shown in place of the rows with an error icon. Pass a message,
+     * or `true` for the default `loadError` label.
+     */
     error?: ReactNode;
+    /** Shows a Retry button under the error. */
     onRetry?: () => void;
     /** Content shown when there are no rows. */
     emptyState?: ReactNode;

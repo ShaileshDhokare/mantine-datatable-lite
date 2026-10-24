@@ -12,6 +12,7 @@ export const defaultLabels: DataTableLabels = {
   apply: 'Apply',
   reset: 'Reset',
   retry: 'Retry',
+  loadError: 'Something went wrong while loading the data.',
   globalSearch: 'Search all columns',
   openGlobalSearch: 'Open global search',
   clearGlobalSearch: 'Clear global search',

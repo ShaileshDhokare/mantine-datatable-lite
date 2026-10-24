@@ -60,8 +60,9 @@ rows.
    its initial request on mount, including the default sort on **Joined**, so
    the app needs no separate initial fetch (`useEmployeeQuery.ts`).
 2. Each request is sent to `POST /api/employees/query` with axios. A newer
-   request aborts the previous one, and the last good page stays visible while
-   loading or after an error.
+   request aborts the previous one. The last good page stays visible while
+   loading; after an error the table shows the message and **Retry** in place
+   of the rows.
 3. Date filters hold `Date` objects. `api.ts` sends them as `YYYY-MM-DD`
    calendar days, because `JSON.stringify` would send UTC timestamps that can
    fall on the previous day.

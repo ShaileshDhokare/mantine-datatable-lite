@@ -23,7 +23,7 @@ export function Demo() {
 
 In server mode `onChange` fires once on mount with the initial request, then immediately for every sort, filter, search, page or size change. Only global search typing is debounced (`debounceTime`, 300 ms by default).
 
-`loading` places an overlay over the previous rows. Supply `error` and `onRetry` to show a retry action. Neither fetching nor error state is owned by the package.
+`loading` places an overlay over the previous rows. `error` replaces the rows with an error icon and message (`true` shows the default `loadError` label), and `onRetry` adds a Retry button under it. Neither fetching nor error state is owned by the package.
 
 The source tabs include a consumer hook that aborts obsolete requests, rejects stale responses and retains the last successful page on failure. Replace the static fetch adapter with your API or your preferred data library.
 

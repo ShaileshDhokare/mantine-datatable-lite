@@ -115,13 +115,13 @@
         "name": "error",
         "type": "ReactNode",
         "required": false,
-        "description": "Error from the caller. The current rows stay visible."
+        "description": "Error from the caller, shown in place of the rows with an error icon. Pass a message,\nor `true` for the default `loadError` label."
       },
       {
         "name": "onRetry",
         "type": "() => void",
         "required": false,
-        "description": ""
+        "description": "Shows a Retry button under the error."
       },
       {
         "name": "emptyState",

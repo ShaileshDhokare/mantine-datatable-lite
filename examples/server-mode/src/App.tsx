@@ -41,7 +41,8 @@ type PendingDelete = { ids: RowId[]; label: string } | null;
 type Action = 'activate' | 'deactivate' | 'delete' | 'reset';
 type Notice = { id: number; color: 'teal' | 'red'; text: string };
 
-const employees = (count: number) => `${count} ${count === 1 ? 'employee' : 'employees'}`;
+const employees = (count: number) =>
+  `${count} ${count === 1 ? 'employee' : 'employees'}`;
 
 function ThemeIcon({ dark }: { dark: boolean }) {
   return (
@@ -69,7 +70,13 @@ function ThemeIcon({ dark }: { dark: boolean }) {
 }
 
 /** Success messages close themselves; errors stay until dismissed. */
-function Toast({ notice, onClose }: { notice: Notice | undefined; onClose: () => void }) {
+function Toast({
+  notice,
+  onClose,
+}: {
+  notice: Notice | undefined;
+  onClose: () => void;
+}) {
   useEffect(() => {
     if (notice?.color !== 'teal') return;
     const timer = setTimeout(onClose, 4000);
@@ -97,7 +104,9 @@ function Toast({ notice, onClose }: { notice: Notice | undefined; onClose: () =>
 
 export function App() {
   const { setColorScheme } = useMantineColorScheme();
-  const scheme = useComputedColorScheme('light', { getInitialValueInEffect: true });
+  const scheme = useComputedColorScheme('light', {
+    getInitialValueInEffect: true,
+  });
   const query = useEmployeeQuery();
   const [options, setOptions] = useState<FilterOptions>();
   const [optionsError, setOptionsError] = useState<string>();
@@ -134,7 +143,11 @@ export function App() {
     setNotice({ id: Date.now(), color, text });
 
   /** Runs a mutation, reports the result, and refetches the current page. */
-  async function mutate(action: Action, run: () => Promise<string>, after?: () => void) {
+  async function mutate(
+    action: Action,
+    run: () => Promise<string>,
+    after?: () => void,
+  ) {
     setRunning(action);
     try {
       notify('teal', await run());
@@ -171,8 +184,8 @@ export function App() {
               Employee directory
             </Title>
             <Text c='dimmed' size='sm'>
-              mantine-datatable-lite in server mode: every sort, filter, search and page
-              change becomes one request to an Express + SQLite API.
+              mantine-datatable-lite in server mode: every sort, filter, search
+              and page change becomes one request to an Express + SQLite API.
             </Text>
           </Box>
           <Group gap='xs' wrap='nowrap'>
@@ -196,12 +209,21 @@ export function App() {
             >
               Reset demo data
             </Button>
-            <Tooltip label={scheme === 'dark' ? 'Light mode' : 'Dark mode'} withArrow>
+            <Tooltip
+              label={scheme === 'dark' ? 'Light mode' : 'Dark mode'}
+              withArrow
+            >
               <ActionIcon
                 variant='default'
                 size={36}
-                aria-label={scheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-                onClick={() => setColorScheme(scheme === 'dark' ? 'light' : 'dark')}
+                aria-label={
+                  scheme === 'dark'
+                    ? 'Switch to light mode'
+                    : 'Switch to dark mode'
+                }
+                onClick={() =>
+                  setColorScheme(scheme === 'dark' ? 'light' : 'dark')
+                }
               >
                 <ThemeIcon dark={scheme === 'dark'} />
               </ActionIcon>
@@ -227,7 +249,9 @@ export function App() {
             }}
           />
           <Text size='sm' c='dimmed' aria-live='polite'>
-            {query.loaded ? `${employees(query.total)} matching` : 'Loading employees…'}
+            {query.loaded
+              ? `${employees(query.total)} matching`
+              : 'Loading employees…'}
           </Text>
         </Group>
 
@@ -245,6 +269,7 @@ export function App() {
             pageSizeOptions: [10, 25, 50, 100],
           }}
           loading={query.loading}
+          loaderProps={{ variant: 'dots' }}
           error={query.error}
           onRetry={query.refresh}
           globalSearch
@@ -255,7 +280,12 @@ export function App() {
           dateInput={DatePickerInput}
           emptyState={
             <Stack align='center' gap={4} py='md'>
-              <Icon name='search' size={28} strokeWidth={1.5} color='var(--mantine-color-dimmed)' />
+              <Icon
+                name='search'
+                size={28}
+                strokeWidth={1.5}
+                color='var(--mantine-color-dimmed)'
+              />
               <Text fw={500}>No employees match these filters</Text>
               <Text size='sm' c='dimmed'>
                 Remove a filter or clear the search to see more people.
@@ -275,7 +305,8 @@ export function App() {
                   onClick={() =>
                     mutate(
                       'activate',
-                      async () => `${employees(await setActive(ids, true))} activated.`,
+                      async () =>
+                        `${employees(await setActive(ids, true))} activated.`,
                       clear,
                     )
                   }
@@ -291,7 +322,8 @@ export function App() {
                   onClick={() =>
                     mutate(
                       'deactivate',
-                      async () => `${employees(await setActive(ids, false))} deactivated.`,
+                      async () =>
+                        `${employees(await setActive(ids, false))} deactivated.`,
                       clear,
                     )
                   }
@@ -304,7 +336,10 @@ export function App() {
                   color='red'
                   disabled={running !== null}
                   onClick={() =>
-                    setPendingDelete({ ids, label: `${employees(ids.length)} (selected)` })
+                    setPendingDelete({
+                      ids,
+                      label: `${employees(ids.length)} (selected)`,
+                    })
                   }
                 >
                   Delete
@@ -349,7 +384,8 @@ export function App() {
         centered
       >
         <Text size='sm'>
-          Delete {pendingDelete?.label}? You can restore everything with Reset demo data.
+          Delete {pendingDelete?.label}? You can restore everything with Reset
+          demo data.
         </Text>
         <Group justify='flex-end' mt='lg'>
           <Button
@@ -367,7 +403,10 @@ export function App() {
               await mutate(
                 'delete',
                 async () => `${employees(await deleteEmployees(ids))} deleted.`,
-                () => setSelectedIds((current) => current.filter((id) => !ids.includes(id))),
+                () =>
+                  setSelectedIds((current) =>
+                    current.filter((id) => !ids.includes(id)),
+                  ),
               );
               setPendingDelete(null);
             }}
