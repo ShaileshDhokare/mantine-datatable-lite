@@ -18,10 +18,10 @@ for editing content and publishing to GitHub Pages.
 ## Examples
 
 [`examples/`](examples) holds standalone apps for local testing and reference,
-such as a [server-mode employee directory](examples/server-mode) built with
-React, Mantine, axios, Express, and SQLite. They link the local library but are
-not workspaces, so they never affect the package, the docs build, or root
-`npm` commands.
+such as an [employee directory](examples/employee-directory) with server-side
+and client-side tables, built with React, Mantine, axios, Express, Kysely, and
+SQLite. They install the published package and are not workspaces, so they
+never affect the package, the docs build, or root `npm` commands.
 
 ## Local development
 
