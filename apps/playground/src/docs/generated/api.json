@@ -1,5 +1,5 @@
 {
-  "version": "0.1.0-alpha.0",
+  "version": "0.1.0-alpha.2",
   "api": {
     "DataTableProps": [
       {
@@ -15,28 +15,64 @@
         "description": ""
       },
       {
-        "name": "pagination",
-        "type": "Pagination",
+        "name": "idAccessor",
+        "type": "IdAccessor<T>",
         "required": false,
-        "description": ""
+        "description": "Row ID for selection and expansion: a unique, stable string or finite number. Default: `row.id`."
+      },
+      {
+        "name": "mode",
+        "type": "'client' | 'server'",
+        "required": false,
+        "description": "`'client'`: the table filters, searches, sorts and pages `rows`.\n`'server'`: `rows` is the current result; fetch it in `onChange`. Default: `'client'`."
+      },
+      {
+        "name": "pagination",
+        "type": "Pagination | boolean",
+        "required": false,
+        "description": "Enable pagination. `true` uses client defaults."
+      },
+      {
+        "name": "onChange",
+        "type": "(params: TableChange) => void",
+        "required": false,
+        "description": "Called with the complete table request. Global search typing is debounced; other changes\nare immediate. In server mode it is also called once on mount with the initial request."
       },
       {
         "name": "globalSearch",
         "type": "boolean",
         "required": false,
-        "description": ""
+        "description": "Show the global search in the toolbar."
       },
       {
         "name": "columnSelector",
         "type": "boolean",
         "required": false,
-        "description": ""
+        "description": "Show the column selector in the toolbar."
       },
       {
-        "name": "idAccessor",
-        "type": "IdAccessor<T>",
+        "name": "showTableStatePills",
+        "type": "boolean",
         "required": false,
-        "description": "Selection and expansion require a unique, stable string or finite numeric ID."
+        "description": "Show applied sort, filters, searches and hidden columns as removable pills."
+      },
+      {
+        "name": "maxChips",
+        "type": "number",
+        "required": false,
+        "description": "Pills shown before the rest move into a \"+N more\" popover. Default: 5."
+      },
+      {
+        "name": "showReset",
+        "type": "boolean",
+        "required": false,
+        "description": "Show the reset button in the toolbar."
+      },
+      {
+        "name": "debounceTime",
+        "type": "number",
+        "required": false,
+        "description": "Global search typing delay in milliseconds. Default: 300."
       },
       {
         "name": "selection",
@@ -46,13 +82,7 @@
       },
       {
         "name": "expandable",
-        "type": "ExpandableConfig<T> | boolean",
-        "required": false,
-        "description": ""
-      },
-      {
-        "name": "expandedRowRender",
-        "type": "(row: T, index: number) => ReactNode",
+        "type": "ExpandableConfig<T>",
         "required": false,
         "description": ""
       },
@@ -69,22 +99,10 @@
         "description": ""
       },
       {
-        "name": "onChange",
-        "type": "(params: TableChange) => void",
-        "required": false,
-        "description": ""
-      },
-      {
-        "name": "persistKey",
-        "type": "string",
-        "required": false,
-        "description": "Persist hidden and pinned column IDs in localStorage."
-      },
-      {
         "name": "loading",
         "type": "boolean",
         "required": false,
-        "description": "Shown over the last supplied rows while the caller loads another page."
+        "description": "Show an overlay over the current rows while the caller loads data."
       },
       {
         "name": "loaderProps",
@@ -96,7 +114,7 @@
         "name": "error",
         "type": "ReactNode",
         "required": false,
-        "description": "Fetch error supplied by the caller. Previous rows remain visible."
+        "description": "Error from the caller. The current rows stay visible."
       },
       {
         "name": "onRetry",
@@ -105,130 +123,112 @@
         "description": ""
       },
       {
-        "name": "toolbar",
-        "type": "boolean",
+        "name": "emptyState",
+        "type": "ReactNode",
         "required": false,
-        "description": "Show selection actions when more than one row is selected."
+        "description": "Content shown when there are no rows."
       },
       {
-        "name": "toolbarActions",
-        "type": "ReactNode[]",
+        "name": "persistKey",
+        "type": "string",
         "required": false,
-        "description": "ActionIcon elements, optionally wrapped in Tooltip. Requires toolbar."
+        "description": "Persist hidden and pinned columns in localStorage under this key."
+      },
+      {
+        "name": "minWidth",
+        "type": "CSSProperties['minWidth']",
+        "required": false,
+        "description": "Table width at which it scrolls horizontally."
+      },
+      {
+        "name": "maxHeight",
+        "type": "CSSProperties['maxHeight']",
+        "required": false,
+        "description": "Height at which the table scrolls vertically."
+      },
+      {
+        "name": "labels",
+        "type": "Partial<DataTableLabels>",
+        "required": false,
+        "description": "Replace built-in UI text."
+      },
+      {
+        "name": "dateInput",
+        "type": "ComponentType<DateInputProps>",
+        "required": false,
+        "description": "Date input for date filters, e.g. `DatePickerInput` from `@mantine/dates`. Default: a native date input."
       },
       {
         "name": "borderColor",
         "type": "MantineColor",
         "required": false,
-        "description": ""
+        "description": "Color of table borders, key of `theme.colors` or any valid CSS color"
       },
       {
         "name": "withTableBorder",
         "type": "boolean",
         "required": false,
-        "description": ""
+        "description": "If set, the table has the outer border"
       },
       {
         "name": "withColumnBorders",
         "type": "boolean",
         "required": false,
-        "description": ""
+        "description": "If set, the table has borders between columns"
       },
       {
         "name": "withRowBorders",
         "type": "boolean",
         "required": false,
-        "description": ""
+        "description": "If set, the table has borders between rows"
       },
       {
         "name": "horizontalSpacing",
         "type": "MantineSpacing",
         "required": false,
-        "description": ""
+        "description": "Horizontal cells spacing, key of `theme.spacing` or any valid CSS value for padding, numbers are converted to rem"
       },
       {
         "name": "verticalSpacing",
         "type": "MantineSpacing",
         "required": false,
-        "description": ""
+        "description": "Vertical cells spacing, key of `theme.spacing` or any valid CSS value for padding, numbers are converted to rem"
       },
       {
         "name": "striped",
         "type": "boolean | 'odd' | 'even'",
         "required": false,
-        "description": ""
+        "description": "If set, every odd/even row background changes to `stripedColor`, if set to `true`, then `odd` value will be used"
       },
       {
         "name": "stripedColor",
         "type": "MantineColor",
         "required": false,
-        "description": ""
+        "description": "Background color of striped rows, key of `theme.colors` or any valid CSS color"
       },
       {
         "name": "highlightOnHover",
         "type": "boolean",
         "required": false,
-        "description": ""
+        "description": "If set, table rows background changes to `highlightOnHoverColor` when hovered"
       },
       {
         "name": "highlightOnHoverColor",
         "type": "MantineColor",
         "required": false,
-        "description": ""
+        "description": "Background color of table rows when hovered, key of `theme.colors` or any valid CSS color"
       },
       {
         "name": "stickyHeader",
         "type": "boolean",
         "required": false,
-        "description": ""
-      },
-      {
-        "name": "minWidth",
-        "type": "React.CSSProperties['minWidth']",
-        "required": false,
-        "description": ""
-      },
-      {
-        "name": "maxHeight",
-        "type": "React.CSSProperties['maxHeight']",
-        "required": false,
-        "description": ""
+        "description": "If set, `Table.Thead` is sticky"
       },
       {
         "name": "layout",
-        "type": "'auto' | 'fixed'",
+        "type": "React.CSSProperties['tableLayout']",
         "required": false,
-        "description": ""
-      },
-      {
-        "name": "debounceTime",
-        "type": "number",
-        "required": false,
-        "description": ""
-      },
-      {
-        "name": "emptyState",
-        "type": "ReactNode",
-        "required": false,
-        "description": ""
-      },
-      {
-        "name": "showTableStatePills",
-        "type": "boolean",
-        "required": false,
-        "description": ""
-      },
-      {
-        "name": "showReset",
-        "type": "boolean",
-        "required": false,
-        "description": ""
-      },
-      {
-        "name": "maxChips",
-        "type": "number",
-        "required": false,
-        "description": ""
+        "description": "Value of `table-layout` style"
       }
     ],
     "DataTableColumn": [
@@ -236,7 +236,7 @@
         "name": "dataIndex",
         "type": "Extract<keyof T, string> | (string & {})",
         "required": true,
-        "description": ""
+        "description": "Unique column ID. Also the row property read when `getValue` is not set."
       },
       {
         "name": "header",
@@ -248,101 +248,23 @@
         "name": "type",
         "type": "ColumnType",
         "required": false,
-        "description": ""
+        "description": "Value type for sorting and filtering. Default: inferred, otherwise string."
       },
       {
-        "name": "align",
-        "type": "'left' | 'center' | 'right'",
+        "name": "getValue",
+        "type": "(row: T) => unknown",
         "required": false,
-        "description": ""
+        "description": "Value used for sorting, filtering, searching and the default cell. Default: `row[dataIndex]`."
       },
       {
         "name": "render",
         "type": "(row: T, index: number) => ReactNode",
         "required": false,
-        "description": ""
+        "description": "Custom cell content. Search highlighting applies only to default cells."
       },
       {
-        "name": "sortable",
-        "type": "boolean",
-        "required": false,
-        "description": ""
-      },
-      {
-        "name": "showSortIcon",
-        "type": "boolean",
-        "required": false,
-        "description": ""
-      },
-      {
-        "name": "defaultSortOrder",
-        "type": "SortOrder",
-        "required": false,
-        "description": ""
-      },
-      {
-        "name": "sortFn",
-        "type": "(a: T, b: T) => number",
-        "required": false,
-        "description": ""
-      },
-      {
-        "name": "filterable",
-        "type": "boolean",
-        "required": false,
-        "description": ""
-      },
-      {
-        "name": "searchable",
-        "type": "boolean",
-        "required": false,
-        "description": ""
-      },
-      {
-        "name": "showSearchIcon",
-        "type": "boolean",
-        "required": false,
-        "description": ""
-      },
-      {
-        "name": "defaultSearchValue",
-        "type": "string",
-        "required": false,
-        "description": ""
-      },
-      {
-        "name": "showFilterIcon",
-        "type": "boolean",
-        "required": false,
-        "description": ""
-      },
-      {
-        "name": "searchableFilter",
-        "type": "boolean",
-        "required": false,
-        "description": ""
-      },
-      {
-        "name": "defaultFilterValue",
-        "type": "FilterValue",
-        "required": false,
-        "description": ""
-      },
-      {
-        "name": "filterOptions",
-        "type": "FilterOption[] | string[]",
-        "required": false,
-        "description": ""
-      },
-      {
-        "name": "filterFn",
-        "type": "(row: T, filterValue: FilterValue) => boolean",
-        "required": false,
-        "description": ""
-      },
-      {
-        "name": "renderFilter",
-        "type": "(context: FilterRenderContext) => ReactNode",
+        "name": "align",
+        "type": "'left' | 'center' | 'right'",
         "required": false,
         "description": ""
       },
@@ -353,84 +275,150 @@
         "description": ""
       },
       {
+        "name": "sortable",
+        "type": "boolean",
+        "required": false,
+        "description": "Enable sorting."
+      },
+      {
+        "name": "defaultSortOrder",
+        "type": "SortOrder",
+        "required": false,
+        "description": "Initial sort order. The first sortable column that sets it wins."
+      },
+      {
+        "name": "sortFn",
+        "type": "(a: T, b: T) => number",
+        "required": false,
+        "description": "Ascending comparator; descending reverses it."
+      },
+      {
+        "name": "showSortIcon",
+        "type": "boolean",
+        "required": false,
+        "description": "Show the sort button in the header. Default: true, or false when `showMenu` is on."
+      },
+      {
+        "name": "filterable",
+        "type": "boolean",
+        "required": false,
+        "description": "Enable filtering."
+      },
+      {
+        "name": "defaultFilterValue",
+        "type": "FilterValue",
+        "required": false,
+        "description": "Initial filter value."
+      },
+      {
+        "name": "filterOptions",
+        "type": "FilterOption[] | string[]",
+        "required": false,
+        "description": "Choices for string and boolean filters. Required for string filters in server mode."
+      },
+      {
+        "name": "searchableFilter",
+        "type": "boolean",
+        "required": false,
+        "description": "Show a search box above string and boolean filter choices."
+      },
+      {
+        "name": "filterFn",
+        "type": "(row: T, filterValue: FilterValue) => boolean",
+        "required": false,
+        "description": "Custom predicate for client mode."
+      },
+      {
+        "name": "renderFilter",
+        "type": "(context: FilterRenderContext) => ReactNode",
+        "required": false,
+        "description": "Custom filter UI."
+      },
+      {
+        "name": "showFilterIcon",
+        "type": "boolean",
+        "required": false,
+        "description": "Show the filter button in the header. Default: true, or false when `showMenu` is on."
+      },
+      {
+        "name": "searchable",
+        "type": "boolean",
+        "required": false,
+        "description": "`true` adds a column search. `false` excludes the column from global search.\nUnset: included in global search only."
+      },
+      {
+        "name": "defaultSearchValue",
+        "type": "string",
+        "required": false,
+        "description": "Initial column search text. Requires `searchable: true`."
+      },
+      {
+        "name": "showSearchIcon",
+        "type": "boolean",
+        "required": false,
+        "description": "Show the search button in the header. Default: true, or false when `showMenu` is on."
+      },
+      {
         "name": "showMenu",
         "type": "boolean",
         "required": false,
-        "description": ""
+        "description": "Show the column menu with sort, filter, search, pin and hide actions."
       },
       {
         "name": "menuOptions",
         "type": "MenuOption[]",
         "required": false,
-        "description": ""
+        "description": "Limit and order the menu actions. Default: all."
       },
       {
-        "name": "sticky",
+        "name": "pinned",
         "type": "'left' | 'right'",
         "required": false,
-        "description": ""
+        "description": "Initial pinned side."
       },
       {
         "name": "pinnable",
         "type": "boolean",
         "required": false,
-        "description": ""
+        "description": "Allow pinning from the menu. Default: true."
       },
       {
         "name": "hideable",
         "type": "boolean",
         "required": false,
-        "description": ""
+        "description": "Allow hiding from the menu and column selector. Default: true."
       },
       {
         "name": "stopRowClick",
         "type": "boolean",
         "required": false,
-        "description": "Used by rowActionsColumn to keep action clicks out of row handlers."
+        "description": "Keep clicks in this column's cells from triggering `onRowClick` or row expansion."
       }
     ],
     "Pagination": [
       {
         "name": "currentPage",
         "type": "number",
-        "required": true,
-        "description": ""
+        "required": false,
+        "description": "Server mode: current page (controlled). Client mode: initial page. Default: 1."
       },
       {
         "name": "pageSize",
         "type": "number",
-        "required": true,
-        "description": ""
+        "required": false,
+        "description": "Server mode: page size (controlled). Client mode: initial page size. Default: 10."
       },
       {
         "name": "totalItems",
         "type": "number",
-        "required": true,
-        "description": ""
-      },
-      {
-        "name": "defaultPageSize",
-        "type": "number",
         "required": false,
-        "description": ""
+        "description": "Server mode: total matching rows (required). Client mode: counted by the table."
       },
       {
         "name": "pageSizeOptions",
         "type": "number[] | false",
         "required": false,
-        "description": ""
-      },
-      {
-        "name": "from",
-        "type": "number",
-        "required": false,
-        "description": ""
-      },
-      {
-        "name": "to",
-        "type": "number",
-        "required": false,
-        "description": ""
+        "description": "Page size choices, or false to hide the selector. Default: [10, 20, 50, 100]."
       }
     ],
     "TableChange": [
@@ -438,7 +426,7 @@
         "name": "pagination",
         "type": "PaginationChange",
         "required": false,
-        "description": ""
+        "description": "Present when pagination is enabled."
       },
       {
         "name": "sorter",
@@ -469,41 +457,35 @@
       {
         "name": "selectedIds",
         "type": "RowId[]",
-        "required": true,
-        "description": ""
+        "required": false,
+        "description": "Controlled selected IDs. Omit to let the table manage selection."
       },
       {
         "name": "onChange",
         "type": "(selection: SelectionSnapshot<T>) => void",
-        "required": true,
+        "required": false,
         "description": ""
       },
       {
         "name": "isSelectable",
         "type": "(row: T) => boolean",
         "required": false,
-        "description": ""
+        "description": "Rows that return false cannot be selected."
       },
       {
         "name": "showSelectionCount",
         "type": "boolean",
         "required": false,
-        "description": ""
+        "description": "Show the selected count in the bulk action bar. Default: true."
       },
       {
         "name": "renderBulkActions",
         "type": "(context: SelectionSnapshot<T> & { clear: () => void; }) => ReactNode",
         "required": false,
-        "description": ""
+        "description": "Bulk action bar content. The bar replaces the toolbar while rows are selected."
       }
     ],
     "SelectionSnapshot": [
-      {
-        "name": "kind",
-        "type": "'include'",
-        "required": true,
-        "description": ""
-      },
       {
         "name": "ids",
         "type": "RowId[]",
@@ -514,19 +496,7 @@
         "name": "loadedRows",
         "type": "T[]",
         "required": true,
-        "description": ""
-      },
-      {
-        "name": "count",
-        "type": "number",
-        "required": true,
-        "description": ""
-      },
-      {
-        "name": "query",
-        "type": "{ filters: Filter[]; columnSearch: ColumnSearch[]; search: string; }",
-        "required": true,
-        "description": ""
+        "description": "Selected rows present in the current `rows`. Rows from other server pages are not included."
       }
     ],
     "ExpandableConfig": [
@@ -540,7 +510,7 @@
         "name": "expandedIds",
         "type": "RowId[]",
         "required": false,
-        "description": ""
+        "description": "Controlled expanded IDs. Omit to let the table manage expansion."
       },
       {
         "name": "onChange",
@@ -552,13 +522,13 @@
         "name": "allowMultiple",
         "type": "boolean",
         "required": false,
-        "description": ""
+        "description": "Allow several expanded rows at once. Default: false."
       },
       {
         "name": "trigger",
         "type": "'icon' | 'row'",
         "required": false,
-        "description": ""
+        "description": "Expand from the icon or from a row click. Default: 'icon'."
       }
     ],
     "FilterRenderContext": [
@@ -584,6 +554,44 @@
         "name": "reset",
         "type": "() => void",
         "required": true,
+        "description": ""
+      }
+    ],
+    "DateInputProps": [
+      {
+        "name": "value",
+        "type": "string | null",
+        "required": true,
+        "description": "Date as `YYYY-MM-DD`, or null."
+      },
+      {
+        "name": "onChange",
+        "type": "(value: string | null) => void",
+        "required": true,
+        "description": ""
+      },
+      {
+        "name": "size",
+        "type": "MantineSize",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "placeholder",
+        "type": "string",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "aria-label",
+        "type": "string",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "popoverProps",
+        "type": "{ withinPortal?: boolean; }",
+        "required": false,
         "description": ""
       }
     ]

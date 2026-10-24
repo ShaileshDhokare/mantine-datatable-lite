@@ -11,6 +11,7 @@ import {
   Tooltip,
 } from '@mantine/core';
 import { useState } from 'react';
+import { useDataTableConfig } from '../../context/DataTableConfigContext';
 import { useDataTableContext } from '../../context/DataTableContext';
 import { Icon } from '../../icons/Icon';
 import type { DataTableColumn } from '../../types';
@@ -23,6 +24,7 @@ export function ColumnPicker<T>({
   inactive?: boolean;
 }) {
   const { hiddenColumns, setHiddenColumns } = useDataTableContext();
+  const { labels } = useDataTableConfig();
   const [opened, setOpened] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
 
@@ -35,15 +37,15 @@ export function ColumnPicker<T>({
       disabled={inactive}
     >
       <Popover.Target>
-        <Tooltip label='Select columns' withArrow disabled={inactive}>
+        <Tooltip label={labels.selectColumns} withArrow disabled={inactive}>
           <ActionIcon
             variant='subtle'
             size='lg'
-            aria-label='Select columns'
+            aria-label={labels.selectColumns}
             color={
               hiddenColumns.length
                 ? 'var(--mantine-primary-color-filled)'
-                : 'var(--mantine-color-gray-6)'
+                : 'var(--mantine-color-dimmed)'
             }
             onClick={() => {
               setSelected(
@@ -92,7 +94,7 @@ export function ColumnPicker<T>({
               setOpened(false);
             }}
           >
-            Reset
+            {labels.reset}
           </Button>
           <Button
             size='xs'
@@ -106,7 +108,7 @@ export function ColumnPicker<T>({
               setOpened(false);
             }}
           >
-            Apply
+            {labels.apply}
           </Button>
         </Group>
       </Popover.Dropdown>

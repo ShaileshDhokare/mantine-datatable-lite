@@ -1,4 +1,6 @@
-import type { DataTableColumn, PinnedColumns } from '../types';
+import type { DataTableColumn } from '../types';
+
+export type PinnedColumns = { left: string[]; right: string[] };
 
 export type ColumnLayout = {
   hiddenColumns: string[];
@@ -12,10 +14,10 @@ export function defaultColumnLayout<T>(
     hiddenColumns: [],
     pinned: {
       left: columns
-        .filter((column) => column.sticky === 'left')
+        .filter((column) => column.pinned === 'left')
         .map((column) => column.dataIndex),
       right: columns
-        .filter((column) => column.sticky === 'right')
+        .filter((column) => column.pinned === 'right')
         .map((column) => column.dataIndex),
     },
   };
@@ -41,7 +43,7 @@ export function pruneColumnLayout<T>(
     return (
       visible.has(field) &&
       column &&
-      (column.pinnable !== false || column.sticky === side)
+      (column.pinnable !== false || column.pinned === side)
     );
   };
   const left = [...new Set(layout.pinned.left)].filter((field) =>

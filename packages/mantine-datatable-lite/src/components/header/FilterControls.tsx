@@ -11,26 +11,27 @@ import {
   Text,
   TextInput,
 } from '@mantine/core';
-import { DatePickerInput } from '@mantine/dates';
 import { useEffect, useMemo, useState } from 'react';
+import { useDataTableConfig } from '../../context/DataTableConfigContext';
 import { useDataTableContext } from '../../context/DataTableContext';
 import { Icon } from '../../icons/Icon';
 import type {
   DataTableColumn,
+  DateInputProps,
   FilterValue,
   NumericOperator,
 } from '../../types';
-import { uniqueValues } from '../../utils/filter/uniqueValues';
 import { columnLabel } from '../../utils/columnLabel';
+import { filterChoices } from '../../utils/filter/filterChoices';
 
-const operators = [
-  { value: 'eq', label: 'Equal to' },
-  { value: 'neq', label: 'Not equal to' },
-  { value: 'gt', label: 'Greater than' },
-  { value: 'gte', label: 'Greater than or equal' },
-  { value: 'lt', label: 'Less than' },
-  { value: 'lte', label: 'Less than or equal' },
-  { value: 'between', label: 'Between' },
+const operatorOrder: NumericOperator[] = [
+  'eq',
+  'neq',
+  'gt',
+  'gte',
+  'lt',
+  'lte',
+  'between',
 ];
 
 type Draft = {
@@ -64,6 +65,25 @@ function dateValue(value: string | number | null): Date | null {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
+function NativeDateInput({
+  value,
+  onChange,
+  size,
+  placeholder,
+  'aria-label': ariaLabel,
+}: DateInputProps) {
+  return (
+    <TextInput
+      size={size}
+      placeholder={placeholder}
+      aria-label={ariaLabel}
+      type='date'
+      value={value ?? ''}
+      onChange={(event) => onChange(event.currentTarget.value || null)}
+    />
+  );
+}
+
 export function FilterControls<T>({
   column,
   rows,
@@ -76,13 +96,17 @@ export function FilterControls<T>({
   onDone: () => void;
 }) {
   const { filters, setFilter } = useDataTableContext();
+  const { labels, dateInput: DateInput = NativeDateInput } =
+    useDataTableConfig();
   const name = columnLabel(column);
+  const filterWord = labels.filter.toLocaleLowerCase();
   const applied = filters.find(
     (filter) => filter.field === column.dataIndex,
   )?.value;
   const date = column.type === 'date';
   const choice =
     column.type === 'string' || column.type === 'boolean' || !column.type;
+  // Drafts start from the applied value; the controls remount each time they open.
   const [selected, setSelected] = useState<string[]>(() =>
     Array.isArray(applied) ? applied.map(String) : [],
   );
@@ -92,19 +116,18 @@ export function FilterControls<T>({
     applied,
   );
   const options = useMemo(
-    () =>
-      choice && (!serverMode || column.filterOptions)
-        ? uniqueValues(rows, column)
-        : [],
-    [choice, rows, column, serverMode],
+    () => (choice ? filterChoices(rows, column, labels, !serverMode) : []),
+    [choice, rows, column, labels, serverMode],
   );
 
+  const missingServerOptions =
+    serverMode && choice && column.type !== 'boolean' && !column.filterOptions;
   useEffect(() => {
-    setSelected(Array.isArray(applied) ? applied.map(String) : []);
-    setDraft(initialDraft(applied, date));
-    setCustomValue(applied);
-    setQuery('');
-  }, [applied, date]);
+    if (missingServerOptions && process.env.NODE_ENV !== 'production')
+      console.warn(
+        `[DataTable] Column "${column.dataIndex}" needs filterOptions in server mode.`,
+      );
+  }, [missingServerOptions, column.dataIndex]);
 
   function commit(value?: FilterValue) {
     setFilter(column.dataIndex, value);
@@ -151,10 +174,10 @@ export function FilterControls<T>({
       )
         commit({ operator: 'between', value: [first, second] });
       else onDone();
+    } else if (first instanceof Date) {
+      commit({ operator: draft.operator, value: first });
     } else {
-      if (first instanceof Date)
-        commit({ operator: draft.operator, value: first });
-      else commit({ operator: draft.operator, value: first });
+      commit({ operator: draft.operator, value: first });
     }
   }
 
@@ -164,12 +187,12 @@ export function FilterControls<T>({
   const input = (
     value: string | number | null,
     onChange: (next: string | number | null) => void,
-    label?: string,
+    label: string,
   ) =>
     date ? (
-      <DatePickerInput
+      <DateInput
         size='xs'
-        aria-label={`${name} filter ${label?.toLowerCase() ?? 'value'}`}
+        aria-label={`${name} ${filterWord} ${label.toLocaleLowerCase()}`}
         placeholder={label}
         value={typeof value === 'string' ? value : null}
         onChange={(next) => onChange(next)}
@@ -178,7 +201,7 @@ export function FilterControls<T>({
     ) : (
       <NumberInput
         size='xs'
-        aria-label={`${name} filter ${label?.toLowerCase() ?? 'value'}`}
+        aria-label={`${name} ${filterWord} ${label.toLocaleLowerCase()}`}
         placeholder={label}
         value={value ?? ''}
         onChange={(next) => onChange(next === '' ? null : next)}
@@ -210,8 +233,8 @@ export function FilterControls<T>({
             {column.searchableFilter === true && (
               <TextInput
                 size='xs'
-                placeholder='Search in filters'
-                aria-label='Search in filters'
+                placeholder={labels.searchOptions}
+                aria-label={labels.searchOptions}
                 leftSection={<Icon name='search' size={14} />}
                 value={query}
                 onChange={(event) => setQuery(event.currentTarget.value)}
@@ -233,9 +256,7 @@ export function FilterControls<T>({
                     ))
                   ) : (
                     <Text size='xs' c='dimmed' p='xs'>
-                      {serverMode && !column.filterOptions
-                        ? 'Provide filterOptions for server data'
-                        : 'No options'}
+                      {labels.noOptions}
                     </Text>
                   )}
                 </Stack>
@@ -246,8 +267,11 @@ export function FilterControls<T>({
           <Stack gap='xs'>
             <Select
               size='xs'
-              aria-label={`${name} filter operator`}
-              data={operators}
+              aria-label={`${name} ${filterWord} operator`}
+              data={operatorOrder.map((operator) => ({
+                value: operator,
+                label: labels.operators[operator],
+              }))}
               value={draft.operator}
               checkIconPosition='right'
               allowDeselect={false}
@@ -262,13 +286,13 @@ export function FilterControls<T>({
             {input(
               draft.first,
               (first) => setDraft((current) => ({ ...current, first })),
-              draft.operator === 'between' ? 'From' : 'Value',
+              draft.operator === 'between' ? labels.from : labels.value,
             )}
             {draft.operator === 'between' &&
               input(
                 draft.second,
                 (second) => setDraft((current) => ({ ...current, second })),
-                'To',
+                labels.to,
               )}
           </Stack>
         )}
@@ -276,10 +300,10 @@ export function FilterControls<T>({
       <Divider />
       <Group justify='space-between' p={6}>
         <Button size='xs' variant='subtle' onClick={() => commit()}>
-          Reset
+          {labels.reset}
         </Button>
         <Button size='xs' onClick={apply}>
-          Apply
+          {labels.apply}
         </Button>
       </Group>
     </Box>

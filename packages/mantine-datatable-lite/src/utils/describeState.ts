@@ -1,22 +1,31 @@
-import type { DataTableColumn, FilterValue, TableChange } from '../types';
+import type {
+  DataTableColumn,
+  DataTableLabels,
+  FilterValue,
+  TableChange,
+} from '../types';
 import { columnLabel } from './columnLabel';
 
-const operatorLabels = {
+const operatorSymbols = {
   eq: '=',
   neq: '≠',
   gt: '>',
   gte: '≥',
   lt: '<',
   lte: '≤',
-  between: 'between',
-};
+} as const;
 
-function displayValue(value: unknown) {
+function displayValue(value: unknown, labels: DataTableLabels) {
   if (value instanceof Date) return value.toLocaleDateString();
+  if (typeof value === 'boolean') return value ? labels.true : labels.false;
   return String(value);
 }
 
-function filterDescription<T>(value: FilterValue, column?: DataTableColumn<T>) {
+function filterDescription<T>(
+  value: FilterValue,
+  labels: DataTableLabels,
+  column?: DataTableColumn<T>,
+) {
   if (Array.isArray(value))
     return value.map((item) => {
       const option = column?.filterOptions?.find((choice) =>
@@ -26,13 +35,16 @@ function filterDescription<T>(value: FilterValue, column?: DataTableColumn<T>) {
       );
       return option && typeof option !== 'string'
         ? option.label
-        : displayValue(item);
+        : displayValue(item, labels);
     });
   if (value.operator === 'between' && Array.isArray(value.value))
     return [
-      `between ${displayValue(value.value[0])} and ${displayValue(value.value[1])}`,
+      `${displayValue(value.value[0], labels)} – ${displayValue(value.value[1], labels)}`,
     ];
-  return [`${operatorLabels[value.operator]} ${displayValue(value.value)}`];
+  if (value.operator === 'between') return [];
+  return [
+    `${operatorSymbols[value.operator]} ${displayValue(value.value, labels)}`,
+  ];
 }
 
 export type StatePill = {
@@ -54,9 +66,10 @@ export function describeState<T>(
     setSort: (field: string, order: null) => void;
     setFilter: (field: string, value?: FilterValue) => void;
     setColumnSearch: (field: string, value: string) => void;
-    setSearchQuery: (value: string, immediate?: boolean) => void;
+    setSearchQuery: (value: string) => void;
     setColumnHidden: (field: string, hidden: boolean) => void;
   },
+  labels: DataTableLabels,
 ): StatePill[] {
   const columnByField = new Map(
     columns.map((column) => [column.dataIndex, column]),
@@ -86,47 +99,50 @@ export function describeState<T>(
   if (sorter)
     addPill(
       'sort',
-      'Sort by:',
-      `${name(sorter.sortField)} ${sorter.sortOrder.toUpperCase()}`,
-      () => state.setSort(sorter.sortField, null),
+      labels.sortedBy,
+      `${name(sorter.field)} ${sorter.order.toUpperCase()}`,
+      () => state.setSort(sorter.field, null),
     );
   for (const filter of state.filters) {
-    filterDescription(filter.value, columnByField.get(filter.field)).forEach(
-      (description, index) =>
-        addPill(
-          `filter:${filter.field}:${index}`,
-          `${name(filter.field)}:`,
-          description,
-          () =>
-            state.setFilter(
-              filter.field,
-              Array.isArray(filter.value)
-                ? (filter.value.filter(
-                    (_, itemIndex) => itemIndex !== index,
-                  ) as FilterValue)
-                : undefined,
-            ),
-        ),
+    filterDescription(
+      filter.value,
+      labels,
+      columnByField.get(filter.field),
+    ).forEach((description, index) =>
+      addPill(
+        `filter:${filter.field}:${index}`,
+        `${name(filter.field)}:`,
+        description,
+        () =>
+          state.setFilter(
+            filter.field,
+            Array.isArray(filter.value)
+              ? (filter.value.filter(
+                  (_, itemIndex) => itemIndex !== index,
+                ) as FilterValue)
+              : undefined,
+          ),
+      ),
     );
   }
   for (const search of state.columnSearch)
     addPill(
-      `search:${search.searchField}`,
-      `${name(search.searchField)}:`,
-      search.searchValue,
-      () => state.setColumnSearch(search.searchField, ''),
+      `search:${search.field}`,
+      `${name(search.field)}:`,
+      search.value,
+      () => state.setColumnSearch(search.field, ''),
       true,
     );
   if (state.searchQuery)
     addPill(
       'global-search',
-      'Search:',
+      labels.searchPill,
       state.searchQuery,
-      () => state.setSearchQuery('', true),
+      () => state.setSearchQuery(''),
       true,
     );
   for (const field of state.hiddenColumns)
-    addPill(`hidden:${field}`, 'Hidden:', name(field), () =>
+    addPill(`hidden:${field}`, labels.hiddenPill, name(field), () =>
       state.setColumnHidden(field, false),
     );
   return pills;

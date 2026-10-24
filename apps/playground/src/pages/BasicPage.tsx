@@ -13,7 +13,6 @@ const scenarios = [
   { id: 'colors', label: 'Theme colors', description: 'Use Mantine colors in light and dark themes.' },
   { id: 'columns', label: 'Columns and rendering', description: 'Set column width and alignment and render custom cells.' },
 ] as const;
-type BasicScenario = (typeof scenarios)[number]['id'];
 
 const baseColumns: DataTableColumn<Employee>[] = [
   { dataIndex: 'id', header: 'ID', width: 70 },

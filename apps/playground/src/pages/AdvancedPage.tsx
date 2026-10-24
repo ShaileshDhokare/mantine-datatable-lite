@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import {
   ActionIcon,
   Badge,
@@ -13,15 +13,11 @@ import {
 import {
   DataTable,
   Icon,
-  type ColumnSearch,
   type DataTableColumn,
-  type Filter,
   type RowId,
-  type Sorter,
 } from 'mantine-datatable-lite';
 import { PlaygroundLayout } from '../components/PlaygroundLayout';
 import { employees, type Employee } from '../data';
-import { queryEmployees } from '../queryEmployees';
 
 const scenarios = [
   {
@@ -36,27 +32,8 @@ const departmentOptions = [
   ...new Set(employees.map((employee) => employee.department)),
 ].sort();
 
-type TableState = {
-  page: number;
-  pageSize: number;
-  sorter?: Sorter;
-  filters: Filter[];
-  columnSearch: ColumnSearch[];
-  searchQuery: string;
-};
-
-function initialState(): TableState {
-  return {
-    page: 1,
-    pageSize: 10,
-    filters: [],
-    columnSearch: [],
-    searchQuery: '',
-  };
-}
-
 export function AdvancedPage() {
-  const [state, setState] = useState<TableState>(initialState);
+  const [page, setPage] = useState(1);
   const [resetKey, setResetKey] = useState(0);
   const [showMenu, setShowMenu] = useState(true);
   const [showSortIcon, setShowSortIcon] = useState(true);
@@ -71,8 +48,9 @@ export function AdvancedPage() {
   const [pageSizeChoices, setPageSizeChoices] = useState('default');
   const [selectedIds, setSelectedIds] = useState<RowId[]>([]);
 
+  // Remounting restores the column defaults and clears all table state.
   function resetTable() {
-    setState(initialState());
+    setPage(1);
     setResetKey((key) => key + 1);
     setSelectedIds([]);
   }
@@ -87,7 +65,7 @@ export function AdvancedPage() {
       showSortIcon,
       showSearchIcon,
       width: 170,
-      sticky: 'left',
+      pinned: 'left',
     },
     {
       dataIndex: 'email',
@@ -166,16 +144,11 @@ export function AdvancedPage() {
       showSortIcon,
       showFilterIcon,
       width: 120,
-      sticky: 'right',
+      pinned: 'right',
       render: (employee) => employee.joinDate.toLocaleDateString(),
     },
   ];
 
-  const matched = useMemo(() => queryEmployees(employees, state), [state]);
-  const rows = matched.slice(
-    (state.page - 1) * state.pageSize,
-    state.page * state.pageSize,
-  );
   const options =
     pageSizeChoices === 'fixed'
       ? false
@@ -186,8 +159,7 @@ export function AdvancedPage() {
   const controls = (
     <Stack gap='sm'>
       <Text size='sm' c='dimmed'>
-        {matched.length} of {employees.length} employees match · page{' '}
-        {state.page}
+        {employees.length} employees, paged in the browser · page {page}
       </Text>
       <Button variant='light' size='xs' onClick={resetTable}>
         Reset table state
@@ -267,12 +239,11 @@ export function AdvancedPage() {
       <DataTable
         key={resetKey}
         columns={columns}
-        rows={rows}
+        rows={employees}
         globalSearch
         columnSelector
         showTableStatePills
         showReset
-        toolbar
         selection={{
           selectedIds,
           onChange: ({ ids }) => setSelectedIds(ids),
@@ -314,28 +285,8 @@ export function AdvancedPage() {
             </DataList>
           ),
         }}
-        pagination={{
-          currentPage: state.page,
-          pageSize: state.pageSize,
-          totalItems: matched.length,
-          pageSizeOptions: options,
-        }}
-        onChange={({
-          pagination,
-          sorter,
-          filters,
-          columnSearch,
-          searchQuery,
-        }) =>
-          setState({
-            page: pagination?.currentPage ?? 1,
-            pageSize: pagination?.pageSize ?? state.pageSize,
-            sorter,
-            filters: filters ?? [],
-            columnSearch: columnSearch ?? [],
-            searchQuery: searchQuery ?? '',
-          })
-        }
+        pagination={{ pageSizeOptions: options }}
+        onChange={({ pagination }) => setPage(pagination?.currentPage ?? 1)}
         minWidth={1250}
         maxHeight={constrainHeight ? 420 : undefined}
         stickyHeader={constrainHeight}

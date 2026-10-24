@@ -1,8 +1,8 @@
 # Documentation site
 
-The existing React/Vite playground is the documentation site. It imports the
-published `mantine-datatable-lite` npm release, not the local library workspace.
-The `alpha` dependency plus the committed lockfile preserves that distinction.
+The existing React/Vite playground is the documentation site. It links the
+local `mantine-datatable-lite` workspace, so the docs and demos always match the
+current library source. The `dev` and `build` scripts build the library first.
 
 ## Develop and build
 
@@ -16,7 +16,7 @@ npm run test:playground
 ```
 
 The dev and build scripts generate `src/docs/generated/api.json` from the
-installed package's TypeScript declarations. `npm run docs:generate -w playground`
+library's built TypeScript declarations. `npm run docs:generate -w playground`
 regenerates it explicitly. Commit the generated JSON with content changes. Props
 names, types and required flags come from TypeScript; editorial descriptions
 live in `src/docs/propDescriptions.ts`.
@@ -35,14 +35,14 @@ live in `src/docs/propDescriptions.ts`.
 - `src/examples/*.tsx`: small complete examples; the displayed source is imported
   directly from the same files that execute the demos.
 - `src/docs/content/llm.md`: authored guide for AI coding tools. The existing
-  `docs:generate` step adds the installed npm declarations and writes identical
+  `docs:generate` step adds the library declarations and writes identical
   copies to `src/docs/generated/llm.md` (the LLM page) and `public/llm.md` (the
   stable Markdown URL and download). Commit both generated files with edits.
 - `src/components/SourceCode.tsx`: lazy source tabs from real playground files,
   including the server adapter and query helper. These show the full playground
   implementation; the short usage blocks focus on the package API.
 
-Keep documentation aligned with the published exports. The current release has
+Keep documentation aligned with the public exports. The current release has
 no public headless hook, inverted all-record selection, or DataTable Styles API.
 Use the public appearance props and custom render callbacks.
 
@@ -57,7 +57,7 @@ The expected public URL is
    as the source.
 3. Run **Deploy documentation to GitHub Pages** in Actions, or push another docs
    change. The workflow uses `npm ci`, checks the playground adapters, builds the
-   npm-backed app and deploys `apps/playground/dist`.
+   library and the app and deploys `apps/playground/dist`.
 4. Check the deployment job and visit the URL it returns. A local build alone
    does not confirm publication.
 

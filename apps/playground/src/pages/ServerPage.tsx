@@ -32,13 +32,9 @@ const columns: DataTableColumn<Employee>[] = [
     </Badge> },
 ];
 
-const initialRequest: TableChange = {
-  pagination: { currentPage: 1, pageSize: 10, totalItems: 0, from: 0, to: 0 },
-  filters: [], columnSearch: [], searchQuery: '',
-};
-
 export function ServerPage() {
-  const [request, setRequest] = useState<TableChange>(initialRequest);
+  // The table sends the first request on mount, including any column defaults.
+  const [request, setRequest] = useState<TableChange | null>(null);
   const [selectedIds, setSelectedIds] = useState<RowId[]>([]);
   const [bulkRequestIds, setBulkRequestIds] = useState<RowId[] | null>(null);
   const { rows, totalItems, loading, error, retry } = useServerData<Employee>(request, fetchEmployeePage);
@@ -51,7 +47,7 @@ export function ServerPage() {
       <Text size='sm' c='dimmed'>Select rows on two pages, then preview the bulk request. It contains
         every selected ID, including IDs from pages that are no longer loaded.</Text>
     </Stack>}>
-    <DataTable columns={columns} rows={rows} globalSearch showTableStatePills showReset toolbar
+    <DataTable mode='server' columns={columns} rows={rows} globalSearch showTableStatePills showReset
       selection={{
         selectedIds,
         onChange: ({ ids }) => setSelectedIds(ids),
@@ -64,8 +60,8 @@ export function ServerPage() {
           </Tooltip>
         ),
       }}
-      pagination={{ currentPage: request.pagination?.currentPage ?? 1,
-        pageSize: request.pagination?.pageSize ?? 10, totalItems }}
+      pagination={{ currentPage: request?.pagination?.currentPage ?? 1,
+        pageSize: request?.pagination?.pageSize ?? 10, totalItems }}
       onChange={setRequest} loading={loading} error={error} onRetry={retry}
       minWidth={1050} withTableBorder withRowBorders />
     <Modal opened={bulkRequestIds !== null} onClose={() => setBulkRequestIds(null)}

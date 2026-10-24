@@ -33,7 +33,7 @@ test('loading preserves table DOM, cell state and observed headers; wrapping rec
     {
       dataIndex: 'name',
       header: 'Name',
-      sticky: 'left' as const,
+      pinned: 'left' as const,
       render: () => <input aria-label='Cell draft' defaultValue='initial' />,
     },
   ];
@@ -72,7 +72,7 @@ test('loading preserves table DOM, cell state and observed headers; wrapping rec
 
 test.each(['asc', 'desc'] as const)(
   'invalid numeric/date values stay last in %s sorting',
-  (sortOrder) => {
+  (order) => {
     const numeric = [
       { value: 3 },
       { value: NaN },
@@ -83,20 +83,20 @@ test.each(['asc', 'desc'] as const)(
     const numbers = sortRows(
       numeric,
       [{ dataIndex: 'value', header: 'Value', type: 'number', sortable: true }],
-      { sortField: 'value', sortOrder },
+      { field: 'value', order },
     );
     expect(numbers.slice(0, 2).map((row) => row.value)).toEqual(
-      sortOrder === 'asc' ? [1, 3] : [3, 1],
+      order === 'asc' ? [1, 3] : [3, 1],
     );
     expect(numbers.slice(2)).toEqual([numeric[1], numeric[3], numeric[4]]);
     expect(
       sortRows(
         numeric.slice(0, 3),
         [{ dataIndex: 'value', header: 'Value', sortable: true }],
-        { sortField: 'value', sortOrder },
+        { field: 'value', order },
       ),
     ).toEqual(
-      sortOrder === 'asc'
+      order === 'asc'
         ? [numeric[2], numeric[0], numeric[1]]
         : [numeric[0], numeric[2], numeric[1]],
     );
@@ -108,18 +108,17 @@ test.each(['asc', 'desc'] as const)(
     const sorted = sortRows(
       dates,
       [{ dataIndex: 'value', header: 'Value', type: 'date', sortable: true }],
-      { sortField: 'value', sortOrder },
+      { field: 'value', order },
     );
     expect(sorted).toEqual(
-      sortOrder === 'asc'
+      order === 'asc'
         ? [dates[2], dates[0], dates[1]]
         : [dates[0], dates[2], dates[1]],
     );
   },
 );
 
-test('schema changes prune sort/filter/search and replace a pending server request', () => {
-  vi.useFakeTimers();
+test('schema changes prune sort/filter/search and request the pruned state', () => {
   const onChange = vi.fn<(request: TableChange) => void>();
   const rows = [{ id: 1, name: 'Ava', role: 'Engineer' }];
   const columns = [
@@ -128,6 +127,7 @@ test('schema changes prune sort/filter/search and replace a pending server reque
       header: 'Name',
       sortable: true,
       filterable: true,
+      filterOptions: ['Ava'],
       searchable: true,
       defaultSearchValue: 'Ava',
       defaultFilterValue: ['Ava'],
@@ -139,6 +139,7 @@ test('schema changes prune sort/filter/search and replace a pending server reque
   const view = render(
     <MantineProvider env='test'>
       <DataTable
+        mode='server'
         columns={columns}
         rows={rows}
         pagination={pagination}
@@ -146,10 +147,20 @@ test('schema changes prune sort/filter/search and replace a pending server reque
       />
     </MantineProvider>,
   );
+  expect(onChange).toHaveBeenCalledTimes(1);
+  expect(onChange).toHaveBeenLastCalledWith({
+    pagination: { currentPage: 2, pageSize: 10 },
+    sorter: { field: 'name', order: 'asc' },
+    filters: [{ field: 'name', value: ['Ava'] }],
+    columnSearch: [{ field: 'name', value: 'Ava' }],
+    searchQuery: '',
+  });
   fireEvent.click(screen.getByRole('button', { name: 'Sort Name: asc' }));
+  expect(onChange).toHaveBeenCalledTimes(2);
   view.rerender(
     <MantineProvider env='test'>
       <DataTable
+        mode='server'
         columns={[columns[1]]}
         rows={rows}
         pagination={pagination}
@@ -157,16 +168,14 @@ test('schema changes prune sort/filter/search and replace a pending server reque
       />
     </MantineProvider>,
   );
-  act(() => vi.advanceTimersByTime(300));
-  expect(onChange).toHaveBeenCalledTimes(1);
-  expect(onChange).toHaveBeenLastCalledWith(
-    expect.objectContaining({
-      sorter: undefined,
-      filters: [],
-      columnSearch: [],
-      pagination: expect.objectContaining({ currentPage: 1 }),
-    }),
-  );
+  expect(onChange).toHaveBeenCalledTimes(3);
+  expect(onChange).toHaveBeenLastCalledWith({
+    pagination: { currentPage: 1, pageSize: 10 },
+    sorter: undefined,
+    filters: [],
+    columnSearch: [],
+    searchQuery: '',
+  });
 });
 
 test('removed search fields do not exclude new rows; hidden columns retain their search', () => {
@@ -334,8 +343,11 @@ test('bulk toolbar hides/inerts standard controls and restores the search draft 
         columns={[{ dataIndex: 'name', header: 'Name' }]}
         globalSearch
         showReset
-        toolbar
-        selection={{ selectedIds: ids, onChange: ({ ids }) => setIds(ids) }}
+        selection={{
+          selectedIds: ids,
+          onChange: ({ ids }) => setIds(ids),
+          renderBulkActions: () => null,
+        }}
       />
     );
   }
@@ -389,7 +401,7 @@ test('control widths are measured and updates reach pinned headers and cells', (
     <MantineProvider env='test'>
       <DataTable
         rows={[{ id: 1, name: 'A' }]}
-        columns={[{ dataIndex: 'name', header: 'Name', sticky: 'left' }]}
+        columns={[{ dataIndex: 'name', header: 'Name', pinned: 'left' }]}
         horizontalSpacing='xl'
         selection={{ selectedIds: [], onChange: vi.fn() }}
         expandable={{ render: () => 'Details' }}
@@ -403,7 +415,7 @@ test('control widths are measured and updates reach pinned headers and cells', (
   ).toBe('136px');
   expect(
     screen
-      .getByRole('columnheader', { name: 'Expand rows' })
+      .getByRole('columnheader', { name: 'Expand row' })
       .style.getPropertyValue('--dt-pin-offset'),
   ).toBe('72px');
   selectionWidth = 80;
@@ -416,4 +428,31 @@ test('control widths are measured and updates reach pinned headers and cells', (
       .getByRole('cell', { name: 'A' })
       .style.getPropertyValue('--dt-pin-offset'),
   ).toBe('150px');
+});
+
+test('reset keeps default pins and clears only user changes', async () => {
+  render(
+    <MantineProvider env='test'>
+      <DataTable
+        rows={[{ id: 1, a: 'A', b: 'B', c: 'C' }]}
+        columns={[
+          { dataIndex: 'a', header: 'A', showMenu: true },
+          { dataIndex: 'b', header: 'B', pinned: 'right', showMenu: true },
+          { dataIndex: 'c', header: 'C', showMenu: true },
+        ]}
+        showReset
+      />
+    </MantineProvider>,
+  );
+  const order = () =>
+    screen
+      .getAllByRole('columnheader')
+      .map((cell) => cell.getAttribute('data-column'));
+  expect(order()).toEqual(['a', 'c', 'b']);
+  fireEvent.click(screen.getByRole('button', { name: 'A menu' }));
+  fireEvent.mouseEnter(screen.getByRole('menuitem', { name: 'Pin' }));
+  fireEvent.click(await screen.findByRole('menuitem', { name: 'Pin to right' }));
+  expect(order()).toEqual(['c', 'b', 'a']);
+  fireEvent.click(screen.getByRole('button', { name: 'Reset table state' }));
+  expect(order()).toEqual(['a', 'c', 'b']);
 });

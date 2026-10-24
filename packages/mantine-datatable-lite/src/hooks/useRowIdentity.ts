@@ -14,13 +14,24 @@ export function rowPanelId(prefix: string, id: RowId): string {
 
 export type RowEntry<T> = { row: T; id: RowId | undefined; key: string };
 
+// Stable keys for row objects without a usable ID. A WeakMap keyed by the row object,
+// so keys follow rows through sorting and never leak.
+const fallbackKeys = new WeakMap<object, number>();
+let nextFallbackKey = 0;
+function fallbackKeyFor(row: object): number {
+  let key = fallbackKeys.get(row);
+  if (key === undefined) {
+    key = nextFallbackKey++;
+    fallbackKeys.set(row, key);
+  }
+  return key;
+}
+
 export function useRowIdentity<T>(
   rows: T[],
   idAccessor: IdAccessor<T> | undefined,
   interactive: boolean,
 ) {
-  const fallbackKeys = useRef(new WeakMap<object, number>());
-  const nextKey = useRef(0);
   const warned = useRef(new Set<string>());
   const { entries, problems } = useMemo(() => {
     const ids = rows.map((row) => {
@@ -53,12 +64,8 @@ export function useRowIdentity<T>(
         );
       const id = duplicate ? undefined : candidate;
       if (id !== undefined) return { row, id, key: `row:${rowIdKey(id)}` };
-      let fallback = index;
-      if (typeof row === 'object' && row !== null) {
-        const existing = fallbackKeys.current.get(row);
-        fallback = existing ?? nextKey.current++;
-        if (existing === undefined) fallbackKeys.current.set(row, fallback);
-      }
+      const fallback =
+        typeof row === 'object' && row !== null ? fallbackKeyFor(row) : index;
       const base = `fallback:${typeof row === 'object' && row !== null ? 'object' : 'position'}:${fallback}`;
       const occurrence = occurrences.get(base) ?? 0;
       occurrences.set(base, occurrence + 1);
@@ -68,7 +75,7 @@ export function useRowIdentity<T>(
   }, [rows, idAccessor, interactive]);
 
   useEffect(() => {
-    if (!import.meta.env.DEV) return;
+    if (process.env.NODE_ENV === 'production') return;
     for (const message of problems) {
       if (!warned.current.has(message)) {
         warned.current.add(message);

@@ -1,4 +1,5 @@
 import { ActionIcon, Group, Paper, Tooltip } from '@mantine/core';
+import { useDataTableConfig } from '../../context/DataTableConfigContext';
 import { useDataTableContext } from '../../context/DataTableContext';
 import { Icon } from '../../icons/Icon';
 import type { DataTableColumn } from '../../types';
@@ -27,7 +28,10 @@ export function TableToolbar<T>({
   inactive?: boolean;
 }) {
   const state = useDataTableContext();
-  const pills = showTableStatePills ? describeState(columns, state) : [];
+  const { labels } = useDataTableConfig();
+  const pills = showTableStatePills
+    ? describeState(columns, state, labels)
+    : [];
   return (
     <Paper radius='sm' withBorder mb={'xs'}>
       <Group justify='space-between' align='center' gap='lg' p='4' wrap='wrap'>
@@ -46,12 +50,12 @@ export function TableToolbar<T>({
             <ColumnPicker columns={columns} inactive={inactive} />
           )}
           {showReset && (
-            <Tooltip label='Reset table state' withArrow>
+            <Tooltip label={labels.resetTable} withArrow>
               <ActionIcon
                 variant='subtle'
                 size='lg'
-                aria-label='Reset table state'
-                color='var(--mantine-color-gray-6)'
+                aria-label={labels.resetTable}
+                color='var(--mantine-color-dimmed)'
                 onClick={state.clearAll}
               >
                 <Icon name='delete' size={20} strokeWidth={1.5} />

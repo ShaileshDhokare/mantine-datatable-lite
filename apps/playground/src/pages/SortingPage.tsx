@@ -12,7 +12,6 @@ const scenarios = [
   { id: 'custom', label: 'Custom sorting', description: 'Department starts sorted by name length with a custom comparator.' },
   { id: 'server', label: 'Server-owned sorting', description: 'The table reports changes while the example supplies sorted rows.' },
 ] as const;
-type SortingScenario = (typeof scenarios)[number]['id'];
 
 export function SortingPage() {
   const [active, setActive] = useScenario(scenarios);
@@ -55,19 +54,20 @@ export function SortingPage() {
     <Switch label='With table border' checked={tableBorder} onChange={(event) => setTableBorder(event.currentTarget.checked)} />
     <Switch label='With column borders' checked={columnBorders} onChange={(event) => setColumnBorders(event.currentTarget.checked)} />
     <Switch label='With row borders' checked={rowBorders} onChange={(event) => setRowBorders(event.currentTarget.checked)} />
-    {active === 'server' ? <Text size='sm' c='dimmed'>{sortRequest}. Changes are reported after 300 ms.</Text>
+    {active === 'server' ? <Text size='sm' c='dimmed'>{sortRequest}. Each change is reported immediately.</Text>
       : <><Text size='sm' c='dimmed'>Rows shown</Text>
         <SegmentedControl fullWidth data={['8', '15', '30']} value={rowCount} onChange={setRowCount} /></>}
   </Stack>;
 
   return <PlaygroundLayout section='sorting' scenarios={scenarios} active={active} onSelect={setActive} controls={controls}>
     <DataTable key={active} columns={columns} rows={active === 'server' ? serverRows : employees.slice(0, Number(rowCount))}
+      mode={active === 'server' ? 'server' : 'client'}
       pagination={active === 'server' ? serverPagination : undefined}
       onChange={active === 'server' ? ({ sorter, pagination: next }) => {
-        setSortRequest(sorter ? `Requested salary ${sorter.sortOrder}` : 'Requested original order');
+        setSortRequest(sorter ? `Requested salary ${sorter.order}` : 'Requested original order');
         const ordered = sorter ? [...employees].sort((a, b) =>
-          sorter.sortOrder === 'asc' ? a.salary - b.salary : b.salary - a.salary) : employees;
-        const page = next ?? serverPagination;
+          sorter.order === 'asc' ? a.salary - b.salary : b.salary - a.salary) : employees;
+        const page = { ...serverPagination, ...next };
         setServerPagination(page);
         setServerRows(ordered.slice((page.currentPage - 1) * page.pageSize, page.currentPage * page.pageSize));
       } : undefined}

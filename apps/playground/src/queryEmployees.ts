@@ -30,7 +30,7 @@ function matchesFilter(employee: Employee, filter: Filter) {
 
 function sortEmployees(rows: Employee[], sorter?: Sorter) {
   if (!sorter) return rows;
-  const field = sorter.sortField as keyof Employee;
+  const field = sorter.field as keyof Employee;
   return [...rows].sort((a, b) => {
     const left = a[field];
     const right = b[field];
@@ -41,7 +41,7 @@ function sortEmployees(rows: Employee[], sorter?: Sorter) {
         : typeof left === 'boolean' && typeof right === 'boolean'
           ? Number(left) - Number(right)
           : String(left).localeCompare(String(right), undefined, { numeric: true, sensitivity: 'base' });
-    return sorter.sortOrder === 'asc' ? result : -result;
+    return sorter.order === 'asc' ? result : -result;
   });
 }
 
@@ -49,8 +49,8 @@ export function queryEmployees(rows: Employee[], state: Pick<TableChange, 'sorte
   const globalTerm = state.searchQuery.toLocaleLowerCase();
   const filtered = rows.filter((employee) =>
     state.filters.every((filter) => matchesFilter(employee, filter)) &&
-    state.columnSearch.every(({ searchField, searchValue }: ColumnSearch) =>
-      String(employee[searchField as keyof Employee] ?? '').toLocaleLowerCase().includes(searchValue.toLocaleLowerCase())) &&
+    state.columnSearch.every(({ field, value }: ColumnSearch) =>
+      String(employee[field as keyof Employee] ?? '').toLocaleLowerCase().includes(value.toLocaleLowerCase())) &&
     (!globalTerm || globalSearchFields.some((field) =>
       String(employee[field]).toLocaleLowerCase().includes(globalTerm))),
   );

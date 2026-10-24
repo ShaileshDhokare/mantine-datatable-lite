@@ -72,9 +72,9 @@ test('measured pinned headers and cells receive sticky offsets', () => {
         <DataTable
           rows={[{ id: 1, a: 'A', b: 'B', c: 'C' }]}
           columns={[
-            { dataIndex: 'a', header: 'A', sticky: 'left' },
-            { dataIndex: 'b', header: 'B', sticky: 'left' },
-            { dataIndex: 'c', header: 'C', sticky: 'right' },
+            { dataIndex: 'a', header: 'A', pinned: 'left' },
+            { dataIndex: 'b', header: 'B', pinned: 'left' },
+            { dataIndex: 'c', header: 'C', pinned: 'right' },
           ]}
         />
       </MantineProvider>,
@@ -136,7 +136,6 @@ test('page selection is tri-state and supplies row objects', () => {
       <DataTable
         rows={rows}
         columns={[{ dataIndex: 'name', header: 'Name' }]}
-        toolbar
         globalSearch
         selection={{
           selectedIds: ids,
@@ -161,8 +160,8 @@ test('page selection is tri-state and supplies row objects', () => {
       }) as HTMLInputElement
     ).indeterminate,
   ).toBe(true);
-  expect(screen.queryByText('1 rows selected')).toBeNull();
-  expect(screen.queryByRole('button', { name: 'Bulk' })).toBeNull();
+  // The bulk bar appears from the first selected row.
+  expect(screen.getByText('1 row selected')).toBeTruthy();
   fireEvent.click(
     screen.getByRole('checkbox', { name: 'Select all rows on this page' }),
   );
@@ -190,7 +189,7 @@ test('bulk action receives IDs selected across server pages', () => {
       <DataTable
         rows={page === 1 ? first : second}
         columns={[{ dataIndex: 'name', header: 'Name' }]}
-        toolbar
+        mode='server'
         pagination={{ currentPage: page, pageSize: 2, totalItems: 4 }}
         selection={{
           selectedIds: ids,
@@ -235,56 +234,97 @@ test('bulk action receives IDs selected across server pages', () => {
   ).toBe(true);
 });
 
-test('selection toolbar is opt in and renders direct and tooltip actions only for multiple rows', () => {
+test('the bulk action bar needs renderBulkActions and shows direct and tooltip actions', () => {
   const direct = vi.fn();
   const wrapped = vi.fn();
   const rows = [
     { id: 1, name: 'Ava' },
     { id: 2, name: 'Bob' },
   ];
-  function Example({ toolbar }: { toolbar: boolean }) {
+  function Example({ bulk }: { bulk: boolean }) {
     const [ids, setIds] = useState<(string | number)[]>([]);
     return (
       <DataTable
         columns={[{ dataIndex: 'name', header: 'Name' }]}
         rows={rows}
-        toolbar={toolbar}
-        toolbarActions={[
-          <ActionIcon key='direct' aria-label='Direct action' onClick={direct}>
-            D
-          </ActionIcon>,
-          <Tooltip key='wrapped' label='Wrapped action'>
-            <ActionIcon aria-label='Wrapped action' onClick={wrapped}>
-              W
-            </ActionIcon>
-          </Tooltip>,
-        ]}
         selection={{
           selectedIds: ids,
           onChange: ({ ids: next }) => setIds(next),
+          renderBulkActions: bulk
+            ? () => (
+                <>
+                  <ActionIcon aria-label='Direct action' onClick={direct}>
+                    D
+                  </ActionIcon>
+                  <Tooltip label='Wrapped action'>
+                    <ActionIcon aria-label='Wrapped action' onClick={wrapped}>
+                      W
+                    </ActionIcon>
+                  </Tooltip>
+                </>
+              )
+            : undefined,
         }}
       />
     );
   }
   const view = render(
     <MantineProvider env='test'>
-      <Example toolbar />
+      <Example bulk />
     </MantineProvider>,
   );
   expect(view.container.querySelector('.mantine-Paper-root')).toBeNull();
   fireEvent.click(screen.getByRole('checkbox', { name: 'Select row 1' }));
-  expect(view.container.querySelector('.mantine-Paper-root')).toBeNull();
-  fireEvent.click(screen.getByRole('checkbox', { name: 'Select row 2' }));
   fireEvent.click(screen.getByRole('button', { name: 'Direct action' }));
   fireEvent.click(screen.getByRole('button', { name: 'Wrapped action' }));
   expect(direct).toHaveBeenCalledTimes(1);
   expect(wrapped).toHaveBeenCalledTimes(1);
   view.rerender(
     <MantineProvider env='test'>
-      <Example toolbar={false} />
+      <Example bulk={false} />
     </MantineProvider>,
   );
   expect(view.container.querySelector('.mantine-Paper-root')).toBeNull();
+});
+
+test('selection works without selectedIds and clears on a new filter', () => {
+  const changes = vi.fn();
+  render(
+    <MantineProvider env='test'>
+      <DataTable
+        rows={[
+          { id: 1, name: 'Ava' },
+          { id: 2, name: 'Bob' },
+        ]}
+        columns={[
+          {
+            dataIndex: 'name',
+            header: 'Name',
+            filterable: true,
+          },
+        ]}
+        selection={{
+          onChange: changes,
+          renderBulkActions: ({ ids }) => <span>Selected {ids.join(',')}</span>,
+        }}
+      />
+    </MantineProvider>,
+  );
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Select row 2' }));
+  expect(screen.getByText('Selected 2')).toBeTruthy();
+  expect(changes).toHaveBeenLastCalledWith({
+    ids: [2],
+    loadedRows: [{ id: 2, name: 'Bob' }],
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Filter Name' }));
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Bob' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
+  expect(screen.queryByText('Selected 2')).toBeNull();
+  expect(
+    (screen.getByRole('checkbox', { name: 'Select row 2' }) as HTMLInputElement)
+      .checked,
+  ).toBe(false);
+  expect(changes).toHaveBeenLastCalledWith({ ids: [], loadedRows: [] });
 });
 
 test('filter change clears selection while sort and page changes preserve it', () => {
@@ -308,6 +348,7 @@ test('filter change clears selection while sort and page changes preserve it', (
             filterOptions: ['Cara'],
           },
         ]}
+        mode='server'
         pagination={{ currentPage: page, pageSize: 2, totalItems: 3 }}
         selection={{
           selectedIds: ids,
@@ -343,7 +384,7 @@ test('filter change clears selection while sort and page changes preserve it', (
   fireEvent.click(screen.getByRole('checkbox', { name: 'Cara' }));
   fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
   expect(changes).toHaveBeenLastCalledWith(
-    expect.objectContaining({ ids: [], count: 0 }),
+    expect.objectContaining({ ids: [] }),
   );
 });
 
@@ -394,7 +435,7 @@ test('search resets controlled selection and only selectable page rows are selec
   );
   act(() => vi.advanceTimersByTime(300));
   expect(changes).toHaveBeenLastCalledWith(
-    expect.objectContaining({ ids: [], count: 0 }),
+    expect.objectContaining({ ids: [] }),
   );
 });
 
@@ -442,4 +483,37 @@ test('selecting text does not trigger row expansion or row click', () => {
   } finally {
     selection.mockRestore();
   }
+});
+
+test('clickable rows can be activated from the keyboard', () => {
+  const onRowClick = vi.fn();
+  render(
+    <MantineProvider env='test'>
+      <DataTable
+        rows={[{ id: 1, name: 'Ava' }]}
+        columns={[{ dataIndex: 'name', header: 'Name' }]}
+        onRowClick={onRowClick}
+      />
+    </MantineProvider>,
+  );
+  const row = screen.getByRole('cell', { name: 'Ava' }).closest('tr')!;
+  expect(row.getAttribute('tabindex')).toBe('0');
+  fireEvent.keyDown(row, { key: 'Enter' });
+  expect(onRowClick).toHaveBeenCalledTimes(1);
+  fireEvent.keyDown(row, { key: ' ' });
+  expect(onRowClick).toHaveBeenCalledTimes(2);
+});
+
+test('rows without a click handler are not focusable', () => {
+  render(
+    <MantineProvider env='test'>
+      <DataTable
+        rows={[{ id: 1, name: 'Ava' }]}
+        columns={[{ dataIndex: 'name', header: 'Name' }]}
+      />
+    </MantineProvider>,
+  );
+  expect(
+    screen.getByRole('cell', { name: 'Ava' }).closest('tr')!.hasAttribute('tabindex'),
+  ).toBe(false);
 });

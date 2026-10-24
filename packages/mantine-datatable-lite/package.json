@@ -1,7 +1,7 @@
 {
   "name": "mantine-datatable-lite",
-  "version": "0.1.0-alpha.0",
-  "description": "A typed React DataTable for Mantine 9 with sorting, filtering, search, pagination, pinning, selection, and expandable rows.",
+  "version": "0.1.0-alpha.2",
+  "description": "A typed React DataTable for Mantine 9 with sorting, filtering, search, client or server pagination, pinning, selection, and expandable rows.",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -12,9 +12,17 @@
   "bugs": {
     "url": "https://github.com/ShaileshDhokare/mantine-datatable-lite/issues"
   },
-  "keywords": ["react", "mantine", "datatable", "table", "typescript"],
+  "keywords": [
+    "react",
+    "mantine",
+    "datatable",
+    "table",
+    "typescript"
+  ],
   "type": "module",
-  "sideEffects": ["*.css"],
+  "sideEffects": [
+    "*.css"
+  ],
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.mts",
@@ -31,7 +39,10 @@
     },
     "./styles.css": "./dist/styles.css"
   },
-  "files": ["dist", "THIRD_PARTY_NOTICES"],
+  "files": [
+    "dist",
+    "THIRD_PARTY_NOTICES"
+  ],
   "publishConfig": {
     "access": "public",
     "tag": "alpha",
@@ -46,10 +57,9 @@
     "prepublishOnly": "node ../../scripts/validate-release.mjs"
   },
   "peerDependencies": {
-    "react": "^19.3.0",
-    "react-dom": "^19.3.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
     "@mantine/core": "^9.6.0",
-    "@mantine/dates": "^9.6.0",
     "@mantine/hooks": "^9.6.0"
   }
 }

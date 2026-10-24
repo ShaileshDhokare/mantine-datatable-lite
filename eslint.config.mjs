@@ -12,9 +12,8 @@ export default defineConfig(
   {
     files: ['packages/mantine-datatable-lite/src/**/*.{ts,tsx}'],
     ignores: ['**/*.test.{ts,tsx}'],
-    plugins: { 'react-hooks': reactHooks },
+    extends: [reactHooks.configs.flat.recommended],
     rules: {
-      'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'error',
     },
   },

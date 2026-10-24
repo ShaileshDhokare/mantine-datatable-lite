@@ -1,0 +1,66 @@
+import type { DataTableLabels } from './types';
+
+export const defaultLabels: DataTableLabels = {
+  noRecords: 'No records found',
+  apply: 'Apply',
+  reset: 'Reset',
+  retry: 'Retry',
+  globalSearch: 'Search all columns',
+  openGlobalSearch: 'Open global search',
+  clearGlobalSearch: 'Clear global search',
+  selectColumns: 'Select columns',
+  resetTable: 'Reset table state',
+  sort: 'Sort',
+  sortAsc: 'Sort Ascending',
+  sortDesc: 'Sort Descending',
+  clearSort: 'Clear Sorting',
+  filter: 'Filter',
+  search: 'Search',
+  searchOptions: 'Search in filters',
+  noOptions: 'No options',
+  true: 'True',
+  false: 'False',
+  pin: 'Pin',
+  pinLeft: 'Pin to left',
+  pinRight: 'Pin to right',
+  moveLeft: 'Move left',
+  moveRight: 'Move right',
+  unpin: 'Unpin',
+  hide: 'Hide',
+  from: 'From',
+  to: 'To',
+  value: 'Value',
+  operators: {
+    eq: 'Equal to',
+    neq: 'Not equal to',
+    gt: 'Greater than',
+    gte: 'Greater than or equal',
+    lt: 'Less than',
+    lte: 'Less than or equal',
+    between: 'Between',
+  },
+  sortedBy: 'Sort by:',
+  searchPill: 'Search:',
+  hiddenPill: 'Hidden:',
+  morePills: (count) => `+${count} more`,
+  selectAll: 'Select all rows on this page',
+  selectRow: 'Select row',
+  expandRow: 'Expand row',
+  collapseRow: 'Collapse row',
+  clearSelection: 'Clear selection',
+  selectedCount: (count) => `${count} ${count === 1 ? 'row' : 'rows'} selected`,
+  pageRange: ({ from, to, total }) => `Showing ${from} - ${to} of ${total} items`,
+  pageSize: (size) => `${size} / page`,
+  rowsPerPage: 'Rows per page',
+};
+
+export function mergeLabels(
+  labels: Partial<DataTableLabels> | undefined,
+): DataTableLabels {
+  if (!labels) return defaultLabels;
+  return {
+    ...defaultLabels,
+    ...labels,
+    operators: { ...defaultLabels.operators, ...labels.operators },
+  };
+}

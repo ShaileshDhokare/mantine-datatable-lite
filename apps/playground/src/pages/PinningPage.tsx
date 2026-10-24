@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Stack, Text } from '@mantine/core';
 import { DataTable, type DataTableColumn } from 'mantine-datatable-lite';
 import { useScenario } from '../useScenario';
@@ -14,13 +13,13 @@ export function PinningPage() {
   const [active, setActive] = useScenario(scenarios);
   const columns: DataTableColumn<Employee>[] = [
     { dataIndex: 'id', header: 'ID', width: 80, showMenu: true },
-    { dataIndex: 'name', header: 'Name', width: 190, showMenu: true, sticky: active === 'initial' ? 'left' : undefined },
+    { dataIndex: 'name', header: 'Name', width: 190, showMenu: true, pinned: active === 'initial' ? 'left' : undefined },
     { dataIndex: 'email', header: 'Email', width: 270, showMenu: true },
     { dataIndex: 'department', header: 'Department', width: 170, showMenu: true },
     { dataIndex: 'role', header: 'Role', width: 210, showMenu: true },
     { dataIndex: 'salary', header: 'Salary', width: 140, showMenu: true, render: (row) => `$${row.salary.toLocaleString()}` },
     { dataIndex: 'isActive', header: 'Status', width: 130, showMenu: true,
-      sticky: active === 'initial' ? 'right' : undefined,
+      pinned: active === 'initial' ? 'right' : undefined,
       render: (row) => row.isActive ? 'Active' : 'Inactive' },
   ];
   return <PlaygroundLayout section='pinning' scenarios={scenarios} active={active}

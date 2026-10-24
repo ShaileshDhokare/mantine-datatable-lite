@@ -24,7 +24,7 @@ test('height-limited scrolling keeps the right-pinned edge free of a side gutter
         <DataTable
           columns={[
             { dataIndex: 'name', header: 'Name' },
-            { dataIndex: 'joined', header: 'Joined', sticky: 'right' },
+            { dataIndex: 'joined', header: 'Joined', pinned: 'right' },
           ]}
           rows={[{ id: 1, name: 'Ada', joined: '2024-01-01' }]}
           minWidth={500}

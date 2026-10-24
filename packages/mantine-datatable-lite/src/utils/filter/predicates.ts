@@ -4,6 +4,7 @@ import type {
   FilterValue,
   NumericOperator,
 } from '../../types';
+import { columnValue } from '../columnValue';
 
 export function activeFilter(value: FilterValue | undefined): boolean {
   if (Array.isArray(value)) return value.length > 0;
@@ -118,11 +119,7 @@ export function filterRows<T>(
     active.every(({ column, value }) =>
       column.filterFn
         ? column.filterFn(row, value)
-        : matchesFilter(
-            (row as Record<string, unknown>)[column.dataIndex],
-            value,
-            column.type,
-          ),
+        : matchesFilter(columnValue(column, row), value, column.type),
     ),
   );
 }

@@ -17,30 +17,30 @@ import classes from '../App.module.css';
 const guides = {
   'getting-started': {
     title: 'Mantine DataTable Lite', description: 'A typed React table that feels at home in Mantine.',
-    overview: 'Build data screens with typed columns, sorting, filters, search, pagination, selection and expandable rows. Features are opt-in, and the table uses your Mantine theme.\n\nStart with `rows` and `columns`. Add a column flag for local interactions, or pass `pagination` and handle `onChange` when your application owns the data.\n\n[Install the package](#/installation), then try the example below. The documentation and demos use the published npm package.',
+    overview: 'Build data screens with typed columns, sorting, filters, search, pagination, selection and expandable rows. Features are opt-in, and the table uses your Mantine theme.\n\nStart with `rows` and `columns`. Add column flags for interactions and `pagination` to page local records. When your server owns the data, set `mode="server"` and fetch in `onChange`.\n\n[Install the package](#/installation), then try the example below.',
     code: gettingStartedCode, Demo: GettingStarted,
     notes: 'Click **Name** to sort, or open the **Role** filter and press Apply. The table transforms these local records for you.\n\nEach feature page includes explanations, usage code and configurable live scenarios. Open the Props tab for its API, or visit the [full API reference](#/api). For a complete fetching flow, start with [server-side data](#/server).',
-    props: ['columns', 'rows', 'pagination', 'onChange'],
+    props: ['columns', 'rows', 'mode', 'pagination', 'onChange'],
   },
   'row-actions': {
     title: 'Row actions', description: 'Add accessible actions without triggering the row click handler.',
     overview: 'Use the public `rowActionsColumn` helper for an action column. It defaults to the Actions heading, an 80 px width and right pinning. Sorting, filtering, search, hiding and pin-menu actions are disabled for this column.\n\nProvide a `render` function and label each icon button. The helper isolates action clicks from `onRowClick` and row-triggered expansion.',
     code: rowActionsCode, Demo: RowActions,
-    notes: 'Click a row, then click its details action. The status message shows which handler ran. Customize `header`, `width` or `sticky` in the helper configuration. Import `rowActionsColumn` from `mantine-datatable-lite`.',
+    notes: 'Click a row, then click its details action. The status message shows which handler ran. Customize `header`, `width` or `pinned` in the helper configuration. Import `rowActionsColumn` from `mantine-datatable-lite`.',
     props: ['onRowClick', 'rowProps'],
   },
   toolbar: {
     title: 'Toolbar & state pills', description: 'Compose search, column visibility, applied state and reset controls.',
     overview: 'Enable `globalSearch`, `columnSelector`, `showTableStatePills` and `showReset` independently. They default to false. Column visibility changes are staged until Apply.\n\nState pills describe the active sort, filters and searches. Remove a pill to clear only that operation. `maxChips` limits visible pills and moves the remainder into an overflow control.',
     code: toolbarCode, Demo: Toolbar,
-    notes: '**Reset** clears applied sorting, filtering, search and column layout changes, making every column visible and unpinned.\n\nSet `toolbar` when you need the replacement selection toolbar. Supply `toolbarActions` as action icons, optionally wrapped in tooltips. See [row selection](#/selection) for bulk actions and a confirmation modal.',
-    props: ['globalSearch', 'columnSelector', 'showTableStatePills', 'showReset', 'maxChips', 'toolbar', 'toolbarActions'],
+    notes: '**Reset** clears applied sorting, filtering, search and column layout changes. Every column becomes visible again, and pins return to each column\'s `pinned` default.\n\nWhile rows are selected, `selection.renderBulkActions` replaces the toolbar with a bulk action bar. See [row selection](#/selection) for bulk actions and a confirmation modal.',
+    props: ['globalSearch', 'columnSelector', 'showTableStatePills', 'showReset', 'maxChips', 'debounceTime', 'labels'],
   },
   theming: {
     title: 'Theming', description: 'Use Mantine colors, spacing and your existing provider.',
     overview: 'The table uses Mantine components and CSS variables. Place it inside your `MantineProvider` to inherit fonts, colors and the current color scheme. Switch the theme in the documentation header to preview light and dark rendering.\n\nCustomize borders, stripes, hover backgrounds and spacing with the public appearance props. CSS variables such as `var(--mantine-color-blue-light)` adapt to both schemes.',
     code: themingCode, Demo: Theming,
-    notes: 'Use `render` for custom cells and `rowProps` for additional row attributes or styles. The current published package exposes appearance props; it does not export a DataTable Styles API (`classNames`, `styles`, `vars`) or a headless `useDataTable` hook. See the [API reference](#/api) for the supported contract.',
+    notes: 'Use `render` for custom cells and `rowProps` for additional row attributes or styles. Use `labels` to translate built-in text. The package exposes appearance props; it does not export a DataTable Styles API (`classNames`, `styles`, `vars`) or a headless `useDataTable` hook. See the [API reference](#/api) for the supported contract.',
     props: ['borderColor', 'striped', 'stripedColor', 'highlightOnHover', 'highlightOnHoverColor', 'horizontalSpacing', 'verticalSpacing', 'withTableBorder', 'withColumnBorders', 'withRowBorders', 'rowProps'],
   },
 };
@@ -63,7 +63,7 @@ export function InstallationPage() {
   return <DocsLayout title='Installation' description='Install the npm package and connect it to your Mantine application.' toc={[
     { id: 'install', label: 'Install dependencies' }, { id: 'styles', label: 'Styles & provider' }, { id: 'next', label: 'Next steps' },
   ]}>
-    <DocSection id='install' title='Install dependencies'><Markdown>{`The current release is available under the npm \`alpha\` tag. The supported peer baseline is React 19.3 and Mantine 9.6 or newer within major version 9. If React and Mantine are already installed, add the table package:
+    <DocSection id='install' title='Install dependencies'><Markdown>{`The current release is available under the npm \`alpha\` tag. The supported peer baseline is React 19.2 and Mantine 9.6 or newer within major version 9. If React and Mantine are already installed, add the table package:
 
 \`\`\`bash
 npm install mantine-datatable-lite@alpha
@@ -72,15 +72,16 @@ npm install mantine-datatable-lite@alpha
 For a new React application, install the peer dependencies too:
 
 \`\`\`bash
-npm install mantine-datatable-lite@alpha react@^19.3 react-dom@^19.3 @mantine/core@^9.6 @mantine/hooks@^9.6 @mantine/dates@^9.6
+npm install mantine-datatable-lite@alpha react@^19.2 react-dom@^19.2 @mantine/core@^9.6 @mantine/hooks@^9.6
 \`\`\`
 
-Use the same Mantine version for core, hooks and dates. The package ships its own TypeScript declarations.`}</Markdown></DocSection>
-    <DocSection id='styles' title='Styles & provider'><Markdown>{`Import Mantine styles before the table stylesheet, then render your app inside \`MantineProvider\`. Include the dates stylesheet for date filters.
+Use the same version for the Mantine packages. The package ships its own TypeScript declarations.
+
+Date filters use the browser's native date input. To use Mantine's date picker instead, install \`@mantine/dates\` and \`dayjs\`, import \`@mantine/dates/styles.css\`, and pass \`dateInput={DatePickerInput}\`.`}</Markdown></DocSection>
+    <DocSection id='styles' title='Styles & provider'><Markdown>{`Import Mantine styles before the table stylesheet, then render your app inside \`MantineProvider\`.
 
 \`\`\`tsx
 import '@mantine/core/styles.css';
-import '@mantine/dates/styles.css';
 import 'mantine-datatable-lite/styles.css';
 import { MantineProvider } from '@mantine/core';
 

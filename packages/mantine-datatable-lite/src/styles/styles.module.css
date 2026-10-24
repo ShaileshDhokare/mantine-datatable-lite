@@ -84,3 +84,10 @@
   align-items: center;
   min-height: 40px;
 }
+
+.pill {
+  background-color: var(--mantine-color-gray-3);
+}
+:where([data-mantine-color-scheme='dark']) .pill {
+  background-color: var(--mantine-color-dark-4);
+}

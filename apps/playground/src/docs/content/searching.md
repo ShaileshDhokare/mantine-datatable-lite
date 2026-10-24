@@ -11,6 +11,6 @@ const columns: DataTableColumn<Employee>[] = [
   globalSearch showTableStatePills showReset />
 ```
 
-Search uses raw field values, with case-insensitive substring matching. Column terms combine with AND; global search matches any eligible column. Explicit `searchable: false` excludes a column from global search. An omitted `searchable` does not enable the column's search UI but still permits global matching.
+Search uses each column's value (`getValue`, or the row field), with case-insensitive substring matching. Column terms combine with AND; global search matches any eligible column. Explicit `searchable: false` excludes a column from global search. An omitted `searchable` does not enable the column's search UI but still permits global matching.
 
 Column search drafts apply through **Apply**. Global typing is debounced (300 ms by default). Matching text is highlighted in default-rendered cells; custom `render` output stays under your control. Search combines with filters and sorting.

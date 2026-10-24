@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Stack, Switch, Text } from '@mantine/core';
-import { DataTable, type DataTableColumn, type Pagination } from 'mantine-datatable-lite';
+import { DataTable, type DataTableColumn, type PaginationChange } from 'mantine-datatable-lite';
 import { useScenario } from '../useScenario';
 import { PlaygroundLayout } from '../components/PlaygroundLayout';
 import { employees, type Employee } from '../data';
@@ -26,28 +26,25 @@ function initialPage(scenario: PaginationScenario) {
 
 export function PaginationPage() {
   const [active, setActive] = useScenario(scenarios);
-  const [page, setPage] = useState(initialPage(active));
+  const [lastChange, setLastChange] = useState<PaginationChange>();
   const [shrink, setShrink] = useState(false);
-  const source = active === 'empty' ? [] : employees.slice(0, active === 'clamp' && shrink ? 12 : 30);
-  const pagination: Pagination = {
-    ...page,
-    totalItems: source.length,
-    pageSizeOptions: active === 'fixed' ? false : active === 'custom' ? [8, 12, 25] : undefined,
-  };
-  const rows = source.slice((page.currentPage - 1) * page.pageSize, page.currentPage * page.pageSize);
+  const rows = active === 'empty' ? [] : employees.slice(0, active === 'clamp' && shrink ? 12 : 30);
 
   return (
     <PlaygroundLayout section='pagination' scenarios={scenarios} active={active}
-      onSelect={(scenario) => { setActive(scenario); setPage(initialPage(scenario)); setShrink(false); }}
+      onSelect={(scenario) => { setActive(scenario); setLastChange(undefined); setShrink(false); }}
       controls={<Stack gap='md'>
-        <Text size='sm' c='dimmed'>Page {page.currentPage}, {page.pageSize} rows per page</Text>
+        <Text size='sm' c='dimmed'>{rows.length} records, paged by the table.
+          {lastChange ? ` Last change: page ${lastChange.currentPage}, ${lastChange.pageSize} rows per page.` : ''}</Text>
         {active === 'clamp' && <Switch label='Reduce to 12 records' checked={shrink}
           onChange={(event) => setShrink(event.currentTarget.checked)} />}
       </Stack>}>
-      <DataTable key={active} columns={columns} rows={rows} pagination={pagination}
-        onChange={({ pagination: next }) => {
-          if (next) setPage({ currentPage: next.currentPage, pageSize: next.pageSize });
+      <DataTable key={active} columns={columns} rows={rows}
+        pagination={{
+          ...initialPage(active),
+          pageSizeOptions: active === 'fixed' ? false : active === 'custom' ? [8, 12, 25] : undefined,
         }}
+        onChange={({ pagination: next }) => setLastChange(next)}
         minWidth={600} withTableBorder withRowBorders />
     </PlaygroundLayout>
   );

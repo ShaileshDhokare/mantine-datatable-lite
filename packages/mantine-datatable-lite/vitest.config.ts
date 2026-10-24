@@ -5,6 +5,7 @@ export default defineConfig({
     environment: 'jsdom',
     pool: 'threads',
     maxWorkers: 1,
+    isolate: false,
     setupFiles: './vitest.setup.ts',
   },
 });

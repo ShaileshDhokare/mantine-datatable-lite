@@ -20,6 +20,8 @@ export default defineConfig({
     },
     rolldownOptions: {
       external: [/^react(?:\/|$)/, /^react-dom(?:\/|$)/, /^@mantine\//],
+      // The table uses hooks and context, so React Server Components must treat it as client code.
+      output: { banner: "'use client';" },
     },
   },
 });

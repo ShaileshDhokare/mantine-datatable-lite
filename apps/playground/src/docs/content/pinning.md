@@ -1,8 +1,8 @@
-Set `showMenu: true` to expose **Pin to left** and **Pin to right**. Use `sticky` to provide an initial pinned position. Give pinned columns a predictable width and make the table wider than its container to explore horizontal scrolling.
+Set `showMenu: true` to expose **Pin to left** and **Pin to right**. Use `pinned` to provide an initial pinned position. Give pinned columns a predictable width and make the table wider than its container to explore horizontal scrolling.
 
 ```tsx
 const columns: DataTableColumn<Employee>[] = [
-  { dataIndex: 'name', header: 'Name', width: 190, sticky: 'left', showMenu: true },
+  { dataIndex: 'name', header: 'Name', width: 190, pinned: 'left', showMenu: true },
   { dataIndex: 'email', header: 'Email', width: 270, showMenu: true },
   { dataIndex: 'department', header: 'Department', width: 170, showMenu: true },
   { dataIndex: 'role', header: 'Role', width: 210, showMenu: true },

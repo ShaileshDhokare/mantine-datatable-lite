@@ -1,8 +1,7 @@
 # mantine-datatable-lite
 
-A typed DataTable for **Mantine 9.6+ and React 19.3+**. Version
-`0.1.0-alpha.0` is [published on npm](https://www.npmjs.com/package/mantine-datatable-lite)
-under the MIT license.
+A typed DataTable for **Mantine 9.6+ and React 19.2+**, [published on
+npm](https://www.npmjs.com/package/mantine-datatable-lite) under the MIT license.
 
 ```sh
 npm install --save-exact mantine-datatable-lite@alpha
@@ -25,17 +24,16 @@ npm ci
 npm run dev:playground
 ```
 
-The playground installs `mantine-datatable-lite` from npm's `alpha` tag. The
-lockfile records the exact published version. A registry tag keeps npm from
-substituting the local library workspace when its version matches.
-
-Use `npm run build:lib`, `npm test`, and `npm run check:package` to develop and
-verify the local library. Local library changes reach the playground after a new
-alpha is published and its dependency is updated:
+The playground links the local library workspace (`file:` dependency), so it
+always runs the current source. Its `dev` and `build` scripts build the library
+first. For live library changes while the playground runs, also start:
 
 ```sh
-npm update mantine-datatable-lite --workspace playground
+npm run dev:lib
 ```
+
+Use `npm run build:lib`, `npm test`, and `npm run check:package` to develop and
+verify the local library.
 
 ```sh
 npm run check:release

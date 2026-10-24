@@ -9,9 +9,10 @@ import {
 } from '@testing-library/react';
 import { afterEach, expect, test, vi } from 'vitest';
 import { DataTable } from './components/DataTable';
-import type { NumericFilterValue } from './types';
+import { defaultLabels } from './labels';
+import type { DateInputProps, NumericFilterValue } from './types';
+import { filterChoices } from './utils/filter/filterChoices';
 import { filterRows, matchesFilter } from './utils/filter/predicates';
-import { uniqueValues } from './utils/filter/uniqueValues';
 
 afterEach(() => {
   cleanup();
@@ -99,28 +100,47 @@ test('several column filters use AND and custom predicates', () => {
   ).toEqual([rows[0]]);
 });
 
-test('derived choices are unique, naturally ordered, sentence cased and capped', () => {
+test('derived choices are unique, naturally ordered, shown as-is and capped', () => {
   const column = { dataIndex: 'city', header: 'City', filterable: true };
   expect(
-    uniqueValues(
+    filterChoices(
       [
         { city: 'new_york' },
-        { city: 'london' },
+        { city: 'Jean-Luc' },
         { city: 'new_york' },
         { city: null },
       ],
       column,
+      defaultLabels,
+      true,
     ),
   ).toEqual([
-    { value: 'london', label: 'London' },
-    { value: 'new_york', label: 'New york' },
+    { value: 'Jean-Luc', label: 'Jean-Luc' },
+    { value: 'new_york', label: 'new_york' },
   ]);
   expect(
-    uniqueValues(
+    filterChoices(
       Array.from({ length: 600 }, (_, city) => ({ city: String(city) })),
       column,
+      defaultLabels,
+      true,
     ),
   ).toHaveLength(500);
+  // Server mode has no full data to derive from; booleans still get both choices.
+  expect(filterChoices([{ city: 'x' }], column, defaultLabels, false)).toEqual(
+    [],
+  );
+  expect(
+    filterChoices(
+      [],
+      { dataIndex: 'active', header: 'Active', type: 'boolean' },
+      defaultLabels,
+      false,
+    ),
+  ).toEqual([
+    { value: 'true', label: 'True' },
+    { value: 'false', label: 'False' },
+  ]);
 });
 
 test('default string filter renders; Apply and Reset notify with the full state', () => {
@@ -137,6 +157,7 @@ test('default string filter renders; Apply and Reset notify with the full state'
             filterable: true,
             defaultFilterValue: ['London'],
             showMenu: true,
+            showFilterIcon: true,
           },
         ]}
         rows={rows}
@@ -320,7 +341,7 @@ test.each([
     expect(await screen.findByRole('combobox')).toBeTruthy();
     expect(
       type === 'date'
-        ? screen.getByRole('button', { name: 'Value filter value' })
+        ? screen.getByLabelText('Value filter value')
         : screen.getByPlaceholderText('Value'),
     ).toBeTruthy();
   },
@@ -348,4 +369,77 @@ test('choosing Between keeps the filter open and shows both number bounds', asyn
   expect(screen.getByRole('button', { name: 'Apply' })).toBeTruthy();
   expect(screen.getByPlaceholderText('From')).toBeTruthy();
   expect(screen.getByPlaceholderText('To')).toBeTruthy();
+});
+
+const joined = [
+  { id: 1, joined: new Date('2024-01-01T00:00:00') },
+  { id: 2, joined: new Date('2024-03-15T00:00:00') },
+];
+const joinedColumn = {
+  dataIndex: 'joined' as const,
+  header: 'Joined',
+  type: 'date' as const,
+  filterable: true,
+  render: (row: (typeof joined)[number]) => `#${row.id}`,
+};
+
+test('date filters use a native date input by default', () => {
+  render(
+    <MantineProvider env='test'>
+      <DataTable columns={[joinedColumn]} rows={joined} />
+    </MantineProvider>,
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Filter Joined' }));
+  const input = screen.getByLabelText<HTMLInputElement>('Joined filter value');
+  expect(input.type).toBe('date');
+  fireEvent.change(input, { target: { value: '2024-03-15' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
+  expect(screen.getAllByRole('cell').map((cell) => cell.textContent)).toEqual([
+    '#2',
+  ]);
+});
+
+test('dateInput replaces the date control', () => {
+  function PickDate({ onChange, 'aria-label': label }: DateInputProps) {
+    return (
+      <button type='button' onClick={() => onChange('2024-01-01')}>
+        {label}
+      </button>
+    );
+  }
+  render(
+    <MantineProvider env='test'>
+      <DataTable columns={[joinedColumn]} rows={joined} dateInput={PickDate} />
+    </MantineProvider>,
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Filter Joined' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Joined filter value' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
+  expect(screen.getAllByRole('cell').map((cell) => cell.textContent)).toEqual([
+    '#1',
+  ]);
+});
+
+test('labels replace built-in text', () => {
+  render(
+    <MantineProvider env='test'>
+      <DataTable
+        columns={[{ dataIndex: 'age', header: 'Age', type: 'number', filterable: true }]}
+        rows={[]}
+        labels={{
+          noRecords: 'Keine Einträge',
+          filter: 'Filtern',
+          apply: 'Anwenden',
+          operators: { between: 'Zwischen' } as never,
+        }}
+      />
+    </MantineProvider>,
+  );
+  expect(screen.getByText('Keine Einträge')).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: 'Filtern Age' }));
+  expect(screen.getByRole('button', { name: 'Anwenden' })).toBeTruthy();
+  // Unlisted operator labels keep their defaults.
+  fireEvent.click(screen.getByRole('combobox'));
+  expect(screen.getByRole('option', { name: 'Zwischen' })).toBeTruthy();
+  expect(screen.getByRole('option', { name: 'Equal to' })).toBeTruthy();
 });

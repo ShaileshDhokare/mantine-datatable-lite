@@ -33,7 +33,6 @@ const scenarios = [
     description: 'Start with a name search already applied.',
   },
 ] as const;
-type SearchScenario = (typeof scenarios)[number]['id'];
 
 export function SearchingPage() {
   const [active, setActive] = useScenario(scenarios);

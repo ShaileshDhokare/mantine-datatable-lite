@@ -1,4 +1,5 @@
 import type { DataTableColumn, Sorter } from '../../types';
+import { columnValue } from '../columnValue';
 import { compareValues } from './compareValues';
 import { resolveColumnType } from './resolveColumnType';
 
@@ -34,18 +35,18 @@ export function sortRows<T>(
 ): T[] {
   if (!sorter) return rows;
   const column = columns.find(
-    (item) => item.dataIndex === sorter.sortField && item.sortable,
+    (item) => item.dataIndex === sorter.field && item.sortable,
   );
   if (!column) return rows;
 
   return [...rows].sort((a, b) => {
     if (column.sortFn) {
       const result = column.sortFn(a, b);
-      return sorter.sortOrder === 'asc' ? result : -result;
+      return sorter.order === 'asc' ? result : -result;
     }
 
-    const leftRaw = (a as Record<string, unknown>)[column.dataIndex];
-    const rightRaw = (b as Record<string, unknown>)[column.dataIndex];
+    const leftRaw = columnValue(column, a);
+    const rightRaw = columnValue(column, b);
     const type = resolveColumnType(leftRaw, rightRaw, column.type);
     const left = sortValue(leftRaw, column.type);
     const right = sortValue(rightRaw, column.type);
@@ -57,6 +58,6 @@ export function sortRows<T>(
       right,
       type === 'date' ? 'number' : type,
     );
-    return sorter.sortOrder === 'asc' ? result : -result;
+    return sorter.order === 'asc' ? result : -result;
   });
 }

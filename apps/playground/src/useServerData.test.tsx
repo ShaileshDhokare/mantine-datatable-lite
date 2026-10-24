@@ -4,8 +4,8 @@ import { afterEach, expect, test, vi } from 'vitest';
 import type { TableChange } from 'mantine-datatable-lite';
 import { useServerData } from './useServerData';
 
-const first: TableChange = { pagination: { currentPage: 1, pageSize: 10, totalItems: 0 }, filters: [], columnSearch: [], searchQuery: '' };
-const second: TableChange = { pagination: { currentPage: 2, pageSize: 10, totalItems: 20 }, filters: [], columnSearch: [], searchQuery: '' };
+const first: TableChange = { pagination: { currentPage: 1, pageSize: 10 }, filters: [], columnSearch: [], searchQuery: '' };
+const second: TableChange = { pagination: { currentPage: 2, pageSize: 10 }, filters: [], columnSearch: [], searchQuery: '' };
 type Page = { rows: number[]; totalItems: number };
 
 function deferred() {
