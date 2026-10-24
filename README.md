@@ -15,6 +15,14 @@ reuses the interactive playground with Markdown guides, highlighted code, live
 demos and a generated API reference. See [the docs setup guide](apps/playground/README.md)
 for editing content and publishing to GitHub Pages.
 
+## Examples
+
+[`examples/`](examples) holds standalone apps for local testing and reference,
+such as a [server-mode employee directory](examples/server-mode) built with
+React, Mantine, axios, Express, and SQLite. They link the local library but are
+not workspaces, so they never affect the package, the docs build, or root
+`npm` commands.
+
 ## Local development
 
 Use Node.js 24 and npm 11. From the repository root:

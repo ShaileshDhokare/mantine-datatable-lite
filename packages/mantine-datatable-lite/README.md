@@ -1,70 +1,101 @@
 # mantine-datatable-lite
 
-A typed React DataTable built with Mantine components. Sorting, typed filters,
-search, client or server pagination, sticky columns, selection, expandable rows,
-and row actions are included, with **no additional runtime dependencies** beyond
-the React and Mantine peer dependencies.
+A small, typed data table for [Mantine](https://mantine.dev) 9 and React 19, with
+the features real screens need and nothing more.
 
-**Prerelease: `0.1.0-alpha.2`.** The API may change before 1.0. Pin an exact
-version when upgrading deliberately, and see [Upgrading from earlier
-alphas](#upgrading-from-earlier-alphas).
+[![npm](https://img.shields.io/npm/v/mantine-datatable-lite/alpha?label=npm)](https://www.npmjs.com/package/mantine-datatable-lite)
+[![license](https://img.shields.io/npm/l/mantine-datatable-lite)](https://github.com/ShaileshDhokare/mantine-datatable-lite/blob/master/packages/mantine-datatable-lite/LICENSE)
+![types](https://img.shields.io/badge/types-included-blue)
 
-## Compatibility
+**[Documentation and live demos](https://shaileshdhokare.github.io/mantine-datatable-lite/#/getting-started)**
+· [API reference](https://shaileshdhokare.github.io/mantine-datatable-lite/#/api)
+· [Full-stack example](https://github.com/ShaileshDhokare/mantine-datatable-lite/tree/master/examples/server-mode)
 
-| Peer dependency | Supported range |
-| --- | --- |
-| `react` and `react-dom` | `^19.2.0` |
-| `@mantine/core` | `^9.6.0` |
-| `@mantine/hooks` | `^9.6.0` |
+- **Sorting, filtering and search.** Typed sort, choice filters for strings and
+  booleans, operator filters for numbers and dates, per-column and global search.
+- **Client or server data.** The table can filter, sort and page your rows, or
+  hand every change to your API in one request object.
+- **Column tools.** A compact column menu, pinning to either side, a column
+  picker, removable state pills, reset, and saved layouts.
+- **Rows.** Selection with bulk actions, expandable detail panels, and an
+  action column helper.
+- **Mantine-native.** Built from Mantine components, follows your theme and dark
+  mode, and accepts the familiar `Table` styling props.
+- **Light.** About 17 KB gzipped (JS + CSS) and no runtime dependencies beyond
+  React and Mantine.
 
-This release targets **React 19 and Mantine 9**, starting at the versions above.
-React 18, Mantine 8, and earlier minor versions outside these ranges are not
-supported or tested. Keep React/React DOM on matching versions and the Mantine
-packages on matching versions. `@mantine/dates` is optional; see
-[Date filters](#date-filters).
+> **Prerelease.** The API is stabilising for 1.0. Pin an exact version, and see
+> [Upgrading from earlier alphas](#upgrading-from-earlier-alphas).
+
+## Contents
+
+- [Install](#install)
+- [Quick start](#quick-start)
+- [Client and server mode](#client-and-server-mode)
+- [Columns](#columns)
+- [Sorting, filtering and search](#sorting-filtering-and-search)
+- [Pagination](#pagination)
+- [Selection and bulk actions](#selection-and-bulk-actions)
+- [Expandable rows and row actions](#expandable-rows-and-row-actions)
+- [Toolbar, column menu and pinning](#toolbar-column-menu-and-pinning)
+- [Styling](#styling)
+- [Translations](#translations)
+- [TypeScript](#typescript)
+- [Props](#props)
+- [Upgrading from earlier alphas](#upgrading-from-earlier-alphas)
 
 ## Install
 
 ```sh
-npm install --save-exact mantine-datatable-lite@alpha
-npm install react@^19.2.0 react-dom@^19.2.0 @mantine/core@^9.6.0 @mantine/hooks@^9.6.0
+npm install mantine-datatable-lite@alpha
 ```
 
-An existing compatible Mantine app only needs the first command. TypeScript apps
-also need React 19 type declarations (`@types/react` and `@types/react-dom`).
+Peer dependencies:
+
+| Package | Version |
+| --- | --- |
+| `react`, `react-dom` | `^19.2.0` |
+| `@mantine/core`, `@mantine/hooks` | `^9.6.0` |
+
+`@mantine/dates` is optional. See [Date filters](#date-filters).
+
+Import the stylesheet once, after Mantine's:
+
+```tsx
+import '@mantine/core/styles.css';
+import 'mantine-datatable-lite/styles.css';
+```
 
 ## Quick start
-
-Import Mantine's CSS first, then the table's CSS, once at your app entry point.
-Render the table inside `MantineProvider`.
 
 ```tsx
 import { MantineProvider } from '@mantine/core';
 import { DataTable, type DataTableColumn } from 'mantine-datatable-lite';
-import '@mantine/core/styles.css';
-import 'mantine-datatable-lite/styles.css';
 
-type Employee = { id: number; name: string; age: number };
-
-const rows: Employee[] = [
-  { id: 1, name: 'Alice', age: 30 },
-  { id: 2, name: 'Bob', age: 26 },
-];
+type Employee = {
+  id: number;
+  name: string;
+  department: string;
+  salary: number;
+  active: boolean;
+};
 
 const columns: DataTableColumn<Employee>[] = [
+  { dataIndex: 'name', header: 'Name', sortable: true, searchable: true },
+  { dataIndex: 'department', header: 'Department', filterable: true },
   {
-    dataIndex: 'name',
-    header: 'Name',
-    type: 'string',
+    dataIndex: 'salary',
+    header: 'Salary',
+    type: 'number',
     sortable: true,
     filterable: true,
-    searchable: true,
-    showMenu: true,
+    align: 'right',
+    render: (row) => `$${row.salary.toLocaleString()}`,
   },
-  { dataIndex: 'age', header: 'Age', type: 'number', sortable: true },
+  { dataIndex: 'active', header: 'Active', type: 'boolean', filterable: true },
 ];
 
-export function App() {
+export function Employees({ rows }: { rows: Employee[] }) {
   return (
     <MantineProvider>
       <DataTable
@@ -83,203 +114,270 @@ export function App() {
 }
 ```
 
-In an app already wrapped in `MantineProvider`, use `DataTable` directly.
-Columns infer their row type from `rows`, or you can specify `DataTable<Employee>`.
-The bundle is marked `'use client'`, so it works from React Server Component
-frameworks such as the Next.js App Router.
-
-## Features
-
-- Single-column sorting with typed comparisons and custom `sortFn`.
-- String, boolean, numeric, and date filters, custom options, and `renderFilter`.
-- Column search and debounced global search; default cells highlight matches.
-- Client pagination, or server pagination with loading overlay, error, and retry.
-- Column menus, visibility picker, left/right pinning, and sticky headers.
-- Optional persistence of hidden and pinned column IDs through `persistKey`.
-- Controlled or table-managed row selection, a tri-state page checkbox, and bulk actions.
-- Controlled or local expansion and a `rowActionsColumn` helper.
-- Mantine borders, spacing, colors, light/dark theme integration, and replaceable UI text.
+Everything is opt-in: start with `rows` and `columns`, then turn on the
+features a screen needs. The bundle is marked `'use client'`, so it can be
+imported from React Server Component frameworks such as the Next.js App Router.
 
 ## Client and server mode
 
-`mode` decides who owns the data operations.
+`mode` decides who owns the data.
 
-**Client mode** (the default): the table filters, searches, and sorts the
-supplied `rows`, in that order, then pages them when `pagination` is set.
+**Client mode** (the default) is for data already in the browser. The table
+filters, searches, sorts and pages `rows` itself.
 
 ```tsx
 <DataTable rows={employees} columns={columns} pagination={{ pageSize: 20 }} />
 ```
 
-`pagination` also accepts `true` for the defaults. In client mode
-`currentPage` and `pageSize` set the starting page and size; the table counts
-the matching rows.
-
-**Server mode**: the table renders `rows` as supplied and reports a complete
-`TableChange` through `onChange`. Fetch, filter, sort, and page on your server,
-then pass the current page and the matching total.
+**Server mode** is for data that lives behind an API. The table renders `rows`
+as they are and reports every change through `onChange` as one `TableChange`
+object. It also reports the initial request once on mount, including column
+defaults, so the first fetch needs no extra setup.
 
 ```tsx
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { DataTable, type TableChange } from 'mantine-datatable-lite';
 
-// The table sends the first request on mount, including column defaults.
-const [request, setRequest] = useState<TableChange | null>(null);
-const page = useEmployees(request); // your data hook: { rows, total, loading, error, retry }
+export function RemoteEmployees() {
+  const [request, setRequest] = useState<TableChange | null>(null);
+  const [page, setPage] = useState({ rows: [] as Employee[], total: 0 });
+  const [loading, setLoading] = useState(true);
 
-<DataTable
-  mode='server'
-  rows={page.rows}
-  columns={columns}
-  pagination={{
-    currentPage: request?.pagination?.currentPage ?? 1,
-    pageSize: request?.pagination?.pageSize ?? 20,
-    totalItems: page.total,
-  }}
-  onChange={setRequest}
-  loading={page.loading}
-  error={page.error}
-  onRetry={page.retry}
-/>;
-```
-
-`TableChange` contains `pagination?` (`currentPage`, `pageSize`), `sorter?`
-(`field`, `order`), `filters` (`field`, `value`), `columnSearch` (`field`,
-`value`), and `searchQuery`. `onChange` fires immediately for every change
-except global search typing, which waits `debounceTime` (300 ms by default). In
-server mode it also fires once on mount. Sorting, filtering, and searching reset
-the page to 1. The default page size choices are `[10, 20, 50, 100]`; set
-`pagination.pageSizeOptions` to `false` to hide the size picker.
-
-The table does not fetch data. Handle request cancellation and stale responses
-in your application. See the
-[server example](https://github.com/ShaileshDhokare/mantine-datatable-lite/blob/master/apps/playground/src/pages/ServerPage.tsx).
-
-For TypeScript 6 with `skipLibCheck: false`, the Mantine peer declarations also
-need current library definitions (for example `lib: ["ESNext", "DOM"]`) and a
-CSS module declaration such as `declare module '*.css';` (Vite supplies this
-through `vite/client`).
-
-## Columns and filters
-
-Every column requires a unique `dataIndex` and a `header`. `dataIndex` reads a
-direct row property; dotted paths are not resolved. For nested or computed
-values, set `getValue(row)`: sorting, filtering, searching, filter choices, and
-the default cell all use it. Use `render(row, index)` for custom cells.
-
-```tsx
-{ dataIndex: 'city', header: 'City', filterable: true, getValue: (row) => row.address.city }
-```
-
-Sorting, filtering, column search, and menus are opt in through `sortable`,
-`filterable`, `searchable`, and `showMenu`. Header buttons are configured
-through `showSortIcon`, `showFilterIcon`, and `showSearchIcon`. They default to
-true, or to false when `showMenu` is on, since the menu has the same actions.
-Global search checks all columns except those marked `searchable: false`.
-
-| Column option | Purpose |
-| --- | --- |
-| `type` | `'string'`, `'number'`, `'boolean'`, or `'date'` |
-| `getValue` | Value for sorting, filtering, searching, and the default cell |
-| `defaultSortOrder`, `sortFn` | Initial ordering or a custom comparator |
-| `defaultFilterValue`, `filterFn`, `renderFilter` | Initial/custom filtering |
-| `filterOptions`, `searchableFilter` | Explicit choices and choice search |
-| `defaultSearchValue` | Initial column search |
-| `width`, `align` | Cell width and text alignment |
-| `pinned`, `pinnable` | Initial left/right pin and menu pin actions |
-| `menuOptions` | Limit the menu to sort/filter/search/pin/display actions |
-| `hideable` | Allow hiding the column |
-
-Filter value shapes match the public types:
-
-```ts
-import type { FilterValue } from 'mantine-datatable-lite';
-
-const department: FilterValue = ['Engineering', 'Design'];
-const active: FilterValue = [true];
-const minimumAge: FilterValue = { operator: 'gte', value: 18 };
-const ageRange: FilterValue = { operator: 'between', value: [18, 65] };
-const joinedAfter: FilterValue = { operator: 'gte', value: new Date('2026-01-01') };
-```
-
-Numeric/date operators are `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, and `between`.
-`between` requires two bounds. Filter and search controls keep drafts local until
-Apply. Hidden columns retain active filters/searches. Reset clears sort, filters,
-search, and hidden columns, and returns pins to each column's `pinned` default.
-Persisted layout contains only hidden/pinned IDs.
-
-In client mode, string filter choices are derived from the rows and shown as-is.
-In server mode, supply complete string `filterOptions`; boolean filters always
-offer true and false.
-
-### Date filters
-
-Date filters use the browser's native date input by default. To use Mantine's
-date picker, install `@mantine/dates` and `dayjs`, import
-`@mantine/dates/styles.css` before the table stylesheet, and pass the component:
-
-```tsx
-import { DatePickerInput } from '@mantine/dates';
-
-<DataTable rows={rows} columns={columns} dateInput={DatePickerInput} />;
-```
-
-Any component that accepts `DateInputProps` (`value`/`onChange` as
-`YYYY-MM-DD` strings) works.
-
-## Selection, expansion, and row actions
-
-Use a unique, stable string or finite numeric `row.id`, or specify `idAccessor`.
-Missing/duplicate IDs disable selection and expansion for affected rows, with a
-development warning. IDs must remain unique across server pages.
-
-```tsx
-import { useState } from 'react';
-import { Button } from '@mantine/core';
-import { DataTable, rowActionsColumn, type RowId } from 'mantine-datatable-lite';
-
-function EmployeeTable() {
-  const [selectedIds, setSelectedIds] = useState<RowId[]>([]);
+  useEffect(() => {
+    if (!request) return;
+    const controller = new AbortController();
+    setLoading(true);
+    fetch('/api/employees/query', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(request),
+      signal: controller.signal,
+    })
+      .then((response) => response.json())
+      .then((result) => setPage(result))
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
+    return () => controller.abort();
+  }, [request]);
 
   return (
     <DataTable
-      rows={rows}
-      columns={[
-        ...columns,
-        rowActionsColumn<Employee>({
-          render: (row) => <Button size='xs' onClick={() => alert(row.name)}>View</Button>,
-        }),
-      ]}
-      idAccessor='id'
-      selection={{
-        selectedIds,
-        onChange: ({ ids }) => setSelectedIds(ids),
-        renderBulkActions: ({ ids, clear }) => (
-          <Button onClick={clear}>Clear {ids.length} selected</Button>
-        ),
+      mode='server'
+      rows={page.rows}
+      columns={columns}
+      pagination={{
+        currentPage: request?.pagination?.currentPage ?? 1,
+        pageSize: request?.pagination?.pageSize ?? 10,
+        totalItems: page.total,
       }}
-      expandable={{ render: (row) => <div>Age: {row.age}</div> }}
+      onChange={setRequest}
+      loading={loading}
     />
   );
 }
 ```
 
-`selectedIds` is optional: omit it and the table keeps the selection itself
-while still calling `onChange`. Selection can accumulate IDs across pages.
-`loadedRows` in the selection snapshot contains selected rows available in the
-supplied data; it does not fetch missing rows. Filter and search changes reset
-selection. With `renderBulkActions`, a bulk action bar replaces the toolbar
-while at least one row is selected.
+A `TableChange` looks like this:
 
-Expansion supports `expandedIds`, `onChange`, `allowMultiple`, and
-`trigger: 'icon' | 'row'`. Rows with `onRowClick` or row-triggered expansion are
-focusable and respond to Enter and Space. Row-action cells prevent action clicks
-from invoking the row click handler or row-triggered expansion.
+```ts
+{
+  pagination: { currentPage: 2, pageSize: 20 },
+  sorter: { field: 'salary', order: 'desc' },
+  filters: [
+    { field: 'department', value: ['Engineering', 'Design'] },
+    { field: 'salary', value: { operator: 'between', value: [50000, 90000] } },
+  ],
+  columnSearch: [{ field: 'name', value: 'ali' }],
+  searchQuery: 'london',
+}
+```
 
-## Labels
+`onChange` fires immediately for every change except typing in the global
+search, which waits `debounceTime` (300 ms by default). Sorting, filtering and
+searching return to page 1. Pass `loading`, `error` and `onRetry` to show a
+loading overlay and a retry action; the current rows stay visible meanwhile.
 
-Replace any built-in text, for example for translations. Unlisted labels keep
-their defaults.
+The repository has a complete
+[React + Express + SQLite example](https://github.com/ShaileshDhokare/mantine-datatable-lite/tree/master/examples/server-mode)
+that turns a `TableChange` into SQL.
+
+## Columns
+
+Each column needs a unique `dataIndex` and a `header`. `dataIndex` names the row
+property to read. For computed or nested values, add `getValue`: sorting,
+filtering, searching, filter choices and the default cell all use it.
+
+```tsx
+const columns: DataTableColumn<Employee>[] = [
+  { dataIndex: 'name', header: 'Name' },
+  {
+    dataIndex: 'city',
+    header: 'City',
+    filterable: true,
+    getValue: (row) => row.address.city,
+  },
+  {
+    dataIndex: 'joined',
+    header: 'Joined',
+    type: 'date',
+    sortable: true,
+    render: (row) => row.joined.toLocaleDateString(),
+  },
+];
+```
+
+`type` (`'string'`, `'number'`, `'boolean'` or `'date'`) picks the sort
+comparison and the filter UI. Keep dates as `Date` objects. `render` customizes
+the cell without changing what sorting and filtering compare.
+
+## Sorting, filtering and search
+
+| Column option | What it does |
+| --- | --- |
+| `sortable` | Sort by this column. Clicking cycles ascending, descending, off. |
+| `defaultSortOrder` | Start sorted. |
+| `sortFn(a, b)` | Custom ascending comparator. |
+| `filterable` | Add a filter: choices for strings and booleans, operators for numbers and dates. |
+| `filterOptions` | Supply choices (`string[]` or `{ value, label }[]`). Needed for strings in server mode. |
+| `searchableFilter` | Add a search box above long choice lists. |
+| `defaultFilterValue` | Start filtered. |
+| `filterFn(row, value)` | Custom predicate (client mode). |
+| `renderFilter(context)` | Your own filter UI with `value`, `onChange`, `apply` and `reset`. |
+| `searchable` | `true` adds a column search. `false` leaves the column out of global search. |
+| `defaultSearchValue` | Start with a column search applied. |
+
+Number and date operators are `eq`, `neq`, `gt`, `gte`, `lt`, `lte` and
+`between`. Filters on different columns combine with AND. Filter and search
+drafts apply when the user presses **Apply**.
+
+Turn on the toolbar search with `globalSearch`. Matching text is highlighted in
+default cells.
+
+### Date filters
+
+Date filters use the browser's native date input, so `@mantine/dates` is not
+required. To use Mantine's date picker instead, install it and pass the
+component:
+
+```sh
+npm install @mantine/dates dayjs
+```
+
+```tsx
+import '@mantine/dates/styles.css';
+import { DatePickerInput } from '@mantine/dates';
+
+<DataTable rows={rows} columns={columns} dateInput={DatePickerInput} />;
+```
+
+Any component that accepts `DateInputProps` (`value` and `onChange` as
+`YYYY-MM-DD` strings) works.
+
+## Pagination
+
+| `pagination` field | Client mode | Server mode |
+| --- | --- | --- |
+| `currentPage` | Starting page | Current page (controlled) |
+| `pageSize` | Starting page size | Page size (controlled) |
+| `totalItems` | Counted by the table | Total matching rows (required) |
+| `pageSizeOptions` | Size choices, or `false` to hide the picker | Same |
+
+`pagination` also accepts `true` for the defaults: page size 10 and choices of
+10, 20, 50 and 100.
+
+## Selection and bulk actions
+
+```tsx
+<DataTable
+  rows={rows}
+  columns={columns}
+  selection={{
+    isSelectable: (row) => row.active,
+    renderBulkActions: ({ ids, loadedRows, clear }) => (
+      <Button onClick={() => archive(ids).then(clear)}>
+        Archive {ids.length}
+      </Button>
+    ),
+  }}
+/>
+```
+
+Rows need a unique, stable ID: `row.id` by default, or set `idAccessor` to a key
+or a function. Pass `selectedIds` and `onChange` to control the selection
+yourself, or leave them out and the table keeps it. While rows are selected,
+`renderBulkActions` replaces the toolbar with a bulk action bar. Selection
+survives sorting and paging, and clears when filters or search change.
+`loadedRows` holds the selected rows present in the current `rows`; use `ids`
+for actions across server pages.
+
+## Expandable rows and row actions
+
+```tsx
+import { DataTable, rowActionsColumn } from 'mantine-datatable-lite';
+
+<DataTable
+  rows={rows}
+  columns={[
+    ...columns,
+    rowActionsColumn<Employee>({
+      render: (row) => (
+        <ActionIcon aria-label={`Edit ${row.name}`} onClick={() => edit(row)}>
+          <IconPencil size={16} />
+        </ActionIcon>
+      ),
+    }),
+  ]}
+  expandable={{
+    render: (row) => <EmployeeDetails employee={row} />,
+    allowMultiple: true,
+  }}
+  onRowClick={(row) => open(row)}
+/>;
+```
+
+`expandable` takes `render`, `allowMultiple`, `trigger: 'icon' | 'row'`, and
+optional `expandedIds` with `onChange` for controlled expansion.
+`rowActionsColumn` adds a column pinned to the right whose clicks never trigger
+`onRowClick` or row expansion. Clickable rows can be focused and activated with
+Enter or Space.
+
+## Toolbar, column menu and pinning
+
+| Prop | What it adds |
+| --- | --- |
+| `globalSearch` | An expanding search box across all columns. |
+| `columnSelector` | A picker to show and hide columns. |
+| `showTableStatePills` | Removable pills for the active sort, filters, searches and hidden columns. `maxChips` limits how many show. |
+| `showReset` | A button that clears sorting, filters, searches and layout changes. |
+
+Column options:
+
+- `showMenu` adds a compact menu with sort, filter, search, pin and hide
+  actions; `menuOptions` limits and orders them. With a menu, the separate header
+  buttons are hidden unless you set `showSortIcon`, `showFilterIcon` or
+  `showSearchIcon`.
+- `pinned: 'left' | 'right'` pins a column from the start. Users can pin, unpin
+  and reorder pinned columns from the menu; `pinnable: false` turns that off.
+- `hideable: false` keeps a column visible.
+
+`persistKey` saves hidden and pinned columns to `localStorage`. Pair pinning
+with `minWidth` so the table scrolls horizontally, and with `maxHeight` plus
+`stickyHeader` for a scrolling body with fixed headings.
+
+## Styling
+
+The table is a Mantine `Table` and accepts its styling props: `striped`,
+`stripedColor`, `highlightOnHover`, `highlightOnHoverColor`, `withTableBorder`,
+`withColumnBorders`, `withRowBorders`, `borderColor`, `horizontalSpacing`,
+`verticalSpacing`, `stickyHeader` and `layout`. Colors and spacing follow your
+Mantine theme, including dark mode. Use `render` for custom cells, `rowProps`
+for row attributes and styles, and `emptyState` for the no-results message.
+
+## Translations
+
+`labels` replaces any built-in text. Labels you leave out keep their English
+defaults.
 
 ```tsx
 <DataTable
@@ -288,43 +386,82 @@ their defaults.
   labels={{
     noRecords: 'Keine Einträge',
     apply: 'Anwenden',
+    reset: 'Zurücksetzen',
     selectedCount: (count) => `${count} ausgewählt`,
     pageRange: ({ from, to, total }) => `${from}–${to} von ${total}`,
   }}
 />
 ```
 
-See `DataTableLabels` for every key.
+See the `DataTableLabels` type for every key.
 
-## Public exports
+## TypeScript
 
-Import from the package root. ESM and CommonJS builds include matching TypeScript
-declarations. Import CSS through `mantine-datatable-lite/styles.css`.
+The table is generic over the row type, which it infers from `rows`. Callbacks
+such as `render`, `getValue`, `sortFn`, `onRowClick` and `renderBulkActions`
+receive typed rows, `idAccessor` only accepts keys that hold strings or numbers,
+and filter values are typed by shape (`between` needs two bounds). All public
+types are exported from the package root.
 
-| Export | Use |
+## Props
+
+### `DataTable`
+
+| Prop | Type | Default |
+| --- | --- | --- |
+| `rows` | `T[]` | required |
+| `columns` | `DataTableColumn<T>[]` | required |
+| `mode` | `'client' \| 'server'` | `'client'` |
+| `pagination` | `Pagination \| boolean` | off |
+| `onChange` | `(change: TableChange) => void` | |
+| `idAccessor` | row key or `(row) => string \| number` | `row.id` |
+| `selection` | `SelectionConfig<T>` | off |
+| `expandable` | `ExpandableConfig<T>` | off |
+| `onRowClick` | `(row, index, event) => void` | |
+| `rowProps` | `(row, index) => ComponentProps<'tr'>` | |
+| `globalSearch` | `boolean` | `false` |
+| `debounceTime` | `number` (ms) | `300` |
+| `columnSelector` | `boolean` | `false` |
+| `showTableStatePills` | `boolean` | `false` |
+| `maxChips` | `number` | `5` |
+| `showReset` | `boolean` | `false` |
+| `persistKey` | `string` | |
+| `minWidth`, `maxHeight` | CSS length | |
+| `loading` | `boolean` | `false` |
+| `loaderProps` | Mantine `LoaderProps` | |
+| `error` | `ReactNode` | |
+| `onRetry` | `() => void` | |
+| `emptyState` | `ReactNode` | "No records found" |
+| `labels` | `Partial<DataTableLabels>` | English |
+| `dateInput` | `ComponentType<DateInputProps>` | native date input |
+
+Plus the Mantine `Table` styling props listed under [Styling](#styling).
+
+### Column
+
+| Option | Type |
 | --- | --- |
-| `DataTable` | Generic React table component |
-| `Icon` | Inline SVG component with `name`, `size`, and standard SVG props |
-| `rowActionsColumn` | Typed action-column factory |
-| `DataTableProps`, `DataTableColumn`, `ColumnType` | Table/column definitions |
-| `DataTableLabels`, `DateInputProps` | UI text and custom date input contracts |
-| `IconProps`, `IconName`, `MenuOption` | Icon and menu definitions |
-| `Sorter`, `SortOrder` | Sort request |
-| `Filter`, `FilterValue`, `FilterOption`, `FilterRenderContext` | Filter definitions |
-| `StringFilterValue`, `BooleanFilterValue`, `NumericFilterValue`, `DateFilterValue`, `NumericOperator` | Typed filter values |
-| `ColumnSearch`, `TableChange` | Search and complete change request |
-| `Pagination`, `PaginationChange` | Pagination config and requested page |
-| `RowId`, `IdAccessor` | Row identity |
-| `SelectionConfig`, `SelectionSnapshot`, `ExpandableConfig` | Selection and expansion definitions |
+| `dataIndex` | row key or a unique string |
+| `header` | `ReactNode` |
+| `type` | `'string' \| 'number' \| 'boolean' \| 'date'` |
+| `getValue` | `(row) => unknown` |
+| `render` | `(row, index) => ReactNode` |
+| `align`, `width` | text alignment, CSS length or number |
+| `sortable`, `defaultSortOrder`, `sortFn`, `showSortIcon` | sorting |
+| `filterable`, `defaultFilterValue`, `filterOptions`, `searchableFilter`, `filterFn`, `renderFilter`, `showFilterIcon` | filtering |
+| `searchable`, `defaultSearchValue`, `showSearchIcon` | search |
+| `showMenu`, `menuOptions` | column menu |
+| `pinned`, `pinnable`, `hideable` | layout |
+| `stopRowClick` | keep cell clicks from reaching `onRowClick` |
 
-Internal hooks, context, header/footer components, and utilities are not public
-exports. There is no public headless `useDataTable` hook.
+Full descriptions are in the
+[API reference](https://shaileshdhokare.github.io/mantine-datatable-lite/#/api).
 
 ## Upgrading from earlier alphas
 
 | Before | Now |
 | --- | --- |
-| `pagination` meant the caller owns all data operations | Add `mode="server"` for that; without it, `pagination` pages rows in the browser |
+| `pagination` meant the caller owns all data | Add `mode="server"` for that; without it, `pagination` pages rows in the browser |
 | `pagination.defaultPageSize`, `from`, `to` | Removed; use `pageSize` |
 | `PaginationChange` with `totalItems`, `from`, `to` | `{ currentPage, pageSize }` |
 | `sorter: { sortField, sortOrder }` | `sorter: { field, order }` |
@@ -338,38 +475,25 @@ exports. There is no public headless `useDataTable` hook.
 
 Behavior changes:
 
-- Sort, filter, column search, and page changes call `onChange` immediately;
-  `debounceTime` only applies to global search typing.
+- Sort, filter, column search and page changes call `onChange` immediately;
+  `debounceTime` only applies to typing in the global search.
 - Server mode calls `onChange` once on mount with the initial request.
-- With `showMenu`, header sort/filter/search buttons are hidden unless you set
-  `showSortIcon`, `showFilterIcon`, or `showSearchIcon`.
+- With `showMenu`, the header sort, filter and search buttons are hidden unless
+  you turn them on.
 - The bulk action bar appears from the first selected row.
 - Reset keeps each column's `pinned` default.
 - Derived filter choices show raw values instead of sentence-cased labels.
+- The table uses separate borders (`border-collapse: separate`), and a scrolling
+  table draws its outer border on the scroll frame, so pinned columns keep their
+  borders while scrolling.
 
-## Scope
+## Not included
 
-This release does not provide virtualization, cell editing, tree/grouped data,
-multi-column sorting, column resizing, row drag and drop, built-in CSV/Excel
-export, or one-click selection of every matching server row. Large data sets
-should use server mode.
-
-Custom Styles API slots are not part of the current table API. Configure the
-exposed Mantine styling props and your Mantine theme.
-
-## Examples and feedback
-
-Read the [documentation](https://shaileshdhokare.github.io/mantine-datatable-lite/#/getting-started)
-and [download the Markdown guide for AI coding tools](https://shaileshdhokare.github.io/mantine-datatable-lite/llm.md).
-
-The [playground source](https://github.com/ShaileshDhokare/mantine-datatable-lite/tree/master/apps/playground)
-contains basic, sorting, filtering, search, pagination, server, pinning, expansion,
-selection, and combined examples.
-
-Report issues through
-[GitHub issues](https://github.com/ShaileshDhokare/mantine-datatable-lite/issues),
-including the package, React, and Mantine versions and a small reproduction.
+Virtualization, cell editing, grouped or tree rows, multi-column sorting, column
+resizing, drag and drop, and CSV/Excel export are out of scope. For large data
+sets, use server mode.
 
 ## License
 
-MIT. Inline SVG attribution and licenses are included in `THIRD_PARTY_NOTICES`.
+MIT. Icon paths are from [Lucide](https://lucide.dev) (ISC); see
+`THIRD_PARTY_NOTICES`.

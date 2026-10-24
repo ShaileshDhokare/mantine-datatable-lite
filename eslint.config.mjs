@@ -4,7 +4,8 @@ import tseslint from 'typescript-eslint';
 import reactHooks from 'eslint-plugin-react-hooks';
 
 export default defineConfig(
-  { ignores: ['**/dist/**', '**/node_modules/**'] },
+  // examples/ are standalone apps with their own tooling.
+  { ignores: ['**/dist/**', '**/node_modules/**', 'examples/**'] },
   {
     files: ['**/*.{js,mjs,ts,tsx}'],
     extends: [js.configs.recommended, tseslint.configs.recommended],

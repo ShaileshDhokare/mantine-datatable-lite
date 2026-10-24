@@ -1,5 +1,34 @@
+/*
+ * Separate borders. With border-collapse: collapse the browser paints a sticky
+ * cell's borders at the cell's original position, so pinned columns lose their
+ * borders while scrolling and a hairline of the scrolled content shows through.
+ * Here each cell carries its own borders, so pinned cells keep them.
+ */
 .root {
   color: var(--mantine-color-text);
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.root tr[data-with-row-border] > :is(th, td) {
+  border-bottom: calc(0.0625rem * var(--mantine-scale)) solid
+    var(--table-border-color);
+}
+.root tbody > tr[data-with-row-border]:last-of-type > td {
+  border-bottom: none;
+}
+/* One line per column boundary: the start border of the next cell. */
+.root
+  :is(th, td)[data-with-column-border]:not(:last-child):not(
+    [data-pin-edge='left']
+  ) {
+  border-inline-end: none;
+}
+/* Mantine redraws collapsed sticky-header borders with shadows and pseudo-elements. */
+.root thead[data-sticky] th {
+  box-shadow: none;
+}
+.root thead[data-sticky] th[data-with-column-border]:not(:first-child)::before {
+  inset-inline-start: 0;
 }
 
 .cell[data-pinned='left'],
@@ -15,10 +44,27 @@
   inset-inline-end: var(--dt-pin-offset);
 }
 .cell[data-pin-edge='left'] {
-  box-shadow: inset -1px 0 var(--table-border-color);
+  border-inline-end: calc(0.0625rem * var(--mantine-scale)) solid
+    var(--table-border-color);
+}
+.cell[data-pin-edge='left'] + :is(th, td) {
+  border-inline-start: none;
 }
 .cell[data-pin-edge='right'] {
-  box-shadow: inset 1px 0 var(--table-border-color);
+  border-inline-start: calc(0.0625rem * var(--mantine-scale)) solid
+    var(--table-border-color);
+}
+
+/* Outer border of a scrolling table: on the frame, so both sides stay visible mid-scroll. */
+.frame {
+  border: calc(0.0625rem * var(--mantine-scale)) solid
+    var(--dt-border-color, var(--dt-default-border-color));
+}
+:where([data-mantine-color-scheme='light']) .frame {
+  --dt-default-border-color: var(--mantine-color-gray-3);
+}
+:where([data-mantine-color-scheme='dark']) .frame {
+  --dt-default-border-color: var(--mantine-color-dark-4);
 }
 .root thead .cell[data-pinned] {
   z-index: 4;
@@ -54,6 +100,10 @@
 }
 .root thead .controlCell {
   z-index: 4;
+}
+/* Block-level, so the cell's vertical-align centers it instead of the text baseline. */
+.controlButton {
+  display: flex;
 }
 .root
   tbody

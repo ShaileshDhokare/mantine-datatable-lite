@@ -110,6 +110,7 @@ export function TableRow<T>({
             }
           >
             <ActionIcon
+              className={classes.controlButton}
               variant='transparent'
               size='sm'
               aria-label={`${expansion.expanded ? labels.collapseRow : labels.expandRow} ${rowName}`}

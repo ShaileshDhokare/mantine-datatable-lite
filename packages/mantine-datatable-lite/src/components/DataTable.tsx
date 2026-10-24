@@ -3,12 +3,14 @@ import {
   Box,
   Button,
   Checkbox,
+  getThemeColor,
   Group,
   LoadingOverlay,
   Stack,
   Table,
   Text,
   Transition,
+  useMantineTheme,
 } from '@mantine/core';
 import {
   useEffect,
@@ -83,6 +85,8 @@ export function DataTable<T>({
   layout,
 }: DataTableProps<T>) {
   const server = mode === 'server';
+  const scrolls = minWidth != null || maxHeight != null;
+  const theme = useMantineTheme();
   const pagination = paginationConfig(paginationProp);
   const tableState = useTableState({
     columns,
@@ -253,7 +257,7 @@ export function DataTable<T>({
         { '--dt-control-width': `${CONTROL_COLUMN_WIDTH}px` } as CSSProperties
       }
       borderColor={borderColor}
-      withTableBorder={withTableBorder}
+      withTableBorder={withTableBorder && !scrolls}
       withColumnBorders={withColumnBorders}
       withRowBorders={withRowBorders}
       horizontalSpacing={horizontalSpacing}
@@ -375,19 +379,27 @@ export function DataTable<T>({
     </Table>
   );
 
-  // Side padding exposes scrolling cells beyond the right-pinned column.
-  const tableContent =
-    minWidth != null || maxHeight != null ? (
-      <Table.ScrollContainer
-        minWidth={minWidth ?? 0}
-        maxHeight={maxHeight}
-        scrollAreaProps={{ scrollbarSize: '8px', offsetScrollbars: 'x' }}
-      >
-        {table}
-      </Table.ScrollContainer>
-    ) : (
-      table
-    );
+  // The outer border sits on the scroll frame, so it stays put while the table scrolls.
+  // Side padding would expose scrolling cells beyond the right-pinned column, so only x is offset.
+  const tableContent = scrolls ? (
+    <Table.ScrollContainer
+      minWidth={minWidth ?? 0}
+      maxHeight={maxHeight}
+      className={withTableBorder ? classes.frame : undefined}
+      style={
+        borderColor
+          ? ({
+              '--dt-border-color': getThemeColor(borderColor, theme),
+            } as CSSProperties)
+          : undefined
+      }
+      scrollAreaProps={{ scrollbarSize: '8px', offsetScrollbars: 'x' }}
+    >
+      {table}
+    </Table.ScrollContainer>
+  ) : (
+    table
+  );
 
   return (
     <DataTableConfigContext.Provider value={config}>
