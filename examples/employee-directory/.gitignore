@@ -1,0 +1,5 @@
+node_modules/
+dist/
+# SQLite database, recreated and seeded on first start. Anchored, so that
+# server/data/ and src/data/ (source files) are not ignored.
+/data/

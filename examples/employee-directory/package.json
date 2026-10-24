@@ -1,0 +1,39 @@
+{
+  "name": "mantine-datatable-lite-employee-directory",
+  "private": true,
+  "type": "module",
+  "description": "Employee directory: mantine-datatable-lite in server-side and client-side mode with React, Mantine, axios, Express, Kysely and SQLite.",
+  "scripts": {
+    "dev": "concurrently --kill-others --names api,web --prefix-colors blue,green \"npm:server\" \"npm:client\"",
+    "server": "node --watch-path=server server/index.js",
+    "client": "vite",
+    "seed": "node server/scripts/seed.js",
+    "build": "npm run typecheck && vite build",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json"
+  },
+  "dependencies": {
+    "@mantine/core": "^9.7.3",
+    "@mantine/dates": "^9.7.3",
+    "@mantine/hooks": "^9.7.3",
+    "@mantine/notifications": "^9.7.3",
+    "axios": "^1.20.0",
+    "dayjs": "^1.11.23",
+    "express": "^5.3.0",
+    "kysely": "^0.29.7",
+    "mantine-datatable-lite": "1.0.0-rc.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "concurrently": "^10.0.6",
+    "typescript": "^6.0.3",
+    "vite": "^8.3.0"
+  },
+  "engines": {
+    "node": ">=22.16"
+  }
+}
