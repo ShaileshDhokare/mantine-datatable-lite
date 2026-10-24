@@ -3,9 +3,12 @@ import type { TableChange } from 'mantine-datatable-lite';
 
 type Page<T> = { rows: T[]; totalItems: number };
 
-/** Example consumer-owned request lifecycle. A real app can use its own data library instead. */
+/**
+ * Example consumer-owned request lifecycle. A real app can use its own data library instead.
+ * `request` is null until the table reports its first request on mount.
+ */
 export function useServerData<T>(
-  request: TableChange,
+  request: TableChange | null,
   fetchPage: (request: TableChange, signal: AbortSignal) => Promise<Page<T>>,
 ) {
   const [result, setResult] = useState<Page<T>>({ rows: [], totalItems: 0 });
@@ -20,11 +23,13 @@ export function useServerData<T>(
   const signature = JSON.stringify(request);
 
   useEffect(() => {
+    const current = requestRef.current;
+    if (!current) return;
     const controller = new AbortController();
     const id = ++requestId.current;
     setLoading(true);
     setError(undefined);
-    fetchRef.current(requestRef.current, controller.signal)
+    fetchRef.current(current, controller.signal)
       .then((next) => {
         if (id === requestId.current && !controller.signal.aborted) setResult(next);
       })

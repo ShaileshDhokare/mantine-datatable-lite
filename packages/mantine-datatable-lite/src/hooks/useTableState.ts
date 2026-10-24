@@ -1,18 +1,13 @@
-import {
-  useCallback,
-  useEffect,
-  useEffectEvent,
-  useRef,
-  useState,
-} from 'react';
+import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import type {
   ColumnSearch,
-  DataTableProps,
+  DataTableColumn,
   Filter,
   FilterValue,
   Pagination,
   SortOrder,
   Sorter,
+  TableChange,
 } from '../types';
 import {
   defaultColumnLayout,
@@ -22,67 +17,179 @@ import {
 } from '../utils/columnLayoutStorage';
 import { activeFilter } from '../utils/filter/predicates';
 import { nextSortOrder } from '../utils/sort/nextSortOrder';
-import { paginationChange, resolvePagination } from '../utils/pagination';
+import { DEFAULT_PAGE_SIZE, resolvePage } from '../utils/pagination';
+
+type Snapshot = {
+  sorter: Sorter | undefined;
+  filters: Filter[];
+  columnSearch: ColumnSearch[];
+  searchQuery: string;
+  page: number;
+  pageSize: number;
+};
+
+function initialSorter<T>(columns: DataTableColumn<T>[]): Sorter | undefined {
+  const column = columns.find((item) => item.sortable && item.defaultSortOrder);
+  return column
+    ? { field: column.dataIndex, order: column.defaultSortOrder! }
+    : undefined;
+}
+
+function initialFilters<T>(columns: DataTableColumn<T>[]): Filter[] {
+  return columns.flatMap((column) =>
+    column.filterable && activeFilter(column.defaultFilterValue)
+      ? [{ field: column.dataIndex, value: column.defaultFilterValue! }]
+      : [],
+  );
+}
+
+function initialColumnSearch<T>(columns: DataTableColumn<T>[]): ColumnSearch[] {
+  return columns.flatMap((column) =>
+    column.searchable && column.defaultSearchValue?.trim()
+      ? [{ field: column.dataIndex, value: column.defaultSearchValue.trim() }]
+      : [],
+  );
+}
+
+/** Returns the same array when nothing is removed, so memoized consumers stay stable. */
+function keep<V>(items: V[], predicate: (item: V) => boolean): V[] {
+  const kept = items.filter(predicate);
+  return kept.length === items.length ? items : kept;
+}
+
+function queryKey(state: Snapshot) {
+  return JSON.stringify([
+    state.sorter,
+    state.filters,
+    state.columnSearch,
+    state.searchQuery,
+  ]);
+}
 
 export function useTableState<T>({
   columns,
-  onChange,
+  mode,
   pagination,
+  onChange,
   persistKey,
-  debounceTime = 300,
-}: Pick<
-  DataTableProps<T>,
-  'columns' | 'onChange' | 'pagination' | 'persistKey' | 'debounceTime'
->) {
-  const [sorter, setSorter] = useState<Sorter | undefined>(() => {
-    const column = columns.find(
-      (item) => item.sortable && item.defaultSortOrder,
-    );
-    return column
-      ? { sortField: column.dataIndex, sortOrder: column.defaultSortOrder! }
-      : undefined;
-  });
-  const [filters, setFilters] = useState<Filter[]>(() =>
-    columns.flatMap((column) =>
-      column.filterable && activeFilter(column.defaultFilterValue)
-        ? [{ field: column.dataIndex, value: column.defaultFilterValue! }]
-        : [],
-    ),
+}: {
+  columns: DataTableColumn<T>[];
+  mode: 'client' | 'server';
+  /** Normalized pagination config; undefined when pagination is off. */
+  pagination: Pagination | undefined;
+  onChange?: (params: TableChange) => void;
+  persistKey?: string;
+}) {
+  const server = mode === 'server';
+  const [sorterState, setSorter] = useState(() => initialSorter(columns));
+  const [filtersState, setFilters] = useState(() => initialFilters(columns));
+  const [columnSearchState, setColumnSearchState] = useState(() =>
+    initialColumnSearch(columns),
   );
-  const [openFilter, setOpenFilter] = useState<string | null>(null);
-  const [columnSearch, setColumnSearchState] = useState<ColumnSearch[]>(() =>
-    columns.flatMap((column) =>
-      column.searchable && column.defaultSearchValue?.trim()
-        ? [
-            {
-              searchField: column.dataIndex,
-              searchValue: column.defaultSearchValue.trim(),
-            },
-          ]
-        : [],
-    ),
-  );
-  const [openSearch, setOpenSearch] = useState<string | null>(null);
   const [searchQuery, setSearchQueryState] = useState('');
+  const [clientPage, setClientPage] = useState(
+    () => pagination?.currentPage ?? 1,
+  );
+  const [clientPageSize, setClientPageSize] = useState(
+    () => pagination?.pageSize ?? DEFAULT_PAGE_SIZE,
+  );
   const [layout, setLayout] = useState(() => defaultColumnLayout(columns));
   const [loadedKey, setLoadedKey] = useState<string>();
+  const [resetVersion, setResetVersion] = useState(0);
+
+  // Effective state: entries for removed or disabled columns are ignored.
+  const byField = new Map(columns.map((column) => [column.dataIndex, column]));
+  const sorter =
+    sorterState && byField.get(sorterState.field)?.sortable
+      ? sorterState
+      : undefined;
+  const filters = keep(
+    filtersState,
+    (filter) => byField.get(filter.field)?.filterable === true,
+  );
+  const columnSearch = keep(
+    columnSearchState,
+    (search) => byField.get(search.field)?.searchable === true,
+  );
   const validLayout = pruneColumnLayout(layout, columns);
-  const layoutSignature = JSON.stringify(layout);
   const validLayoutSignature = JSON.stringify(validLayout);
   const { hiddenColumns, pinned } = validLayout;
-  const [resetVersion, setResetVersion] = useState(0);
-  const sorterRef = useRef(sorter);
-  const filtersRef = useRef(filters);
-  const columnSearchRef = useRef(columnSearch);
-  const searchQueryRef = useRef(searchQuery);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const callbackRef = useRef(onChange);
-  const paginationRef = useRef(pagination);
-  const lastClampRef = useRef<string | null>(null);
-  callbackRef.current = onChange;
-  paginationRef.current = pagination;
 
-  useEffect(() => () => clearTimeout(timerRef.current), []);
+  const page = server ? (pagination?.currentPage ?? 1) : clientPage;
+  const pageSize = server
+    ? (pagination?.pageSize ?? DEFAULT_PAGE_SIZE)
+    : clientPageSize;
+  const totalItems = pagination?.totalItems;
+  const current: Snapshot = {
+    sorter,
+    filters,
+    columnSearch,
+    searchQuery,
+    page,
+    pageSize,
+  };
+  const currentQueryKey = queryKey(current);
+
+  function toChange(state: Snapshot): TableChange {
+    const resolved =
+      server && totalItems !== undefined
+        ? resolvePage(state.page, state.pageSize, totalItems)
+        : undefined;
+    return {
+      pagination: pagination
+        ? {
+            currentPage: resolved?.currentPage ?? state.page,
+            pageSize: resolved?.pageSize ?? state.pageSize,
+          }
+        : undefined,
+      sorter: state.sorter,
+      filters: state.filters,
+      columnSearch: state.columnSearch,
+      searchQuery: state.searchQuery,
+    };
+  }
+
+  // The query last reported through onChange; null until the first server request.
+  const reportedQuery = useRef<string | null>(server ? null : currentQueryKey);
+  const lastClamp = useRef<string | null>(null);
+
+  function commit(next: Snapshot) {
+    reportedQuery.current = queryKey(next);
+    onChange?.(toChange(next));
+  }
+
+  function commitQuery(next: Snapshot) {
+    if (!server) setClientPage(1);
+    commit({ ...next, page: 1 });
+  }
+
+  // Reports the initial server request, and requests dropped by column changes.
+  const reportQuery = useEffectEvent(() => {
+    if (reportedQuery.current === currentQueryKey) return;
+    const initial = reportedQuery.current === null;
+    reportedQuery.current = currentQueryKey;
+    onChange?.(toChange(initial ? current : { ...current, page: 1 }));
+  });
+  useEffect(() => {
+    reportQuery();
+  }, [currentQueryKey]);
+
+  // A shrinking server total moves the request to the last available page.
+  const reportClamp = useEffectEvent(() => {
+    if (!server || !pagination || totalItems === undefined) return;
+    const { currentPage } = resolvePage(page, pageSize, totalItems);
+    if (currentPage === page) {
+      lastClamp.current = null;
+      return;
+    }
+    const key = `${page}:${pageSize}:${totalItems}`;
+    if (lastClamp.current === key) return;
+    lastClamp.current = key;
+    onChange?.(toChange(current));
+  });
+  useEffect(() => {
+    reportClamp();
+  }, [page, pageSize, totalItems]);
 
   const loadLayout = useEffectEvent((key: string | undefined) => {
     setLayout(
@@ -93,14 +200,10 @@ export function useTableState<T>({
     setLoadedKey(key);
   });
   useEffect(() => {
-    // Changing columns prunes the current layout; only a new key loads saved defaults.
+    // Read storage after mount so server-rendered markup matches the first client render.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadLayout(persistKey);
   }, [persistKey]);
-
-  const reconcileLayout = useEffectEvent(() => setLayout(validLayout));
-  useEffect(() => {
-    if (layoutSignature !== validLayoutSignature) reconcileLayout();
-  }, [layoutSignature, validLayoutSignature]);
 
   const saveLayout = useEffectEvent((key: string) =>
     writeColumnLayout(key, validLayout),
@@ -109,256 +212,128 @@ export function useTableState<T>({
     if (persistKey && loadedKey === persistKey) saveLayout(persistKey);
   }, [persistKey, loadedKey, validLayoutSignature]);
 
-  const notify = useCallback(
-    (
-      nextSorter: Sorter | undefined,
-      nextFilters: Filter[],
-      immediate = false,
-      nextPagination?: Pagination,
-    ) => {
-      clearTimeout(timerRef.current);
-      if (callbackRef.current) {
-        const requestedPagination = nextPagination ?? paginationRef.current;
-        const snapshot = {
-          pagination: requestedPagination
-            ? paginationChange(requestedPagination)
-            : undefined,
-          sorter: nextSorter,
-          filters: nextFilters,
-          columnSearch: columnSearchRef.current,
-          searchQuery: searchQueryRef.current,
-        };
-        if (immediate) callbackRef.current(snapshot);
-        else
-          timerRef.current = setTimeout(
-            () => callbackRef.current?.(snapshot),
-            Math.max(0, debounceTime),
-          );
-      }
-    },
-    [debounceTime],
-  );
-
-  const columnSignature = JSON.stringify(
-    columns.map(({ dataIndex, sortable, filterable, searchable }) => [
-      dataIndex,
-      Boolean(sortable),
-      Boolean(filterable),
-      searchable === true,
-    ]),
-  );
-  const reconcileDataState = useEffectEvent(() => {
-    const byField = new Map(
-      columns.map((column) => [column.dataIndex, column]),
-    );
-    const currentSort = sorterRef.current;
-    const nextSorter =
-      currentSort && byField.get(currentSort.sortField)?.sortable
-        ? currentSort
-        : undefined;
-    const nextFilters = filtersRef.current.filter(
-      (filter) => byField.get(filter.field)?.filterable,
-    );
-    const nextSearch = columnSearchRef.current.filter(
-      (search) => byField.get(search.searchField)?.searchable === true,
-    );
-    if (openFilter && !byField.get(openFilter)?.filterable) setOpenFilter(null);
-    if (openSearch && byField.get(openSearch)?.searchable !== true)
-      setOpenSearch(null);
-    if (
-      nextSorter === currentSort &&
-      nextFilters.length === filtersRef.current.length &&
-      nextSearch.length === columnSearchRef.current.length
-    )
-      return;
-    sorterRef.current = nextSorter;
-    filtersRef.current = nextFilters;
-    columnSearchRef.current = nextSearch;
-    setSorter(nextSorter);
-    setFilters(nextFilters);
-    setColumnSearchState(nextSearch);
-    notify(nextSorter, nextFilters, false, resetPage());
-  });
-  useEffect(() => {
-    reconcileDataState();
-  }, [columnSignature]);
-
   function setSort(field: string, order?: SortOrder | null) {
-    const current = sorterRef.current;
     const nextOrder =
-      order === null ? undefined : (order ?? nextSortOrder(current, field));
-    const next = nextOrder
-      ? { sortField: field, sortOrder: nextOrder }
-      : undefined;
-    sorterRef.current = next;
+      order === null ? undefined : (order ?? nextSortOrder(sorter, field));
+    const next = nextOrder ? { field, order: nextOrder } : undefined;
     setSorter(next);
-    notify(next, filtersRef.current, false, resetPage());
+    commitQuery({ ...current, sorter: next });
   }
 
   function setFilter(field: string, value?: FilterValue) {
-    const next = filtersRef.current.filter((filter) => filter.field !== field);
+    const next = filters.filter((filter) => filter.field !== field);
     if (value && activeFilter(value)) next.push({ field, value });
-    filtersRef.current = next;
     setFilters(next);
-    setOpenFilter(null);
-    notify(sorterRef.current, next, false, resetPage());
+    commitQuery({ ...current, filters: next });
   }
 
   function setColumnSearch(field: string, value: string) {
-    const next = columnSearchRef.current.filter(
-      (search) => search.searchField !== field,
-    );
+    const next = columnSearch.filter((search) => search.field !== field);
     const trimmed = value.trim();
-    if (trimmed) next.push({ searchField: field, searchValue: trimmed });
-    columnSearchRef.current = next;
+    if (trimmed) next.push({ field, value: trimmed });
     setColumnSearchState(next);
-    setOpenSearch(null);
-    notify(sorterRef.current, filtersRef.current, false, resetPage());
+    commitQuery({ ...current, columnSearch: next });
   }
 
-  function setSearchQuery(value: string, immediate = false) {
-    searchQueryRef.current = value.trim();
-    setSearchQueryState(value.trim());
-    notify(sorterRef.current, filtersRef.current, immediate, resetPage());
+  function setSearchQuery(value: string) {
+    const trimmed = value.trim();
+    if (trimmed === searchQuery) return;
+    setSearchQueryState(trimmed);
+    commitQuery({ ...current, searchQuery: trimmed });
+  }
+
+  function setPagination(nextPage: number, nextPageSize = pageSize) {
+    if (!pagination) return;
+    if (!server) {
+      setClientPage(nextPage);
+      setClientPageSize(nextPageSize);
+    }
+    commit({ ...current, page: nextPage, pageSize: nextPageSize });
   }
 
   function setColumnHidden(field: string, hidden: boolean) {
-    const column = columns.find((item) => item.dataIndex === field);
+    const column = byField.get(field);
     if (!column || (hidden && column.hideable === false)) return;
-    const next = hidden
-      ? [...new Set([...hiddenColumns, field])]
-      : hiddenColumns.filter((item) => item !== field);
-    setHiddenColumns(next);
+    setHiddenColumns(
+      hidden
+        ? [...new Set([...hiddenColumns, field])]
+        : hiddenColumns.filter((item) => item !== field),
+    );
   }
 
   function setHiddenColumns(fields: string[]) {
-    setLayout((current) =>
+    setLayout((state) =>
       pruneColumnLayout(
-        {
-          hiddenColumns: fields,
-          pinned: current.pinned,
-        },
+        { hiddenColumns: fields, pinned: state.pinned },
         columns,
       ),
     );
   }
 
   function pinColumn(field: string, side: 'left' | 'right' | null) {
-    if (
-      columns.find((column) => column.dataIndex === field)?.pinnable === false
-    )
-      return;
-    setLayout((current) =>
-      pruneColumnLayout(
+    if (byField.get(field)?.pinnable === false) return;
+    setLayout((state) => {
+      const without = (items: string[]) =>
+        items.filter((item) => item !== field);
+      return pruneColumnLayout(
         {
-          hiddenColumns: current.hiddenColumns,
+          hiddenColumns: state.hiddenColumns,
           pinned: {
             left:
               side === 'left'
-                ? [
-                    ...current.pinned.left.filter((item) => item !== field),
-                    field,
-                  ]
-                : current.pinned.left.filter((item) => item !== field),
+                ? [...without(state.pinned.left), field]
+                : without(state.pinned.left),
             right:
               side === 'right'
-                ? [
-                    ...current.pinned.right.filter((item) => item !== field),
-                    field,
-                  ]
-                : current.pinned.right.filter((item) => item !== field),
+                ? [...without(state.pinned.right), field]
+                : without(state.pinned.right),
           },
         },
         columns,
-      ),
-    );
+      );
+    });
   }
 
   function movePinned(field: string, direction: -1 | 1) {
-    setLayout((current) => {
-      const side = current.pinned.left.includes(field)
+    setLayout((state) => {
+      const side = state.pinned.left.includes(field)
         ? 'left'
-        : current.pinned.right.includes(field)
+        : state.pinned.right.includes(field)
           ? 'right'
           : null;
-      if (!side) return current;
-      const items = [...current.pinned[side]];
+      if (!side) return state;
+      const items = [...state.pinned[side]];
       const from = items.indexOf(field);
       const to = from + direction;
-      if (to < 0 || to >= items.length) return current;
+      if (to < 0 || to >= items.length) return state;
       [items[from], items[to]] = [items[to], items[from]];
-      return { ...current, pinned: { ...current.pinned, [side]: items } };
+      return { ...state, pinned: { ...state.pinned, [side]: items } };
     });
   }
 
   function clearAll() {
-    sorterRef.current = undefined;
-    filtersRef.current = [];
-    columnSearchRef.current = [];
-    searchQueryRef.current = '';
     setSorter(undefined);
     setFilters([]);
     setColumnSearchState([]);
     setSearchQueryState('');
-    setLayout({ hiddenColumns: [], pinned: { left: [], right: [] } });
+    setLayout(defaultColumnLayout(columns));
     setResetVersion((version) => version + 1);
-    setOpenFilter(null);
-    setOpenSearch(null);
-    notify(undefined, [], false, resetPage());
+    commitQuery({
+      ...current,
+      sorter: undefined,
+      filters: [],
+      columnSearch: [],
+      searchQuery: '',
+    });
   }
-
-  function resetPage() {
-    const current = paginationRef.current;
-    if (!current) return undefined;
-    const next = { ...current, currentPage: 1 };
-    delete next.from;
-    delete next.to;
-    paginationRef.current = next;
-    return next;
-  }
-
-  function setPagination(
-    currentPage: number,
-    pageSize = paginationRef.current?.pageSize,
-  ) {
-    const current = paginationRef.current;
-    if (!current || !pageSize) return;
-    const next: Pagination = { ...current, currentPage, pageSize };
-    delete next.from;
-    delete next.to;
-    paginationRef.current = next;
-    notify(sorterRef.current, filtersRef.current, true, next);
-  }
-
-  useEffect(() => {
-    if (!pagination || !onChange) return;
-    const { pageSize, currentPage: clampedPage } =
-      resolvePagination(pagination);
-    const key = `${pagination.currentPage}:${pageSize}:${pagination.totalItems}`;
-    if (clampedPage === pagination.currentPage) lastClampRef.current = null;
-    if (
-      clampedPage !== pagination.currentPage &&
-      lastClampRef.current !== key
-    ) {
-      lastClampRef.current = key;
-      const next = { ...pagination, currentPage: clampedPage };
-      delete next.from;
-      delete next.to;
-      notify(sorterRef.current, filtersRef.current, true, next);
-    }
-  }, [pagination, onChange, notify]);
 
   return {
     sorter,
     setSort,
     filters,
     setFilter,
-    openFilter,
-    setOpenFilter,
     columnSearch,
     setColumnSearch,
-    openSearch,
-    setOpenSearch,
     searchQuery,
     setSearchQuery,
     hiddenColumns,
@@ -369,6 +344,10 @@ export function useTableState<T>({
     movePinned,
     clearAll,
     resetVersion,
+    page,
+    pageSize,
     setPagination,
   };
 }
+
+export type TableState = ReturnType<typeof useTableState>;

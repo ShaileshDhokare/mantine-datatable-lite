@@ -9,14 +9,15 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run --pool=threads --maxWorkers=1",
     "docs:generate": "node scripts/generate-api.mjs",
-    "predev": "npm run docs:generate",
-    "prebuild": "npm run docs:generate"
+    "predev": "npm run lib:build && npm run docs:generate",
+    "prebuild": "npm run lib:build && npm run docs:generate",
+    "lib:build": "npm run build -w mantine-datatable-lite"
   },
   "dependencies": {
     "@mantine/core": "^9.6.2",
     "@mantine/dates": "^9.6.2",
     "@mantine/hooks": "^9.6.2",
-    "mantine-datatable-lite": "alpha",
+    "mantine-datatable-lite": "file:../../packages/mantine-datatable-lite",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "react-markdown": "^10.1.0",

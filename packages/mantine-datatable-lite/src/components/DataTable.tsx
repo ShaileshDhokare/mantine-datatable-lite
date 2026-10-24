@@ -1,49 +1,96 @@
 import {
-  ActionIcon,
-  Alert,
   Box,
   Button,
   Checkbox,
-  Group,
-  Highlight,
+  getThemeColor,
   LoadingOverlay,
-  Paper,
   Stack,
   Table,
   Text,
-  Tooltip,
   Transition,
+  useMantineTheme,
+  VisuallyHidden,
 } from '@mantine/core';
 import {
-  Fragment,
   useEffect,
   useId,
   useMemo,
   useRef,
   useState,
   type CSSProperties,
+  type ReactNode,
 } from 'react';
+import { DataTableConfigContext } from '../context/DataTableConfigContext';
 import { DataTableContext } from '../context/DataTableContext';
-import { useTableState } from '../hooks/useTableState';
-import { Icon } from '../icons/Icon';
-import classes from '../styles/styles.module.css';
-import type { DataTableProps, RowId } from '../types';
 import {
   CONTROL_COLUMN_WIDTH,
   useColumnLayout,
 } from '../hooks/useColumnLayout';
 import { rowPanelId, useRowIdentity } from '../hooks/useRowIdentity';
 import { useSelection } from '../hooks/useSelection';
+import { useTableState } from '../hooks/useTableState';
+import { Icon } from '../icons/Icon';
+import { mergeLabels } from '../labels';
+import classes from '../styles/styles.module.css';
+import type { DataTableProps, RowId } from '../types';
 import { filterRows } from '../utils/filter/predicates';
-import { sortRows } from '../utils/sort/sortRows';
+import { paginationConfig, resolvePage } from '../utils/pagination';
 import { searchRows } from '../utils/search/searchRows';
-import { ColumnHeader } from './header/ColumnHeader';
-import { TableToolbar } from './toolbar/TableToolbar';
+import { sortRows } from '../utils/sort/sortRows';
+import { TableRow, type CellColumn } from './body/TableRow';
 import { TablePagination } from './footer/TablePagination';
+import { ColumnHeader } from './header/ColumnHeader';
+import { HeaderPopoverScope } from './header/HeaderPopoverScope';
+import { BulkActionBar } from './toolbar/BulkActionBar';
+import { TableToolbar } from './toolbar/TableToolbar';
+
+/** A full-width body row for the empty and error states. */
+function BodyMessage({
+  colSpan,
+  children,
+}: {
+  colSpan: number;
+  children: ReactNode;
+}) {
+  return (
+    <Table.Tr>
+      <Table.Td colSpan={colSpan} ta='center' py='xl' px={0}>
+        <div className={classes.bodyMessage}>{children}</div>
+      </Table.Td>
+    </Table.Tr>
+  );
+}
+
+/** Stable empty rows while an error is shown. */
+const NO_ROWS: never[] = [];
 
 export function DataTable<T>({
   columns,
   rows,
+  mode = 'client',
+  pagination: paginationProp,
+  onChange,
+  idAccessor,
+  globalSearch,
+  columnSelector,
+  showTableStatePills,
+  maxChips,
+  showReset,
+  debounceTime,
+  selection,
+  expandable,
+  onRowClick,
+  rowProps,
+  loading,
+  loaderProps,
+  error,
+  onRetry,
+  emptyState,
+  persistKey,
+  minWidth,
+  maxHeight,
+  labels: labelOverrides,
+  dateInput,
   borderColor,
   withTableBorder,
   withColumnBorders,
@@ -55,45 +102,27 @@ export function DataTable<T>({
   highlightOnHover,
   highlightOnHoverColor,
   stickyHeader,
-  minWidth,
-  maxHeight,
   layout,
-  onChange,
-  pagination,
-  persistKey,
-  globalSearch,
-  columnSelector,
-  showTableStatePills,
-  showReset,
-  toolbar,
-  toolbarActions,
-  maxChips,
-  debounceTime,
-  emptyState,
-  loading,
-  loaderProps,
-  error,
-  onRetry,
-  idAccessor,
-  selection,
-  expandable,
-  expandedRowRender,
-  onRowClick,
-  rowProps,
+  'aria-label': ariaLabel,
+  'aria-labelledby': ariaLabelledBy,
 }: DataTableProps<T>) {
+  const server = mode === 'server';
+  const scrolls = minWidth != null || maxHeight != null;
+  const theme = useMantineTheme();
+  const pagination = paginationConfig(paginationProp);
   const tableState = useTableState({
     columns,
-    onChange,
+    mode,
     pagination,
+    onChange,
     persistKey,
-    debounceTime,
   });
-  const expandConfig =
-    typeof expandable === 'object'
-      ? expandable
-      : expandable && expandedRowRender
-        ? { render: expandedRowRender }
-        : undefined;
+  const config = useMemo(
+    () => ({ labels: mergeLabels(labelOverrides), dateInput }),
+    [labelOverrides, dateInput],
+  );
+  const { labels } = config;
+
   const {
     tableRef,
     ordered: visibleColumns,
@@ -106,63 +135,68 @@ export function DataTable<T>({
     tableState.hiddenColumns,
     tableState.pinned,
     Boolean(selection),
-    Boolean(expandConfig),
+    Boolean(expandable),
   );
-  const [localExpanded, setLocalExpanded] = useState<RowId[]>([]);
-  const expandedIds = expandConfig?.expandedIds ?? localExpanded;
-  const expandedSet = new Set(expandedIds);
-  const panelPrefix = useId().replace(/:/g, '');
+
+  // Client mode: filter → search → sort → page. Server mode: rows are the result.
+  const { filters, columnSearch, searchQuery, sorter } = tableState;
   const filteredRows = useMemo(
-    () => (pagination ? rows : filterRows(rows, columns, tableState.filters)),
-    [rows, columns, tableState.filters, pagination],
+    () => (server ? rows : filterRows(rows, columns, filters)),
+    [server, rows, columns, filters],
   );
   const searchedRows = useMemo(
     () =>
-      pagination
+      server
         ? filteredRows
-        : searchRows(
-            filteredRows,
-            columns,
-            tableState.columnSearch,
-            tableState.searchQuery,
-          ),
-    [
-      filteredRows,
-      columns,
-      tableState.columnSearch,
-      tableState.searchQuery,
-      pagination,
-    ],
+        : searchRows(filteredRows, columns, columnSearch, searchQuery),
+    [server, filteredRows, columns, columnSearch, searchQuery],
   );
-  const visibleRows = useMemo(
-    () =>
-      pagination
-        ? searchedRows
-        : sortRows(searchedRows, columns, tableState.sorter),
-    [searchedRows, columns, tableState.sorter, pagination],
+  const sortedRows = useMemo(
+    () => (server ? searchedRows : sortRows(searchedRows, columns, sorter)),
+    [server, searchedRows, columns, sorter],
   );
+  const totalItems = server
+    ? (pagination?.totalItems ?? rows.length)
+    : sortedRows.length;
+  const page = resolvePage(tableState.page, tableState.pageSize, totalItems);
+  const visibleRows =
+    pagination && !server
+      ? sortedRows.slice(
+          (page.currentPage - 1) * page.pageSize,
+          page.currentPage * page.pageSize,
+        )
+      : sortedRows;
 
+  const missingTotal = server && pagination?.totalItems === undefined;
+  useEffect(() => {
+    if (missingTotal && process.env.NODE_ENV !== 'production')
+      console.warn(
+        '[DataTable] Server pagination needs pagination.totalItems.',
+      );
+  }, [missingTotal]);
+
+  // An error replaces the rows, so selection and expansion see no rows either.
+  const failed = Boolean(error);
   const rowEntries = useRowIdentity(
-    visibleRows,
+    failed ? (NO_ROWS as T[]) : visibleRows,
     idAccessor,
-    Boolean(selection || expandConfig),
+    Boolean(selection || expandable),
   );
 
+  const [localExpanded, setLocalExpanded] = useState<RowId[]>([]);
+  const expandedIds = expandable?.expandedIds ?? localExpanded;
+  const expandedSet = new Set(expandedIds);
+  const panelPrefix = useId().replace(/:/g, '');
   function toggleExpanded(id: RowId) {
     const next = expandedSet.has(id)
       ? expandedIds.filter((item) => item !== id)
-      : expandConfig?.allowMultiple
+      : expandable?.allowMultiple
         ? [...expandedIds, id]
         : [id];
-    if (expandConfig?.expandedIds === undefined) setLocalExpanded(next);
-    expandConfig?.onChange?.(next);
+    if (expandable?.expandedIds === undefined) setLocalExpanded(next);
+    expandable?.onChange?.(next);
   }
 
-  const query = {
-    filters: tableState.filters,
-    columnSearch: tableState.columnSearch,
-    search: tableState.searchQuery,
-  };
   const {
     selectedIds,
     selectedSet,
@@ -172,24 +206,49 @@ export function DataTable<T>({
     snapshot,
     changeSelection,
     togglePage,
-  } = useSelection(rowEntries, selection, query);
-  const columnSearchByField = new Map(
-    tableState.columnSearch.map((item) => [item.searchField, item.searchValue]),
+  } = useSelection(
+    rowEntries,
+    selection,
+    JSON.stringify([filters, columnSearch, searchQuery]),
   );
-  const cellColumns = visibleColumns.map((column) => ({
+
+  const columnSearchByField = new Map(
+    columnSearch.map((item) => [item.field, item.value]),
+  );
+  function pinProps(field: string): CellColumn<T>['pinProps'] {
+    const pin = offsets.get(field);
+    if (!pin) return {};
+    return {
+      'data-pinned': pin.side,
+      'data-pin-edge':
+        pin.side === 'left' && left[left.length - 1] === field
+          ? 'left'
+          : pin.side === 'right' && right[0] === field
+            ? 'right'
+            : undefined,
+      className: classes.cell,
+      style: { '--dt-pin-offset': `${pin.offset}px` } as CSSProperties,
+    } as CellColumn<T>['pinProps'];
+  }
+  const cellColumns: CellColumn<T>[] = visibleColumns.map((column) => ({
     column,
-    pin: offsets.get(column.dataIndex),
+    pinProps: pinProps(column.dataIndex),
     terms: column.render
       ? []
       : [
-          column.searchable !== false ? tableState.searchQuery : '',
+          column.searchable !== false ? searchQuery : '',
           columnSearchByField.get(column.dataIndex),
         ].filter((term): term is string => Boolean(term)),
   }));
 
-  const extraColumns =
-    Number(Boolean(selection)) + Number(Boolean(expandConfig));
-  const colSpan = Math.max(visibleColumns.length + extraColumns, 1);
+  const colSpan = Math.max(
+    visibleColumns.length +
+      Number(Boolean(selection)) +
+      Number(Boolean(expandable)),
+    1,
+  );
+
+  // Toolbars: the bulk action bar covers the standard toolbar while rows are selected.
   const standardToolbarRef = useRef<HTMLDivElement>(null);
   const bulkToolbarRef = useRef<HTMLDivElement>(null);
   const restoreToolbarFocus = useRef(false);
@@ -197,7 +256,7 @@ export function DataTable<T>({
     globalSearch || columnSelector || showTableStatePills || showReset,
   );
   const showBulkToolbar = Boolean(
-    toolbar && selection && selectedIds.length > 1,
+    selection?.renderBulkActions && selectedIds.length > 0,
   );
   useEffect(() => {
     if (
@@ -218,25 +277,6 @@ export function DataTable<T>({
     changeSelection([]);
   }
 
-  function pinProps(field: string) {
-    const pin = offsets.get(field);
-    return pin
-      ? {
-          'data-pinned': pin.side,
-          'data-pin-edge':
-            pin.side === 'left' && left[left.length - 1] === field
-              ? 'left'
-              : pin.side === 'right' && right[0] === field
-                ? 'right'
-                : undefined,
-          className: classes.cell,
-          style: {
-            '--dt-pin-offset': `${pin.offset}px`,
-          } as CSSProperties,
-        }
-      : {};
-  }
-
   const table = (
     <Table
       ref={tableRef}
@@ -245,7 +285,7 @@ export function DataTable<T>({
         { '--dt-control-width': `${CONTROL_COLUMN_WIDTH}px` } as CSSProperties
       }
       borderColor={borderColor}
-      withTableBorder={withTableBorder}
+      withTableBorder={withTableBorder && !scrolls}
       withColumnBorders={withColumnBorders}
       withRowBorders={withRowBorders}
       horizontalSpacing={horizontalSpacing}
@@ -256,309 +296,232 @@ export function DataTable<T>({
       highlightOnHoverColor={highlightOnHoverColor}
       stickyHeader={stickyHeader}
       layout={layout}
+      aria-label={ariaLabel}
+      aria-labelledby={ariaLabelledBy}
       aria-busy={Boolean(loading)}
     >
       <Table.Thead>
-        <Table.Tr>
-          {selection && (
-            <Table.Th
-              data-control='selection'
-              w={CONTROL_COLUMN_WIDTH}
-              className={classes.controlCell}
-              style={{ '--dt-pin-offset': '0px' } as CSSProperties}
-            >
-              <Checkbox
-                aria-label='Select all rows on this page'
-                size='sm'
-                checked={allPageSelected}
-                indeterminate={!allPageSelected && selectedOnPage > 0}
-                disabled={!pageIds.size}
-                onChange={togglePage}
+        <HeaderPopoverScope>
+          <Table.Tr>
+            {selection && (
+              <Table.Th
+                data-control='selection'
+                w={CONTROL_COLUMN_WIDTH}
+                className={classes.controlCell}
+                style={{ '--dt-pin-offset': '0px' } as CSSProperties}
+              >
+                <Checkbox
+                  aria-label={labels.selectAll}
+                  size='sm'
+                  checked={allPageSelected}
+                  indeterminate={!allPageSelected && selectedOnPage > 0}
+                  disabled={!pageIds.size}
+                  onChange={togglePage}
+                />
+              </Table.Th>
+            )}
+            {expandable && (
+              <Table.Th
+                data-control='expansion'
+                w={CONTROL_COLUMN_WIDTH}
+                className={classes.controlCell}
+                style={
+                  {
+                    '--dt-pin-offset': `${expansionOffset}px`,
+                  } as CSSProperties
+                }
+              >
+                {/* Header cells need text for screen readers; this column has no visible title. */}
+                <VisuallyHidden>{labels.expandRow}</VisuallyHidden>
+              </Table.Th>
+            )}
+            {cellColumns.map(({ column }) => (
+              <ColumnHeader
+                key={column.dataIndex}
+                column={column}
+                rows={rows}
+                serverMode={server}
+                canHide={
+                  visibleColumns.length > 1 &&
+                  Boolean(columnSelector || showTableStatePills || showReset)
+                }
+                pin={offsets.get(column.dataIndex)}
+                stickyHeader={stickyHeader}
               />
-            </Table.Th>
-          )}
-          {expandConfig && (
-            <Table.Th
-              data-control='expansion'
-              w={CONTROL_COLUMN_WIDTH}
-              className={classes.controlCell}
-              style={
-                {
-                  '--dt-pin-offset': `${expansionOffset}px`,
-                } as CSSProperties
-              }
-              aria-label='Expand rows'
-            />
-          )}
-          {cellColumns.map(({ column, pin }) => (
-            <ColumnHeader
-              key={column.dataIndex}
-              column={column}
-              rows={rows}
-              serverMode={Boolean(pagination)}
-              canHide={
-                visibleColumns.length > 1 &&
-                Boolean(columnSelector || showTableStatePills || showReset)
-              }
-              pin={pin}
-              stickyHeader={stickyHeader}
-            />
-          ))}
-        </Table.Tr>
+            ))}
+          </Table.Tr>
+        </HeaderPopoverScope>
       </Table.Thead>
       <Table.Tbody>
-        {visibleRows.length === 0 && (
-          <Table.Tr>
-            <Table.Td colSpan={colSpan} ta='center' py='xl'>
-              {emptyState ?? (
-                <Stack align='center' gap='xs' py='md'>
-                  <Icon
-                    name='empty'
-                    strokeWidth={1}
-                    size={36}
-                    color='var(--mantine-color-dimmed)'
-                    aria-hidden='true'
-                  />
-                  <Text size='sm' c='dimmed'>
-                    No records found
-                  </Text>
-                </Stack>
+        {failed && (
+          <BodyMessage colSpan={colSpan}>
+            <Stack align='center' gap='xs' py='md' role='alert'>
+              <Icon
+                name='error'
+                strokeWidth={1.25}
+                size={36}
+                color='var(--mantine-color-error)'
+              />
+              <Text component='div' size='sm'>
+                {error === true ? labels.loadError : error}
+              </Text>
+              {onRetry && (
+                <Button size='xs' variant='default' mt={4} onClick={onRetry}>
+                  {labels.retry}
+                </Button>
               )}
-            </Table.Td>
-          </Table.Tr>
+            </Stack>
+          </BodyMessage>
         )}
-        {rowEntries.map(({ row, id, key }, index) => {
-          const expanded = id !== undefined && expandedSet.has(id);
-          const panelId =
-            id === undefined ? undefined : rowPanelId(panelPrefix, id);
-          const selectable = id !== undefined && pageIds.has(id);
-          const suppliedProps = rowProps?.(row, index) ?? {};
-          return (
-            <Fragment key={key}>
-              <Table.Tr
-                {...suppliedProps}
-                data-selected={
-                  (id !== undefined && selectedSet.has(id)) || undefined
-                }
-                onClick={(event) => {
-                  suppliedProps.onClick?.(event);
-                  if (event.defaultPrevented) return;
-                  if (!window.getSelection?.()?.toString()) {
-                    if (expandConfig?.trigger === 'row' && id !== undefined)
-                      toggleExpanded(id);
-                    onRowClick?.(row, index, event);
-                  }
-                }}
-              >
-                {selection && (
-                  <Table.Td
-                    className={classes.controlCell}
-                    style={{ '--dt-pin-offset': '0px' } as CSSProperties}
-                  >
-                    <Checkbox
-                      size='sm'
-                      aria-label={
-                        id === undefined
-                          ? `Select row ${index + 1} (invalid ID)`
-                          : `Select row ${String(id)}`
-                      }
-                      checked={id !== undefined && selectedSet.has(id)}
-                      disabled={!selectable}
-                      onClick={(event) => event.stopPropagation()}
-                      onChange={() => {
-                        if (id === undefined) return;
-                        changeSelection(
-                          selectedSet.has(id)
-                            ? selectedIds.filter((item) => item !== id)
-                            : [...selectedIds, id],
-                        );
-                      }}
-                    />
-                  </Table.Td>
-                )}
-                {expandConfig && (
-                  <Table.Td
-                    className={classes.controlCell}
-                    style={
-                      {
-                        '--dt-pin-offset': `${expansionOffset}px`,
-                      } as CSSProperties
-                    }
-                  >
-                    <ActionIcon
-                      variant='transparent'
-                      size='sm'
-                      aria-label={`${expanded ? 'Collapse' : 'Expand'} row ${id === undefined ? `${index + 1} (invalid ID)` : String(id)}`}
-                      disabled={id === undefined}
-                      aria-expanded={expanded}
-                      aria-controls={panelId}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        if (id !== undefined) toggleExpanded(id);
-                      }}
-                      color='var(--mantine-color-gray-6)'
-                    >
-                      <Icon
-                        name={expanded ? 'collapse' : 'expand'}
-                        strokeWidth={1.25}
-                        size={18}
-                      />
-                    </ActionIcon>
-                  </Table.Td>
-                )}
-                {cellColumns.map(({ column, terms }) => {
-                  const value = (row as Record<string, unknown>)[
-                    column.dataIndex
-                  ];
-                  return (
-                    <Table.Td
-                      key={column.dataIndex}
-                      ta={column.align}
-                      {...pinProps(column.dataIndex)}
-                      onClick={
-                        column.stopRowClick
-                          ? (event) => event.stopPropagation()
-                          : undefined
-                      }
-                    >
-                      {column.render ? (
-                        column.render(row, index)
-                      ) : value == null ? null : terms.length ? (
-                        <Highlight highlight={terms}>{String(value)}</Highlight>
-                      ) : (
-                        String(value)
-                      )}
-                    </Table.Td>
-                  );
-                })}
-              </Table.Tr>
-              {expandConfig && expanded && (
-                <Table.Tr id={panelId} className={classes.expandPanel}>
-                  <Table.Td colSpan={colSpan}>
-                    {expandConfig.render(row, index)}
-                  </Table.Td>
-                </Table.Tr>
-              )}
-            </Fragment>
-          );
-        })}
+        {!failed && visibleRows.length === 0 && (
+          <BodyMessage colSpan={colSpan}>
+            {emptyState ?? (
+              <Stack align='center' gap='xs' py='md'>
+                <Icon
+                  name='empty'
+                  strokeWidth={1.25}
+                  size={36}
+                  color='var(--mantine-color-dimmed)'
+                />
+                <Text size='sm' c='dimmed'>
+                  {labels.noRecords}
+                </Text>
+              </Stack>
+            )}
+          </BodyMessage>
+        )}
+        {rowEntries.map(({ row, id, key }, index) => (
+          <TableRow
+            key={key}
+            row={row}
+            index={index}
+            id={id}
+            cellColumns={cellColumns}
+            colSpan={colSpan}
+            rowProps={rowProps}
+            onRowClick={onRowClick}
+            selection={
+              selection && {
+                selected: id !== undefined && selectedSet.has(id),
+                selectable: id !== undefined && pageIds.has(id),
+                toggle: () =>
+                  changeSelection(
+                    selectedSet.has(id!)
+                      ? selectedIds.filter((item) => item !== id)
+                      : [...selectedIds, id!],
+                  ),
+              }
+            }
+            expansion={
+              expandable && {
+                expanded: id !== undefined && expandedSet.has(id),
+                offset: expansionOffset,
+                panelId:
+                  id === undefined ? undefined : rowPanelId(panelPrefix, id),
+                onRowClick: expandable.trigger === 'row',
+                toggle: () => toggleExpanded(id!),
+                render: () => expandable.render(row, index),
+              }
+            }
+          />
+        ))}
       </Table.Tbody>
     </Table>
   );
 
-  // Side padding exposes scrolling cells beyond the right-pinned column.
-  const tableContent =
-    minWidth != null || maxHeight != null ? (
-      <Table.ScrollContainer
-        minWidth={minWidth ?? 0}
-        maxHeight={maxHeight}
-        scrollAreaProps={{ scrollbarSize: '8px', offsetScrollbars: 'x' }}
-      >
-        {table}
-      </Table.ScrollContainer>
-    ) : (
-      table
-    );
+  // The outer border sits on the scroll frame, so it stays put while the table scrolls.
+  // Side padding would expose scrolling cells beyond the right-pinned column, so only x is offset.
+  const tableContent = scrolls ? (
+    <Table.ScrollContainer
+      minWidth={minWidth ?? 0}
+      maxHeight={maxHeight}
+      className={withTableBorder ? classes.frame : undefined}
+      style={
+        borderColor
+          ? ({
+              '--dt-border-color': getThemeColor(borderColor, theme),
+            } as CSSProperties)
+          : undefined
+      }
+      scrollAreaProps={{
+        scrollbarSize: '8px',
+        offsetScrollbars: 'x',
+        classNames: { viewport: classes.viewport },
+      }}
+    >
+      {table}
+    </Table.ScrollContainer>
+  ) : (
+    table
+  );
 
   return (
-    <DataTableContext.Provider value={tableState}>
-      {(showStandardToolbar || showBulkToolbar) && (
-        <Box pos='relative'>
-          {showStandardToolbar && (
-            <Box
-              ref={standardToolbarRef}
-              inert={showBulkToolbar}
-              aria-hidden={showBulkToolbar || undefined}
-            >
-              <TableToolbar
-                columns={columns}
-                globalSearch={globalSearch}
-                columnSelector={columnSelector}
-                showTableStatePills={showTableStatePills}
-                showReset={showReset}
-                debounceTime={debounceTime}
-                maxChips={maxChips}
-                inactive={showBulkToolbar}
-              />
-            </Box>
-          )}
-          <Transition
-            mounted={showBulkToolbar}
-            transition='fade'
-            duration={100}
-          >
-            {(styles) => (
-              <Paper
-                ref={bulkToolbarRef}
-                radius='sm'
-                withBorder
-                className={showStandardToolbar ? classes.bulkBar : undefined}
-                style={styles}
+    <DataTableConfigContext.Provider value={config}>
+      <DataTableContext.Provider value={tableState}>
+        <Box className={classes.wrapper}>
+          {(showStandardToolbar || showBulkToolbar) && (
+            <Box className={classes.toolbars}>
+              {showStandardToolbar && (
+                <TableToolbar
+                  ref={standardToolbarRef}
+                  columns={columns}
+                  globalSearch={globalSearch}
+                  columnSelector={columnSelector}
+                  showTableStatePills={showTableStatePills}
+                  showReset={showReset}
+                  debounceTime={debounceTime}
+                  maxChips={maxChips}
+                  inactive={showBulkToolbar}
+                />
+              )}
+              <Transition
+                mounted={showBulkToolbar}
+                transition='fade'
+                duration={100}
               >
-                <Group
-                  justify='space-between'
-                  align='center'
-                  gap='lg'
-                  p={4}
-                  wrap='nowrap'
-                >
-                  {selection?.showSelectionCount !== false && (
-                    <Text fw={600} size='sm' ml='xs'>
-                      {selectedIds.length} rows selected
-                    </Text>
-                  )}
-                  <Group gap='xs' wrap='nowrap'>
-                    {toolbarActions?.map((action, index) => (
-                      <Fragment key={index}>{action}</Fragment>
-                    ))}
-                    {selection?.renderBulkActions?.({
+                {(styles) => (
+                  <BulkActionBar
+                    ref={bulkToolbarRef}
+                    count={selectedIds.length}
+                    showCount={selection?.showSelectionCount !== false}
+                    style={styles}
+                    onClear={clearSelection}
+                    actions={selection?.renderBulkActions?.({
                       ...snapshot(selectedIds),
                       clear: clearSelection,
                     })}
-                    <Tooltip label='Clear selection'>
-                      <ActionIcon
-                        variant='transparent'
-                        size='lg'
-                        aria-label='Clear selection'
-                        onClick={clearSelection}
-                      >
-                        <Icon name='clear' size={20} />
-                      </ActionIcon>
-                    </Tooltip>
-                  </Group>
-                </Group>
-              </Paper>
-            )}
-          </Transition>
+                  />
+                )}
+              </Transition>
+            </Box>
+          )}
+          {selection && (
+            // Always mounted, so screen readers announce the first selection too.
+            <VisuallyHidden role='status'>
+              {selectedIds.length
+                ? labels.selectedCount(selectedIds.length)
+                : ''}
+            </VisuallyHidden>
+          )}
+          <Box pos='relative'>
+            <LoadingOverlay
+              visible={Boolean(loading)}
+              overlayProps={{ radius: 'sm', blur: 2 }}
+              loaderProps={{ type: 'dots', size: 'md', ...loaderProps }}
+            />
+            {tableContent}
+          </Box>
+          {pagination && (
+            <TablePagination
+              page={page.currentPage}
+              pageSize={page.pageSize}
+              total={totalItems}
+              pageSizeOptions={pagination.pageSizeOptions}
+              onChange={tableState.setPagination}
+            />
+          )}
         </Box>
-      )}
-      <Box pos='relative' aria-busy={Boolean(loading)}>
-        <LoadingOverlay
-          visible={Boolean(loading)}
-          zIndex={1000}
-          overlayProps={{ radius: 'sm', blur: 2 }}
-          loaderProps={{ type: 'bars', size: 'sm', ...loaderProps }}
-        />
-        {tableContent}
-      </Box>
-      {error && (
-        <Alert color='red' role='alert' mt='xs'>
-          <Group justify='space-between' gap='sm'>
-            <Text size='sm'>{error}</Text>
-            {onRetry && (
-              <Button size='xs' variant='light' color='red' onClick={onRetry}>
-                Retry
-              </Button>
-            )}
-          </Group>
-        </Alert>
-      )}
-      {pagination && (
-        <TablePagination
-          pagination={pagination}
-          onChange={tableState.setPagination}
-        />
-      )}
-    </DataTableContext.Provider>
+      </DataTableContext.Provider>
+    </DataTableConfigContext.Provider>
   );
 }

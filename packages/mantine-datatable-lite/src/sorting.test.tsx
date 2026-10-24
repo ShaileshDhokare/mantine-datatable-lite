@@ -1,6 +1,5 @@
 import { MantineProvider } from '@mantine/core';
 import {
-  act,
   cleanup,
   fireEvent,
   render,
@@ -72,12 +71,12 @@ test('type-aware sorting keeps nulls last, stable ties, and honors custom sort',
     },
   ];
   expect(
-    sortRows(rows, score, { sortField: 'score', sortOrder: 'asc' }).map(
+    sortRows(rows, score, { field: 'score', order: 'asc' }).map(
       (row) => row.name,
     ),
   ).toEqual(['Apple', 'banana', 'éclair']);
   expect(
-    sortRows(rows, score, { sortField: 'score', sortOrder: 'desc' }).map(
+    sortRows(rows, score, { field: 'score', order: 'desc' }).map(
       (row) => row.name,
     ),
   ).toEqual(['Apple', 'banana', 'éclair']);
@@ -85,7 +84,7 @@ test('type-aware sorting keeps nulls last, stable ties, and honors custom sort',
     sortRows(
       rows,
       [{ dataIndex: 'name', header: 'Name', type: 'string', sortable: true }],
-      { sortField: 'name', sortOrder: 'asc' },
+      { field: 'name', order: 'asc' },
     ).map((row) => row.name),
   ).toEqual(['Apple', 'banana', 'éclair']);
   expect(
@@ -99,7 +98,7 @@ test('type-aware sorting keeps nulls last, stable ties, and honors custom sort',
           sortFn: (a, b) => a.group.length - b.group.length,
         },
       ],
-      { sortField: 'group', sortOrder: 'asc' },
+      { field: 'group', order: 'asc' },
     ).map((row) => row.name),
   ).toEqual(['Apple', 'banana', 'éclair']);
   expect(rows[0].name).toBe('éclair');
@@ -131,49 +130,89 @@ test('number, date, and boolean columns use their declared types', () => {
     },
   ];
   expect(
-    sortRows(rows, columns, { sortField: 'number', sortOrder: 'asc' })[0],
+    sortRows(rows, columns, { field: 'number', order: 'asc' })[0],
   ).toBe(rows[1]);
   expect(
-    sortRows(rows, columns, { sortField: 'date', sortOrder: 'asc' })[0],
+    sortRows(rows, columns, { field: 'date', order: 'asc' })[0],
   ).toBe(rows[1]);
   expect(
-    sortRows(rows, columns, { sortField: 'active', sortOrder: 'asc' })[0],
+    sortRows(rows, columns, { field: 'active', order: 'asc' })[0],
   ).toBe(rows[1]);
   expect(
-    sortRows(rows, columns, { sortField: 'active', sortOrder: 'desc' })[0],
+    sortRows(rows, columns, { field: 'active', order: 'desc' })[0],
   ).toBe(rows[0]);
 });
 
-test('pagination-owned rows stay untouched and the latest request is debounced', () => {
-  vi.useFakeTimers();
+test('server rows stay untouched and every sort click is requested immediately', () => {
   const onChange = vi.fn();
-  const pagination = { currentPage: 1, pageSize: 2, totalItems: 10 };
   render(
     <MantineProvider env='test'>
       <DataTable
-        columns={[{ dataIndex: 'value', header: 'Value', sortable: true }]}
+        mode='server'
+        columns={[
+          {
+            dataIndex: 'value',
+            header: 'Value',
+            sortable: true,
+            defaultSortOrder: 'asc',
+          },
+        ]}
         rows={[{ value: 2 }, { value: 1 }]}
-        pagination={pagination}
+        pagination={{ currentPage: 1, pageSize: 2, totalItems: 10 }}
         onChange={onChange}
       />
     </MantineProvider>,
   );
-  const button = screen.getByRole('button', { name: 'Sort Value: none' });
-  fireEvent.click(button);
-  fireEvent.click(button);
-  expect(screen.getAllByRole('cell').map((cell) => cell.textContent)).toEqual([
-    '2',
-    '1',
-  ]);
-  act(() => vi.advanceTimersByTime(300));
-  expect(onChange).toHaveBeenCalledTimes(1);
-  expect(onChange).toHaveBeenCalledWith({
-    pagination: { ...pagination, from: 1, to: 2 },
-    sorter: { sortField: 'value', sortOrder: 'desc' },
+  const request = (sorter?: { field: string; order: 'asc' | 'desc' }) => ({
+    pagination: { currentPage: 1, pageSize: 2 },
+    sorter,
     filters: [],
     columnSearch: [],
     searchQuery: '',
   });
+  // The initial request carries the column default.
+  expect(onChange).toHaveBeenCalledTimes(1);
+  expect(onChange).toHaveBeenLastCalledWith(
+    request({ field: 'value', order: 'asc' }),
+  );
+  const button = screen.getByRole('button', { name: 'Sort Value: asc' });
+  fireEvent.click(button);
+  expect(onChange).toHaveBeenCalledTimes(2);
+  expect(onChange).toHaveBeenLastCalledWith(
+    request({ field: 'value', order: 'desc' }),
+  );
+  fireEvent.click(button);
+  expect(onChange).toHaveBeenCalledTimes(3);
+  expect(onChange).toHaveBeenLastCalledWith(request(undefined));
+  expect(screen.getAllByRole('cell').map((cell) => cell.textContent)).toEqual([
+    '2',
+    '1',
+  ]);
+});
+
+test('client mode does not report the initial state', () => {
+  const onChange = vi.fn();
+  render(
+    <MantineProvider env='test'>
+      <DataTable
+        columns={[
+          {
+            dataIndex: 'value',
+            header: 'Value',
+            sortable: true,
+            defaultSortOrder: 'asc',
+          },
+        ]}
+        rows={[{ value: 2 }, { value: 1 }]}
+        onChange={onChange}
+      />
+    </MantineProvider>,
+  );
+  expect(onChange).not.toHaveBeenCalled();
+  expect(screen.getAllByRole('cell').map((cell) => cell.textContent)).toEqual([
+    '1',
+    '2',
+  ]);
 });
 
 test('sort submenu selects a direction', async () => {
@@ -192,6 +231,8 @@ test('sort submenu selects a direction', async () => {
       />
     </MantineProvider>,
   );
+  // With a menu, the header sort button is hidden unless showSortIcon is set.
+  expect(screen.queryByRole('button', { name: 'Sort Value: none' })).toBeNull();
   fireEvent.click(screen.getByRole('button', { name: 'Value menu' }));
   for (const label of ['Filter', 'Search', 'Pin', 'Hide']) {
     expect(screen.getByRole('menuitem', { name: label })).toBeTruthy();
@@ -203,6 +244,27 @@ test('sort submenu selects a direction', async () => {
   expect(screen.getByRole('columnheader').getAttribute('aria-sort')).toBe(
     'descending',
   );
+});
+
+test('showSortIcon brings the header button back next to the menu', () => {
+  render(
+    <MantineProvider env='test'>
+      <DataTable
+        columns={[
+          {
+            dataIndex: 'value',
+            header: 'Value',
+            sortable: true,
+            showMenu: true,
+            showSortIcon: true,
+          },
+        ]}
+        rows={[{ value: 2 }]}
+      />
+    </MantineProvider>,
+  );
+  expect(screen.getByRole('button', { name: 'Sort Value: none' })).toBeTruthy();
+  expect(screen.getByRole('button', { name: 'Value menu' })).toBeTruthy();
 });
 
 test('showMenu displays only requested actions even when sorting is disabled', () => {

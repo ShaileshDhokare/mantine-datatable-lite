@@ -1,33 +1,26 @@
-import type { Pagination, PaginationChange } from '../types';
+import type { Pagination } from '../types';
 
-export function resolvePagination(pagination: Pagination) {
-  const pageSize =
-    pagination.pageSize > 0
-      ? pagination.pageSize
-      : pagination.defaultPageSize || 10;
-  const pageCount = Math.max(1, Math.ceil(pagination.totalItems / pageSize));
-  const currentPage = Math.min(Math.max(1, pagination.currentPage), pageCount);
-  const samePage = currentPage === pagination.currentPage;
-  return {
-    pageSize,
-    pageCount,
-    currentPage,
-    from:
-      pagination.totalItems === 0
-        ? 0
-        : samePage && pagination.from != null
-          ? pagination.from
-          : (currentPage - 1) * pageSize + 1,
-    to:
-      pagination.totalItems === 0
-        ? 0
-        : samePage && pagination.to != null
-          ? pagination.to
-          : Math.min(currentPage * pageSize, pagination.totalItems),
-  };
+export const DEFAULT_PAGE_SIZE = 10;
+export const DEFAULT_PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
+
+/** Normalizes the `pagination` prop; undefined when pagination is off. */
+export function paginationConfig(
+  pagination: Pagination | boolean | undefined,
+): Pagination | undefined {
+  if (!pagination) return undefined;
+  return pagination === true ? {} : pagination;
 }
 
-export function paginationChange(pagination: Pagination): PaginationChange {
-  const { currentPage, pageSize, from, to } = resolvePagination(pagination);
-  return { currentPage, pageSize, from, to, totalItems: pagination.totalItems };
+/** Clamps a page to the available range and computes the shown item range. */
+export function resolvePage(page: number, pageSize: number, total: number) {
+  const size = pageSize > 0 ? pageSize : DEFAULT_PAGE_SIZE;
+  const pageCount = Math.max(1, Math.ceil(total / size));
+  const currentPage = Math.min(Math.max(1, Math.floor(page) || 1), pageCount);
+  return {
+    pageSize: size,
+    pageCount,
+    currentPage,
+    from: total === 0 ? 0 : (currentPage - 1) * size + 1,
+    to: Math.min(currentPage * size, total),
+  };
 }

@@ -18,9 +18,9 @@ test('fetches JSON on every request with query parameters and returns the reques
   const { fetchEmployeePage } = await import('./serverEmployees');
   const signal = new AbortController().signal;
   const request = {
-    pagination: { currentPage: 1, pageSize: 1, totalItems: 0 },
+    pagination: { currentPage: 1, pageSize: 1 },
     filters: [{ field: 'department', value: ['Engineering'] }],
-    sorter: { sortField: 'salary', sortOrder: 'desc' as const },
+    sorter: { field: 'salary', order: 'desc' as const },
     searchQuery: 'engineer',
     columnSearch: [],
   };

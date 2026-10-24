@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { DataTableColumn, PinnedColumns } from '../types';
+import type { DataTableColumn } from '../types';
+import type { PinnedColumns } from '../utils/columnLayoutStorage';
 
 export const CONTROL_COLUMN_WIDTH = 48;
 

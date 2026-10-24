@@ -7,6 +7,8 @@ import {
   Text,
   UnstyledButton,
 } from '@mantine/core';
+import { useDataTableConfig } from '../../context/DataTableConfigContext';
+import classes from '../../styles/styles.module.css';
 import type { StatePill } from '../../utils/describeState';
 
 export function AppliedChips({
@@ -18,6 +20,7 @@ export function AppliedChips({
   maxChips?: number;
   inactive?: boolean;
 }) {
+  const { labels } = useDataTableConfig();
   const limit = Math.max(0, Math.floor(maxChips));
   const renderPill = (pill: StatePill) => (
     <Pill
@@ -27,11 +30,11 @@ export function AppliedChips({
       w={'min-content'}
       onRemove={pill.remove}
       removeButtonProps={{
-        'aria-label': `Remove ${pill.label}`,
+        'aria-label': labels.removePill(pill.label),
         'aria-hidden': false,
         tabIndex: 0,
       }}
-      bg='gray.3'
+      className={classes.pill}
     >
       <Text span fw={500} inherit>
         {pill.fieldLabel}
@@ -56,7 +59,7 @@ export function AppliedChips({
         <Popover position='bottom-start' withinPortal disabled={inactive}>
           <Popover.Target>
             <UnstyledButton fz='xs' c='dimmed' fw={500}>
-              +{pills.length - limit} more
+              {labels.morePills(pills.length - limit)}
             </UnstyledButton>
           </Popover.Target>
           <Popover.Dropdown p={8}>

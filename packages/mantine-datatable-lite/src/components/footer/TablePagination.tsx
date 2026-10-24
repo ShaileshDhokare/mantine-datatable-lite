@@ -5,11 +5,9 @@ import {
   Text,
 } from '@mantine/core';
 import type { SVGProps } from 'react';
+import { useDataTableConfig } from '../../context/DataTableConfigContext';
 import { Icon } from '../../icons/Icon';
-import type { Pagination } from '../../types';
-import { resolvePagination } from '../../utils/pagination';
-
-const defaultPageSizeOptions = [10, 20, 50, 100];
+import { DEFAULT_PAGE_SIZE_OPTIONS, resolvePage } from '../../utils/pagination';
 
 const NextIcon = (props: SVGProps<SVGSVGElement>) => (
   <Icon size={18} {...props} name='nextPage' />
@@ -33,26 +31,30 @@ const DotsIcon = (props: SVGProps<SVGSVGElement>) => (
 );
 
 export function TablePagination({
-  pagination,
+  page,
+  pageSize: requestedPageSize,
+  total,
+  pageSizeOptions,
   onChange,
 }: {
-  pagination: Pagination;
+  page: number;
+  pageSize: number;
+  total: number;
+  pageSizeOptions?: number[] | false;
   onChange: (page: number, pageSize: number) => void;
 }) {
-  const { totalItems } = pagination;
-  const {
-    pageSize,
-    pageCount,
-    currentPage,
-    from: firstItem,
-    to: lastItem,
-  } = resolvePagination(pagination);
+  const { labels } = useDataTableConfig();
+  const { pageSize, pageCount, currentPage, from, to } = resolvePage(
+    page,
+    requestedPageSize,
+    total,
+  );
   const options =
-    pagination.pageSizeOptions === false
+    pageSizeOptions === false
       ? null
       : [
           ...new Set([
-            ...(pagination.pageSizeOptions ?? defaultPageSizeOptions),
+            ...(pageSizeOptions ?? DEFAULT_PAGE_SIZE_OPTIONS),
             pageSize,
           ]),
         ].sort((a, b) => a - b);
@@ -60,16 +62,18 @@ export function TablePagination({
   return (
     <Group justify='space-between' align='center' gap='md' wrap='wrap' p='xs'>
       <Text size='sm' c='dimmed'>
-        Showing {firstItem} - {lastItem} of {totalItems} items
+        {labels.pageRange({ from, to, total })}
       </Text>
       <Group gap='sm' wrap='wrap' justify='flex-end'>
         <MantinePagination
           total={pageCount}
           value={currentPage}
-          onChange={(page) => onChange(page, pageSize)}
-          disabled={totalItems === 0}
+          onChange={(next) => onChange(next, pageSize)}
+          disabled={total === 0}
           withEdges
-          getControlProps={(control) => ({ 'aria-label': `${control} page` })}
+          getControlProps={(control) => ({
+            'aria-label': labels.pageControl(control),
+          })}
           nextIcon={NextIcon}
           previousIcon={PreviousIcon}
           firstIcon={FirstIcon}
@@ -78,7 +82,7 @@ export function TablePagination({
         />
         {options && (
           <Select
-            aria-label='Rows per page'
+            aria-label={labels.rowsPerPage}
             size='sm'
             w={120}
             allowDeselect={false}
@@ -93,7 +97,7 @@ export function TablePagination({
             value={String(pageSize)}
             data={options.map((size) => ({
               value: String(size),
-              label: `${size} / page`,
+              label: labels.pageSize(size),
             }))}
             onChange={(value) => {
               if (value) onChange(1, Number(value));

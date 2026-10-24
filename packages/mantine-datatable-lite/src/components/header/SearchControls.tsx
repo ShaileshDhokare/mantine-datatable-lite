@@ -1,9 +1,10 @@
-import { columnLabel } from '../../utils/columnLabel';
 import { Box, Button, Divider, Group, TextInput } from '@mantine/core';
 import { useState } from 'react';
+import { useDataTableConfig } from '../../context/DataTableConfigContext';
 import { useDataTableContext } from '../../context/DataTableContext';
 import { Icon } from '../../icons/Icon';
 import type { DataTableColumn } from '../../types';
+import { columnLabel } from '../../utils/columnLabel';
 
 export function SearchControls<T>({
   column,
@@ -13,9 +14,10 @@ export function SearchControls<T>({
   onDone: () => void;
 }) {
   const { columnSearch, setColumnSearch } = useDataTableContext();
+  const { labels } = useDataTableConfig();
+  const name = `${labels.search} ${columnLabel(column)}`;
   const [draft, setDraft] = useState(
-    columnSearch.find((item) => item.searchField === column.dataIndex)
-      ?.searchValue ?? '',
+    columnSearch.find((item) => item.field === column.dataIndex)?.value ?? '',
   );
 
   function commit(value: string) {
@@ -33,8 +35,8 @@ export function SearchControls<T>({
         <TextInput
           size='xs'
           autoFocus
-          aria-label={`Search ${columnLabel(column)}`}
-          placeholder={`Search ${columnLabel(column)}`}
+          aria-label={name}
+          placeholder={name}
           leftSection={<Icon name='search' size={14} />}
           value={draft}
           onChange={(event) => setDraft(event.currentTarget.value)}
@@ -43,10 +45,10 @@ export function SearchControls<T>({
       <Divider />
       <Group justify='space-between' p={6}>
         <Button size='xs' variant='subtle' onClick={() => commit('')}>
-          Reset
+          {labels.reset}
         </Button>
         <Button size='xs' onClick={() => commit(draft)}>
-          Apply
+          {labels.apply}
         </Button>
       </Group>
     </Box>

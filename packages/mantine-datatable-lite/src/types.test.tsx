@@ -1,7 +1,9 @@
+import { DatePickerInput } from '@mantine/dates';
 import { expectTypeOf, test } from 'vitest';
 import { DataTable } from './index';
 import type {
   DataTableProps,
+  DateInputProps,
   IdAccessor,
   NumericFilterValue,
   DateFilterValue,
@@ -48,4 +50,40 @@ test('row inference and public filter/identity contracts remain type safe', () =
   expectTypeOf(invalidRange).not.toBeAny();
   expectTypeOf(invalidScalar).not.toBeAny();
   expectTypeOf(invalidAccessor).not.toBeAny();
+});
+
+test('pagination, selection, expansion and date input accept their simplest forms', () => {
+  type Row = { id: number; name: string; city: { name: string } };
+  const rows: Row[] = [{ id: 1, name: 'A', city: { name: 'Pune' } }];
+  const columns = [{ dataIndex: 'name' as const, header: 'Name' }];
+  const element = (
+    <DataTable
+      rows={rows}
+      columns={[
+        ...columns,
+        {
+          dataIndex: 'city',
+          header: 'City',
+          getValue: (row) => {
+            expectTypeOf(row).toEqualTypeOf<Row>();
+            return row.city.name;
+          },
+        },
+      ]}
+      pagination
+      selection={{ renderBulkActions: ({ ids }) => ids.length }}
+      dateInput={DatePickerInput}
+    />
+  );
+  expectTypeOf(element).not.toBeAny();
+  expectTypeOf(DatePickerInput).toExtend<
+    NonNullable<DataTableProps<Row>['dateInput']>
+  >();
+  expectTypeOf<DateInputProps['value']>().toEqualTypeOf<string | null>();
+  // @ts-expect-error Expansion takes a config object, not a boolean.
+  const invalidExpandable = <DataTable rows={rows} columns={columns} expandable />;
+  // @ts-expect-error The bulk toolbar prop was removed; use selection.renderBulkActions.
+  const removedToolbar = <DataTable rows={rows} columns={columns} toolbar />;
+  expectTypeOf(invalidExpandable).not.toBeAny();
+  expectTypeOf(removedToolbar).not.toBeAny();
 });

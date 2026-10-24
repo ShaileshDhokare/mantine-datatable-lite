@@ -1,0 +1,83 @@
+import type { DataTableLabels } from './types';
+
+const pageControls = {
+  first: 'First page',
+  previous: 'Previous page',
+  next: 'Next page',
+  last: 'Last page',
+} as const;
+
+export const defaultLabels: DataTableLabels = {
+  noRecords: 'No records found',
+  apply: 'Apply',
+  reset: 'Reset',
+  retry: 'Retry',
+  loadError: 'Something went wrong while loading the data.',
+  globalSearch: 'Search all columns',
+  openGlobalSearch: 'Open global search',
+  clearGlobalSearch: 'Clear global search',
+  selectColumns: 'Select columns',
+  resetTable: 'Reset table state',
+  sort: 'Sort',
+  sortAsc: 'Sort Ascending',
+  sortDesc: 'Sort Descending',
+  clearSort: 'Clear Sorting',
+  sortColumn: (column, order) => `Sort ${column}: ${order ?? 'none'}`,
+  sortOrder: { asc: 'ASC', desc: 'DESC' },
+  columnMenu: (column) => `${column} menu`,
+  filter: 'Filter',
+  search: 'Search',
+  searchOptions: 'Search in filters',
+  noOptions: 'No options',
+  filterOperator: (column) => `${column} filter operator`,
+  filterInput: (column, input) => `${column} filter ${input.toLowerCase()}`,
+  true: 'True',
+  false: 'False',
+  pin: 'Pin',
+  pinLeft: 'Pin to left',
+  pinRight: 'Pin to right',
+  moveLeft: 'Move left',
+  moveRight: 'Move right',
+  unpin: 'Unpin',
+  hide: 'Hide',
+  from: 'From',
+  to: 'To',
+  value: 'Value',
+  operators: {
+    eq: 'Equal to',
+    neq: 'Not equal to',
+    gt: 'Greater than',
+    gte: 'Greater than or equal',
+    lt: 'Less than',
+    lte: 'Less than or equal',
+    between: 'Between',
+  },
+  sortedBy: 'Sort by:',
+  searchPill: 'Search:',
+  hiddenPill: 'Hidden:',
+  morePills: (count) => `+${count} more`,
+  removePill: (pill) => `Remove ${pill}`,
+  formatDate: (date) => date.toLocaleDateString(),
+  selectAll: 'Select all rows on this page',
+  selectRow: 'Select row',
+  expandRow: 'Expand row',
+  collapseRow: 'Collapse row',
+  clearSelection: 'Clear selection',
+  selectedCount: (count) => `${count} ${count === 1 ? 'row' : 'rows'} selected`,
+  pageRange: ({ from, to, total }) => `Showing ${from} - ${to} of ${total} items`,
+  pageSize: (size) => `${size} / page`,
+  rowsPerPage: 'Rows per page',
+  pageControl: (control) => pageControls[control],
+};
+
+export function mergeLabels(
+  labels: Partial<DataTableLabels> | undefined,
+): DataTableLabels {
+  if (!labels) return defaultLabels;
+  return {
+    ...defaultLabels,
+    ...labels,
+    operators: { ...defaultLabels.operators, ...labels.operators },
+    sortOrder: { ...defaultLabels.sortOrder, ...labels.sortOrder },
+  };
+}

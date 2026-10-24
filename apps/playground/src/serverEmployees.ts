@@ -10,13 +10,10 @@ function requestUrl(request: TableChange) {
   if (page) {
     params.set('currentPage', String(page.currentPage));
     params.set('pageSize', String(page.pageSize));
-    params.set('totalItems', String(page.totalItems));
-    if (page.from != null) params.set('from', String(page.from));
-    if (page.to != null) params.set('to', String(page.to));
   }
   if (request.sorter) {
-    params.set('sortField', request.sorter.sortField);
-    params.set('sortOrder', request.sorter.sortOrder);
+    params.set('sortField', request.sorter.field);
+    params.set('sortOrder', request.sorter.order);
   }
   params.set('filters', JSON.stringify(request.filters));
   params.set('columnSearch', JSON.stringify(request.columnSearch));

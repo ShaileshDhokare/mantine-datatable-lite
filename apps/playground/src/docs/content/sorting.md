@@ -12,6 +12,6 @@ const columns: DataTableColumn<Employee>[] = [
 <DataTable columns={columns} rows={employees} />
 ```
 
-`sortFn` defines the ascending comparison; the table reverses it for descending order. Only one column is sorted at a time. `showMenu` exposes explicit sort actions, and `showSortIcon: false` hides the dedicated icon.
+`sortFn` defines the ascending comparison; the table reverses it for descending order. Only one column is sorted at a time. `showMenu` exposes explicit sort actions. With a menu, the header sort icon is hidden unless you set `showSortIcon: true`.
 
-Without `pagination`, the table sorts a copy of your records locally. With `pagination`, handle `onChange.sorter` and supply the sorted page yourself. See [server-side data](#/server) for the complete request flow.
+In client mode, the table sorts a copy of your records. With `mode="server"`, handle `onChange.sorter` and supply the sorted page yourself. See [server-side data](#/server) for the complete request flow.

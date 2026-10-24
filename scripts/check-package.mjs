@@ -41,12 +41,18 @@ try {
   assert.equal(Object.keys(installedPackage.dependencies ?? {}).length, 0, 'The installed artifact must keep runtime dependencies as peers.');
   const gzipBytes = gzipSync(readFileSync(join(installed, 'dist/index.js'))).length + gzipSync(readFileSync(join(installed, 'dist/styles.css'))).length;
   assert(gzipBytes <= 25 * 1024, `Library JS + CSS exceeds the 25 KiB gzip budget: ${gzipBytes}`);
+  for (const file of ['dist/index.js', 'dist/index.cjs']) {
+    const code = readFileSync(join(installed, file), 'utf8');
+    assert(/^['"]use client['"];/.test(code), `${file} must start with 'use client' for React Server Components.`);
+    assert(code.includes('process.env.NODE_ENV'), `${file} must leave dev warnings to the consumer's bundler.`);
+    assert(!code.includes('@mantine/dates'), `${file} must not import @mantine/dates; apps pass a date input instead.`);
+  }
 
   const api = `
 import { DataTable, Icon, rowActionsColumn } from '${pkg.name}';
-import type { DataTableColumn, DataTableProps, ColumnType, IconName, IconProps, MenuOption, Sorter, SortOrder, Filter, FilterValue, FilterOption, NumericOperator, FilterRenderContext, ColumnSearch, Pagination, PaginationChange, TableChange, RowId, IdAccessor, NumericFilterValue, StringFilterValue, BooleanFilterValue, DateFilterValue, PinnedColumns, SelectionSnapshot, SelectionConfig, ExpandableConfig } from '${pkg.name}';
+import type { DataTableColumn, DataTableProps, DataTableLabels, DateInputProps, ColumnType, IconName, IconProps, MenuOption, Sorter, SortOrder, Filter, FilterValue, FilterOption, NumericOperator, FilterRenderContext, ColumnSearch, Pagination, PaginationChange, TableChange, RowId, IdAccessor, NumericFilterValue, StringFilterValue, BooleanFilterValue, DateFilterValue, SelectionSnapshot, SelectionConfig, ExpandableConfig } from '${pkg.name}';
 type Row = { id: number; name: string };
-export type PublicTypes = [DataTableColumn<Row>, DataTableProps<Row>, ColumnType, IconName, IconProps, MenuOption, Sorter, SortOrder, Filter, FilterValue, FilterOption, NumericOperator, FilterRenderContext, ColumnSearch, Pagination, PaginationChange, TableChange, RowId, IdAccessor<Row>, NumericFilterValue, StringFilterValue, BooleanFilterValue, DateFilterValue, PinnedColumns, SelectionSnapshot<Row>, SelectionConfig<Row>, ExpandableConfig<Row>];
+export type PublicTypes = [DataTableColumn<Row>, DataTableProps<Row>, DataTableLabels, DateInputProps, ColumnType, IconName, IconProps, MenuOption, Sorter, SortOrder, Filter, FilterValue, FilterOption, NumericOperator, FilterRenderContext, ColumnSearch, Pagination, PaginationChange, TableChange, RowId, IdAccessor<Row>, NumericFilterValue, StringFilterValue, BooleanFilterValue, DateFilterValue, SelectionSnapshot<Row>, SelectionConfig<Row>, ExpandableConfig<Row>];
 export const actions = rowActionsColumn<Row>({ render: (row) => row.name });
 export const table = DataTable<Row>;
 export const icon = Icon;

@@ -1,0 +1,4 @@
+node_modules/
+dist/
+# SQLite database, recreated and seeded on first start
+data/

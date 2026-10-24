@@ -1,13 +1,25 @@
-import { useEffect, useEffectEvent, useRef } from 'react';
+import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import type { RowId, SelectionConfig, SelectionSnapshot } from '../types';
 import type { RowEntry } from './useRowIdentity';
 
+const NO_IDS: RowId[] = [];
+
+/**
+ * Controlled (`selectedIds`) or table-managed selection. Selection clears when
+ * filters or searches change (`queryKey`); sorting and paging keep it.
+ */
 export function useSelection<T>(
   entries: RowEntry<T>[],
   selection: SelectionConfig<T> | undefined,
-  query: SelectionSnapshot<T>['query'],
+  queryKey: string,
 ) {
-  const selectedIds = selection?.selectedIds ?? [];
+  const controlled = selection?.selectedIds !== undefined;
+  const [local, setLocal] = useState({ ids: NO_IDS, queryKey });
+  const selectedIds = controlled
+    ? selection.selectedIds!
+    : local.queryKey === queryKey
+      ? local.ids
+      : NO_IDS;
   const selectedSet = new Set(selectedIds);
   const pageIds = new Set(
     entries.flatMap(({ row, id }) =>
@@ -24,17 +36,15 @@ export function useSelection<T>(
   function snapshot(ids: RowId[]): SelectionSnapshot<T> {
     const set = new Set(ids);
     return {
-      kind: 'include',
       ids,
-      count: ids.length,
-      query,
       loadedRows: entries
         .filter(({ id }) => id !== undefined && set.has(id))
         .map(({ row }) => row),
     };
   }
   function changeSelection(ids: RowId[]) {
-    selection?.onChange(snapshot(ids));
+    if (!controlled) setLocal({ ids, queryKey });
+    selection?.onChange?.(snapshot(ids));
   }
   function togglePage() {
     changeSelection(
@@ -43,16 +53,21 @@ export function useSelection<T>(
         : [...new Set([...selectedIds, ...pageIds])],
     );
   }
-  const querySignature = JSON.stringify(query);
-  const previousQuery = useRef(querySignature);
-  const resetForQuery = useEffectEvent(() => {
-    if (previousQuery.current === querySignature) return;
-    previousQuery.current = querySignature;
-    if (selectedIds.length) changeSelection([]);
+
+  // Table-managed selection is already empty for a new query; tell the caller.
+  const previousQuery = useRef(queryKey);
+  const reportCleared = useEffectEvent(() => {
+    const previous = previousQuery.current;
+    if (previous === queryKey) return;
+    previousQuery.current = queryKey;
+    const hadSelection = controlled
+      ? selectedIds.length > 0
+      : local.queryKey === previous && local.ids.length > 0;
+    if (hadSelection) selection?.onChange?.(snapshot([]));
   });
   useEffect(() => {
-    resetForQuery();
-  }, [querySignature]);
+    reportCleared();
+  }, [queryKey]);
 
   return {
     selectedIds,

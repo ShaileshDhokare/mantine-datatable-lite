@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { DataList, Stack, Text } from '@mantine/core';
 import { DataTable, type DataTableColumn } from 'mantine-datatable-lite';
 import { useScenario } from '../useScenario';

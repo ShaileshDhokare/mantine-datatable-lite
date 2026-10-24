@@ -10,6 +10,8 @@ import {
 import { afterEach, expect, test, vi } from 'vitest';
 import { DataTable } from './components/DataTable';
 import { AppliedChips } from './components/toolbar/AppliedChips';
+import { defaultLabels } from './labels';
+import classes from './styles/styles.module.css';
 import { describeState, type StatePill } from './utils/describeState';
 
 afterEach(() => {
@@ -212,25 +214,29 @@ test('describeState labels numeric and date filter shapes', () => {
     },
   ];
   const noop = vi.fn();
-  const pills = describeState(columns, {
-    filters: [
-      { field: 'age', value: { operator: 'between', value: [20, 30] } },
-      {
-        field: 'joined',
-        value: { operator: 'gte', value: new Date(2024, 0, 1) },
-      },
-      { field: 'active', value: [true] },
-    ],
-    columnSearch: [],
-    searchQuery: '',
-    hiddenColumns: [],
-    setSort: noop,
-    setFilter: noop,
-    setColumnSearch: noop,
-    setSearchQuery: noop,
-    setColumnHidden: noop,
-  });
-  expect(pills[0].label).toBe('Age: between 20 and 30');
+  const pills = describeState(
+    columns,
+    {
+      filters: [
+        { field: 'age', value: { operator: 'between', value: [20, 30] } },
+        {
+          field: 'joined',
+          value: { operator: 'gte', value: new Date(2024, 0, 1) },
+        },
+        { field: 'active', value: [true] },
+      ],
+      columnSearch: [],
+      searchQuery: '',
+      hiddenColumns: [],
+      setSort: noop,
+      setFilter: noop,
+      setColumnSearch: noop,
+      setSearchQuery: noop,
+      setColumnHidden: noop,
+    },
+    defaultLabels,
+  );
+  expect(pills[0].label).toBe('Age: 20 – 30');
   expect(pills[1].label).toContain('Joined: ≥ ');
   expect(pills[2].label).toBe('Status: Active');
 });
@@ -360,7 +366,7 @@ test('global search clear action clears the applied query and pill', () => {
   expect(screen.getAllByRole('cell')).toHaveLength(2);
 });
 
-test('all pills use gray.3 and emphasize labels and search terms', () => {
+test('all pills use the theme-aware pill style and emphasize labels and search terms', () => {
   const remove = vi.fn();
   const pills: StatePill[] = [
     {
@@ -406,10 +412,9 @@ test('all pills use gray.3 and emphasize labels and search terms', () => {
       <AppliedChips pills={pills} />
     </MantineProvider>,
   );
+  expect(classes.pill).toBeTruthy();
   for (const item of pills) {
-    expect(pill(item.label).style.background).toBe(
-      'var(--mantine-color-gray-3)',
-    );
+    expect(pill(item.label).classList.contains(classes.pill)).toBe(true);
   }
   expect(pill('Name: %Ava%').textContent).toBe('Name: %Ava%');
   const emphasized = pill('Name: %Ava%').querySelectorAll('.mantine-Text-root');

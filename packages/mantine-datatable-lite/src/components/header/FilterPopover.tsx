@@ -1,8 +1,12 @@
-import { columnLabel } from '../../utils/columnLabel';
 import { ActionIcon, Popover } from '@mantine/core';
-import { useDataTableContext } from '../../context/DataTableContext';
+import { useDataTableConfig } from '../../context/DataTableConfigContext';
+import {
+  useDataTableContext,
+  useHeaderPopover,
+} from '../../context/DataTableContext';
 import { Icon } from '../../icons/Icon';
 import type { DataTableColumn } from '../../types';
+import { columnLabel } from '../../utils/columnLabel';
 import { FilterControls } from './FilterControls';
 
 export function FilterPopover<T>({
@@ -14,15 +18,15 @@ export function FilterPopover<T>({
   rows: T[];
   serverMode: boolean;
 }) {
-  const { filters, openFilter, setOpenFilter, setOpenSearch } =
-    useDataTableContext();
-  const opened = openFilter === column.dataIndex;
+  const { filters } = useDataTableContext();
+  const { labels } = useDataTableConfig();
+  const { opened, setOpened } = useHeaderPopover(`filter:${column.dataIndex}`);
   const active = filters.some((filter) => filter.field === column.dataIndex);
 
   return (
     <Popover
       opened={opened}
-      onChange={(next) => setOpenFilter(next ? column.dataIndex : null)}
+      onChange={setOpened}
       position='bottom-end'
       offset={0}
       width='auto'
@@ -37,13 +41,10 @@ export function FilterPopover<T>({
           color={
             active
               ? 'var(--mantine-primary-color-filled)'
-              : 'var(--mantine-color-gray-6)'
+              : 'var(--mantine-color-dimmed)'
           }
-          aria-label={`Filter ${columnLabel(column)}`}
-          onClick={() => {
-            setOpenSearch(null);
-            setOpenFilter(opened ? null : column.dataIndex);
-          }}
+          aria-label={`${labels.filter} ${columnLabel(column)}`}
+          onClick={() => setOpened(!opened)}
         >
           <Icon
             name='filter'
@@ -59,7 +60,7 @@ export function FilterPopover<T>({
             column={column}
             rows={rows}
             serverMode={serverMode}
-            onDone={() => setOpenFilter(null)}
+            onDone={() => setOpened(false)}
           />
         )}
       </Popover.Dropdown>

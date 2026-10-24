@@ -5,6 +5,8 @@ export { rowActionsColumn } from './rowActionsColumn';
 export type {
   DataTableColumn,
   DataTableProps,
+  DataTableLabels,
+  DateInputProps,
   ColumnType,
   IconName,
   MenuOption,
@@ -25,7 +27,6 @@ export type {
   StringFilterValue,
   BooleanFilterValue,
   DateFilterValue,
-  PinnedColumns,
   SelectionSnapshot,
   SelectionConfig,
   ExpandableConfig,

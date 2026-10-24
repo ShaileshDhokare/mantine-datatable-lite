@@ -1,11 +1,10 @@
 # mantine-datatable-lite
 
-A typed DataTable for **Mantine 9.6+ and React 19.3+**. Version
-`0.1.0-alpha.0` is [published on npm](https://www.npmjs.com/package/mantine-datatable-lite)
-under the MIT license.
+A typed DataTable for **Mantine 9.6+ and React 19.2+**, [published on
+npm](https://www.npmjs.com/package/mantine-datatable-lite) under the MIT license.
 
 ```sh
-npm install --save-exact mantine-datatable-lite@alpha
+npm install --save-exact mantine-datatable-lite@next
 ```
 
 See the [package README](packages/mantine-datatable-lite/README.md) for installation,
@@ -16,6 +15,14 @@ reuses the interactive playground with Markdown guides, highlighted code, live
 demos and a generated API reference. See [the docs setup guide](apps/playground/README.md)
 for editing content and publishing to GitHub Pages.
 
+## Examples
+
+[`examples/`](examples) holds standalone apps for local testing and reference,
+such as a [server-mode employee directory](examples/server-mode) built with
+React, Mantine, axios, Express, and SQLite. They link the local library but are
+not workspaces, so they never affect the package, the docs build, or root
+`npm` commands.
+
 ## Local development
 
 Use Node.js 24 and npm 11. From the repository root:
@@ -25,17 +32,16 @@ npm ci
 npm run dev:playground
 ```
 
-The playground installs `mantine-datatable-lite` from npm's `alpha` tag. The
-lockfile records the exact published version. A registry tag keeps npm from
-substituting the local library workspace when its version matches.
-
-Use `npm run build:lib`, `npm test`, and `npm run check:package` to develop and
-verify the local library. Local library changes reach the playground after a new
-alpha is published and its dependency is updated:
+The playground links the local library workspace (`file:` dependency), so it
+always runs the current source. Its `dev` and `build` scripts build the library
+first. For live library changes while the playground runs, also start:
 
 ```sh
-npm update mantine-datatable-lite --workspace playground
+npm run dev:lib
 ```
+
+Use `npm run build:lib`, `npm test`, and `npm run check:package` to develop and
+verify the local library.
 
 ```sh
 npm run check:release
@@ -50,7 +56,16 @@ npm and applies the same consumer checks to that artifact.
 
 ## Publishing
 
-Package releases are published manually through the npm CLI. The documentation
-has a separate GitHub Pages workflow; it does not publish the npm package.
-See [RELEASING.md](RELEASING.md) for validation, publishing, and updating the
-playground's installed release.
+Package releases are published manually through the npm CLI. Prereleases use
+their own dist-tag (`alpha`, or `next` for release candidates), which
+`scripts/validate-release.mjs` checks against `publishConfig.tag`:
+
+```sh
+npm run check:release
+npm publish --workspace packages/mantine-datatable-lite --access public --tag next --dry-run
+npm publish --workspace packages/mantine-datatable-lite --access public --tag next
+npm run check:published
+```
+
+The documentation has a separate GitHub Pages workflow; it does not publish the
+npm package.

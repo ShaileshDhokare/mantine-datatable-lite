@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { SegmentedControl, Stack, Switch, Text } from '@mantine/core';
+import { DatePickerInput } from '@mantine/dates';
 import { DataTable, type DataTableColumn } from 'mantine-datatable-lite';
 import { useScenario } from '../useScenario';
 import { PlaygroundLayout } from '../components/PlaygroundLayout';
@@ -9,7 +10,7 @@ const scenarios = [
   { id: 'string', label: 'String values', description: 'Select one or more departments. Option search is available when enabled.' },
   { id: 'boolean', label: 'Boolean values', description: 'Filter active and inactive employees with checkboxes.' },
   { id: 'number', label: 'Number operators', description: 'Filter salary with comparisons or inclusive Between bounds.' },
-  { id: 'date', label: 'Date operators', description: 'Filter join dates with Mantine date pickers.' },
+  { id: 'date', label: 'Date operators', description: "Filter join dates with the native date input or Mantine's date picker." },
   { id: 'menuString', label: 'String from menu', description: 'Filter string values from the column menu alone.' },
   { id: 'menuBoolean', label: 'Boolean from menu', description: 'Filter boolean values from the column menu alone.' },
   { id: 'menuNumber', label: 'Number from menu', description: 'Use number operators from the column menu alone.' },
@@ -19,7 +20,6 @@ const scenarios = [
   { id: 'custom', label: 'Custom predicate', description: 'Filter roles using a custom seniority predicate.' },
   { id: 'empty', label: 'No matching records', description: 'See the default empty state, then try custom content or Reset.' },
 ] as const;
-type FilteringScenario = (typeof scenarios)[number]['id'];
 
 export function FilteringPage() {
   const [active, setActive] = useScenario(scenarios);
@@ -33,6 +33,7 @@ export function FilteringPage() {
   const [rowBorders, setRowBorders] = useState(true);
   const [rowCount, setRowCount] = useState('30');
   const [customEmpty, setCustomEmpty] = useState(false);
+  const [mantinePicker, setMantinePicker] = useState(true);
 
   const menuOnly = active.startsWith('menu');
   const filterIcon = !menuOnly && showFilterIcon;
@@ -105,6 +106,9 @@ export function FilteringPage() {
       onChange={(event) => setRowBorders(event.currentTarget.checked)} />
     <Text size='sm' fw={500}>Rows shown</Text>
     <SegmentedControl fullWidth data={['10', '30']} value={rowCount} onChange={setRowCount} />
+    {(active === 'date' || active === 'menuDate') && <Switch label='Mantine date picker'
+      description='Off uses the native date input.' checked={mantinePicker}
+      onChange={(event) => setMantinePicker(event.currentTarget.checked)} />}
     {active === 'empty' && <Switch label='Custom empty state' checked={customEmpty}
       onChange={(event) => setCustomEmpty(event.currentTarget.checked)} />}
   </Stack>;
@@ -115,6 +119,7 @@ export function FilteringPage() {
       minWidth={active === 'multiple' ? 900 : 560}
       withTableBorder={tableBorder} withColumnBorders={columnBorders} withRowBorders={rowBorders}
       emptyState={active === 'empty' && customEmpty ? <Text size='sm' c='grape'>No employees match this view</Text> : undefined}
+      dateInput={mantinePicker ? DatePickerInput : undefined}
     />
   </PlaygroundLayout>;
 }

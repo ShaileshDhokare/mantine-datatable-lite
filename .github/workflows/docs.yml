@@ -5,12 +5,16 @@ on:
     branches: [master]
     paths:
       - 'apps/playground/**'
+      # The site builds the library from source and generates its API reference.
+      - 'packages/mantine-datatable-lite/**'
       - 'package.json'
       - 'package-lock.json'
       - '.github/workflows/docs.yml'
   pull_request:
     paths:
       - 'apps/playground/**'
+      # The site builds the library from source and generates its API reference.
+      - 'packages/mantine-datatable-lite/**'
       - 'package.json'
       - 'package-lock.json'
       - '.github/workflows/docs.yml'

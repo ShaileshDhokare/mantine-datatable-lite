@@ -24,7 +24,7 @@ const scenarios = [
     id: 'all',
     label: 'Select any row',
     description:
-      'Select individual rows or all visible rows, then use the bulk toolbar.',
+      'Select individual rows or all visible rows, then use the bulk action bar.',
   },
   {
     id: 'eligible',
@@ -88,19 +88,6 @@ export function SelectionPage() {
         rows={rows}
         withTableBorder
         withRowBorders
-        toolbar
-        toolbarActions={[
-          <Tooltip key='log' label='Log selected rows'>
-            <ActionIcon
-              aria-label='Log selected rows'
-              variant='default'
-              size='lg'
-              onClick={() => console.log(selectedRows())}
-            >
-              <Icon name='show' size={20} />
-            </ActionIcon>
-          </Tooltip>,
-        ]}
         selection={{
           selectedIds,
           onChange: onSelectionChange,
@@ -108,15 +95,22 @@ export function SelectionPage() {
             active === 'eligible' ? (row) => row.isActive : undefined,
           renderBulkActions: ({ loadedRows }) => (
             <Group gap='xs'>
+              <Tooltip label='Log selected rows'>
+                <ActionIcon
+                  aria-label='Log selected rows'
+                  variant='default'
+                  size='lg'
+                  onClick={() => console.log(loadedRows)}
+                >
+                  <Icon name='show' size={20} />
+                </ActionIcon>
+              </Tooltip>
               <Tooltip label='Delete selected rows'>
                 <ActionIcon
                   aria-label='Delete selected rows'
                   variant='default'
                   size='lg'
-                  onClick={() => {
-                    console.log(loadedRows);
-                    setPendingDelete(selectedRows());
-                  }}
+                  onClick={() => setPendingDelete(selectedRows())}
                 >
                   <Icon name='delete' size={20} />
                 </ActionIcon>
