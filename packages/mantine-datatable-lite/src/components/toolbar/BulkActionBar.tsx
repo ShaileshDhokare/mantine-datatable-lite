@@ -24,7 +24,7 @@ export function BulkActionBar({
   return (
     <Paper
       ref={ref}
-      radius='sm'
+      radius='var(--mantine-radius-default)'
       withBorder
       className={classes.bulkBar}
       style={style}

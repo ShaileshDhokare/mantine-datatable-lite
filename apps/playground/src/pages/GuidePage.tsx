@@ -15,6 +15,9 @@ import themingCode from '../examples/Theming.tsx?raw';
 import classes from '../App.module.css';
 import { tag, version } from '../docs/generated/api.json';
 
+// `npm install` resolves the `latest` tag by default, so stable releases need no suffix.
+const packageSpec = tag === 'latest' ? 'mantine-datatable-lite' : `mantine-datatable-lite@${tag}`;
+
 const guides = {
   'getting-started': {
     title: 'Mantine DataTable Lite', description: 'A typed React table that feels at home in Mantine.',
@@ -67,13 +70,13 @@ export function InstallationPage() {
     <DocSection id='install' title='Install dependencies'><Markdown>{`The current release, ${version}, is available under the npm \`${tag}\` tag. The supported peer baseline is React 19.2 and Mantine 9.6 or newer within major version 9. If React and Mantine are already installed, add the table package:
 
 \`\`\`bash
-npm install mantine-datatable-lite@${tag}
+npm install ${packageSpec}
 \`\`\`
 
 For a new React application, install the peer dependencies too:
 
 \`\`\`bash
-npm install mantine-datatable-lite@${tag} react@^19.2 react-dom@^19.2 @mantine/core@^9.6 @mantine/hooks@^9.6
+npm install ${packageSpec} react@^19.2 react-dom@^19.2 @mantine/core@^9.6 @mantine/hooks@^9.6
 \`\`\`
 
 Use the same version for the Mantine packages. The package ships its own TypeScript declarations.

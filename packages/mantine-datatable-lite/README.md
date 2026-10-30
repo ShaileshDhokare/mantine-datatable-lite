@@ -3,13 +3,13 @@
 A small, typed data table for [Mantine](https://mantine.dev) 9 and React 19, with
 the features real screens need and nothing more.
 
-[![npm](https://img.shields.io/npm/v/mantine-datatable-lite/next?label=npm)](https://www.npmjs.com/package/mantine-datatable-lite)
+[![npm](https://img.shields.io/npm/v/mantine-datatable-lite?label=npm)](https://www.npmjs.com/package/mantine-datatable-lite)
 [![license](https://img.shields.io/npm/l/mantine-datatable-lite)](https://github.com/ShaileshDhokare/mantine-datatable-lite/blob/master/packages/mantine-datatable-lite/LICENSE)
 ![types](https://img.shields.io/badge/types-included-blue)
 
 **[Documentation and live demos](https://shaileshdhokare.github.io/mantine-datatable-lite/#/getting-started)**
 · [API reference](https://shaileshdhokare.github.io/mantine-datatable-lite/#/api)
-· [Full-stack example](https://github.com/ShaileshDhokare/mantine-datatable-lite/tree/master/examples/server-mode)
+· [Full-stack example](https://github.com/ShaileshDhokare/mantine-datatable-lite/tree/master/examples/employee-directory)
 
 - **Sorting, filtering and search.** Typed sort, choice filters for strings and
   booleans, operator filters for numbers and dates, per-column and global search.
@@ -24,8 +24,9 @@ the features real screens need and nothing more.
 - **Light.** About 17 KB gzipped (JS + CSS) and no runtime dependencies beyond
   React and Mantine.
 
-> **Release candidate.** `1.0.0-rc.0` is the API planned for 1.0. It is published
-> under the `next` tag; pin an exact version, and see
+> **1.0 is the first stable release.** The API follows semantic versioning, so
+> breaking changes wait for a new major version. `1.0.0-rc.0` has the same API;
+> coming from an alpha, see
 > [Upgrading from earlier alphas](#upgrading-from-earlier-alphas).
 
 ## Contents
@@ -49,7 +50,7 @@ the features real screens need and nothing more.
 ## Install
 
 ```sh
-npm install mantine-datatable-lite@next
+npm install mantine-datatable-lite
 ```
 
 Peer dependencies:
@@ -202,8 +203,9 @@ searching return to page 1. `loading` shows an overlay over the current rows.
 default `loadError` text), and `onRetry` adds a Retry button under it.
 
 The repository has a complete
-[React + Express + SQLite example](https://github.com/ShaileshDhokare/mantine-datatable-lite/tree/master/examples/server-mode)
-that turns a `TableChange` into SQL.
+[employee directory example](https://github.com/ShaileshDhokare/mantine-datatable-lite/tree/master/examples/employee-directory)
+with a server-side and a client-side table. Its Express API turns a
+`TableChange` into SQL with Kysely and SQLite.
 
 ## Columns
 
@@ -435,7 +437,7 @@ right-to-left layout, so translate `pinLeft`, `pinRight`, `moveLeft` and
 - Colors come from your Mantine theme. Mantine's default `dimmed` text and
   light-mode primary color are below the WCAG AA contrast ratio for small text;
   raise them in your theme if you need AA (the
-  [server-mode example](https://github.com/ShaileshDhokare/mantine-datatable-lite/tree/master/examples/server-mode)
+  [employee directory example](https://github.com/ShaileshDhokare/mantine-datatable-lite/tree/master/examples/employee-directory)
   shows one way).
 
 ## TypeScript
@@ -502,6 +504,9 @@ Full descriptions are in the
 [API reference](https://shaileshdhokare.github.io/mantine-datatable-lite/#/api).
 
 ## Upgrading from earlier alphas
+
+`1.0.0-rc.0` has the same API as 1.0, so it upgrades without changes. From a
+`0.1.0` alpha, update the following:
 
 | Before | Now |
 | --- | --- |

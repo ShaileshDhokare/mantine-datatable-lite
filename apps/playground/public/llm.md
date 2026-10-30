@@ -1,11 +1,11 @@
 # Mantine DataTable Lite: guide for AI coding tools
 
-This guide describes `mantine-datatable-lite@1.0.0-rc.0`. Download it and attach it to an AI coding assistant, or give the assistant its direct URL. Check the installed package version before generating code: this is a prerelease API and later releases may differ.
+This guide describes `mantine-datatable-lite@1.0.0`. Download it and attach it to an AI coding assistant, or give the assistant its direct URL. Check the installed package version before generating code: other versions may differ.
 
 ## Package and compatibility
 
 - npm package: `mantine-datatable-lite`.
-- Documented version: `1.0.0-rc.0`; npm release tag: `next`.
+- Documented version: `1.0.0`; npm release tag: `latest`.
 - Documentation: https://shaileshdhokare.github.io/mantine-datatable-lite/#/getting-started
 - This guide: https://shaileshdhokare.github.io/mantine-datatable-lite/llm.md
 - API page: https://shaileshdhokare.github.io/mantine-datatable-lite/#/api
@@ -22,7 +22,7 @@ Public runtime exports are `DataTable`, `Icon` and `rowActionsColumn`. Import ty
 In an existing compatible React/Mantine app:
 
 ```bash
-npm install --save-exact mantine-datatable-lite@1.0.0-rc.0
+npm install --save-exact mantine-datatable-lite@1.0.0
 ```
 
 In a new React app, also install the peers:
@@ -31,7 +31,7 @@ In a new React app, also install the peers:
 npm install react@^19.2.0 react-dom@^19.2.0 @mantine/core@^9.6.0 @mantine/hooks@^9.6.0
 ```
 
-TypeScript projects need matching React type declarations. The `next` tag can move; an exact version makes generated code reproducible.
+TypeScript projects need matching React type declarations. The `latest` tag can move; an exact version makes generated code reproducible.
 
 Import CSS once in the application entry point, in this order. Put the app inside `MantineProvider`:
 
@@ -275,7 +275,7 @@ There are no public DataTable `classNames`, `styles` or `vars` slots in this rel
 6. Keep remote fetching, initial load, loading/error state, cancellation, retry and destructive-action confirmation in the consuming app.
 7. Do not invent APIs from other table libraries. This release has no `manualSorting`, public `useDataTable`, virtualization, column resizing, editing, grouped/tree rows, multi-column sorting, row drag and drop, built-in CSV/Excel export or select-all-matching-server-records mode.
 
-Suggested prompt: "Use the attached mantine-datatable-lite guide for version 1.0.0-rc.0. Build a typed Mantine table for my existing React app. Use only the documented public API. Explain whether the table or my application owns the data operations."
+Suggested prompt: "Use the attached mantine-datatable-lite guide for version 1.0.0. Build a typed Mantine table for my existing React app. Use only the documented public API. Explain whether the table or my application owns the data operations."
 
 ## Feature links
 
@@ -295,7 +295,7 @@ Suggested prompt: "Use the attached mantine-datatable-lite guide for version 1.0
 
 ## API reference
 
-These declarations come from the package, version `1.0.0-rc.0`. They are reference definitions; import public values and types from `mantine-datatable-lite` in your application. The `RangeFilterValue` and `MantineTableProps` helpers below are not public exports.
+These declarations come from the package, version `1.0.0`. They are reference definitions; import public values and types from `mantine-datatable-lite` in your application. The `RangeFilterValue` and `MantineTableProps` helpers below are not public exports.
 
 ```tsx
 import type { ComponentProps, ComponentType, CSSProperties, MouseEvent, ReactNode, SVGProps } from 'react';

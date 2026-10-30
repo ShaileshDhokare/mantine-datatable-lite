@@ -1,6 +1,6 @@
 {
-  "version": "1.0.0-rc.0",
-  "tag": "next",
+  "version": "1.0.0",
+  "tag": "latest",
   "api": {
     "DataTableProps": [
       {
