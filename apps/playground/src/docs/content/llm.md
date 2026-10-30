@@ -1,6 +1,6 @@
 # Mantine DataTable Lite: guide for AI coding tools
 
-This guide describes `mantine-datatable-lite@{{version}}`. Download it and attach it to an AI coding assistant, or give the assistant its direct URL. Check the installed package version before generating code: this is a prerelease API and later releases may differ.
+This guide describes `mantine-datatable-lite@{{version}}`. Download it and attach it to an AI coding assistant, or give the assistant its direct URL. Check the installed package version before generating code: other versions may differ.
 
 ## Package and compatibility
 
